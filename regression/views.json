@@ -1,0 +1,23 @@
+{
+  "views": [
+    "hall",
+    "hallDoors",
+    "studioScreen",
+    "studioEntry",
+    "venue",
+    "venueSeats",
+    "tunnelFirst",
+    "tunnelMiddle",
+    "waiting",
+    "thinking",
+    "thinkingWindow",
+    "sunset",
+    "garden",
+    "spark"
+  ],
+  "viewport": {
+    "desktop": "1440x900",
+    "mobilePortrait": "430x932",
+    "mobileLandscape": "932x430"
+  }
+}
