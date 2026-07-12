@@ -2,166 +2,68 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HrM · YouTube relay</title>
 <style>
   html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
   #player{position:absolute;inset:0;width:100%;height:100%}
-  #status{position:absolute;inset:auto 12px 12px 12px;z-index:3;padding:9px 12px;border:1px solid rgba(255,255,255,.18);border-radius:10px;background:rgba(0,0,0,.72);color:#eee;font:12px/1.35 system-ui,sans-serif;letter-spacing:.02em;display:none}
-  #status.show{display:block}
 </style>
 </head>
 <body>
 <div id="player"></div>
-<div id="status" role="status" aria-live="polite"></div>
 <script>
-(() => {
-  'use strict';
+// HrM Workshop — YouTube relay (upload this file to any of your GitHub Pages
+// repos, e.g. next to SAYWHAT). Because this page is served over https, the
+// inner YouTube embed gets a valid referer and plays even when the museum
+// itself is opened from a local file:// URL (which otherwise causes Error 153).
+//
+// Usage from the museum:
+//   yt.html?v=VIDEO_ID           — play one video (looping)
+//   yt.html?list=PLAYLIST_ID     — play a playlist
+// The museum can control playback by posting messages to this window:
+//   {func:'playVideo'|'pauseVideo'|'unMute'|'mute'}  or the YT-style
+//   {"event":"command","func":...} JSON string — both are forwarded.
+var params = new URLSearchParams(location.search);
+var videoId = params.get('v') || 'jfKfPfyJRdk';
+var listId = params.get('list') || '';
 
-  const params = new URLSearchParams(location.search);
-  const videoId = params.get('v') || 'jfKfPfyJRdk';
-  const listId = params.get('list') || '';
-  const autoplay = params.get('autoplay') !== '0';
-  const startMuted = params.get('muted') !== '0';
-  const parentOrigin = params.get('parentOrigin') || '*';
-  const statusEl = document.getElementById('status');
+var tag = document.createElement('script');
+tag.src = 'https://www.youtube.com/iframe_api';
+document.head.appendChild(tag);
 
-  let player = null;
-  let playerReady = false;
-  let apiFailed = false;
-  const commandQueue = [];
-  const allowedCommands = new Set([
-    'playVideo','pauseVideo','stopVideo','mute','unMute','setVolume','seekTo',
-    'setPlaybackRate','loadVideoById','cueVideoById','nextVideo','previousVideo'
-  ]);
-
-  function targetOrigin(){
-    return parentOrigin && parentOrigin !== 'null' ? parentOrigin : '*';
-  }
-
-  function notify(type, extra={}){
-    try{
-      parent.postMessage({source:'hrm-youtube-relay',type,...extra}, targetOrigin());
-    }catch(e){
-      parent.postMessage({source:'hrm-youtube-relay',type,...extra}, '*');
+var player = null;
+window.onYouTubeIframeAPIReady = function(){
+  var opts = {
+    width:'100%', height:'100%',
+    playerVars:{
+      autoplay:1, mute:1, playsinline:1, controls:1,
+      loop: listId ? 0 : 1,
+      playlist: listId ? undefined : videoId,
+      rel:0, modestbranding:1
+    },
+    events:{
+      onReady:function(e){ e.target.mute(); e.target.playVideo(); }
     }
-  }
-
-  function showStatus(message, persistent=false){
-    statusEl.textContent = message;
-    statusEl.classList.add('show');
-    if(!persistent) setTimeout(()=>statusEl.classList.remove('show'),2600);
-  }
-
-  function validParentMessage(ev){
-    if(ev.source !== parent) return false;
-    if(parentOrigin === '*' || parentOrigin === '') return true;
-    if(parentOrigin === 'null') return ev.origin === 'null' || ev.origin === '';
-    return ev.origin === parentOrigin;
-  }
-
-  function parsePayload(raw){
-    if(typeof raw === 'string'){
-      try{ return JSON.parse(raw); }catch(e){ return null; }
-    }
-    return raw && typeof raw === 'object' ? raw : null;
-  }
-
-  function runCommand(payload){
-    const func = payload?.func || (payload?.event === 'command' ? payload.func : null);
-    const args = Array.isArray(payload?.args) ? payload.args : [];
-    if(!func || !allowedCommands.has(func)) return;
-    if(!playerReady || !player || typeof player[func] !== 'function'){
-      commandQueue.push({func,args});
-      notify('state',{state:'command queued',queued:commandQueue.length});
-      return;
-    }
-    try{
-      player[func](...args);
-    }catch(error){
-      notify('error',{code:'command',message:String(error?.message||error)});
-    }
-  }
-
-  function flushQueue(){
-    while(playerReady && commandQueue.length){
-      const command = commandQueue.shift();
-      runCommand(command);
-    }
-  }
-
-  window.addEventListener('message',ev=>{
-    if(!validParentMessage(ev)) return;
-    const payload = parsePayload(ev.data);
-    if(!payload) return;
-    runCommand(payload);
-  });
-
-  window.onYouTubeIframeAPIReady = () => {
-    if(apiFailed) return;
-    const playerVars = {
-      autoplay: autoplay ? 1 : 0,
-      mute: startMuted ? 1 : 0,
-      playsinline:1,
-      controls:1,
-      fs:1,
-      rel:0,
-      modestbranding:1,
-      enablejsapi:1,
-      loop:listId ? 0 : 1
-    };
-    if(listId){
-      playerVars.listType='playlist';
-      playerVars.list=listId;
-    }else{
-      playerVars.playlist=videoId;
-    }
-
-    player = new YT.Player('player',{
-      width:'100%',height:'100%',
-      videoId:listId ? undefined : videoId,
-      playerVars,
-      events:{
-        onReady(event){
-          playerReady=true;
-          if(startMuted) event.target.mute();
-          if(autoplay) event.target.playVideo();
-          notify('ready',{videoId,listId,muted:startMuted});
-          flushQueue();
-        },
-        onStateChange(event){
-          notify('state',{state:event.data});
-        },
-        onError(event){
-          notify('error',{code:event.data});
-          showStatus(`YouTube player error ${event.data}. This video may prohibit embedding.`,true);
-        },
-        onAutoplayBlocked(){
-          notify('state',{state:'autoplay blocked'});
-          showStatus('Playback needs one click. Use the player controls.',true);
-        }
-      }
-    });
   };
+  if(listId){
+    opts.playerVars.listType = 'playlist';
+    opts.playerVars.list = listId;
+  }else{
+    opts.videoId = videoId;
+  }
+  player = new YT.Player('player', opts);
+};
 
-  const tag=document.createElement('script');
-  tag.src='https://www.youtube.com/iframe_api';
-  tag.async=true;
-  tag.onerror=()=>{
-    apiFailed=true;
-    notify('error',{code:'api-load'});
-    showStatus('The YouTube player API could not be loaded.',true);
-  };
-  document.head.appendChild(tag);
-
-  notify('state',{state:'relay booting'});
-  setTimeout(()=>{
-    if(!playerReady && !apiFailed){
-      notify('state',{state:'still connecting'});
-      showStatus('Still connecting to YouTube…',false);
-    }
-  },8000);
-})();
+window.addEventListener('message', function(ev){
+  var data = ev.data;
+  if(typeof data === 'string'){
+    try{ data = JSON.parse(data); }catch(e){ return; }
+  }
+  if(!data) return;
+  var func = data.func || (data.event === 'command' ? data.func : null);
+  if(!func || !player || typeof player[func] !== 'function') return;
+  try{ player[func].apply(player, Array.isArray(data.args) ? data.args : []); }catch(e){}
+});
 </script>
 </body>
 </html>
