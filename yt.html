@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HrM · YouTube relay</title>
+<style>
+  html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
+  #player{position:absolute;inset:0;width:100%;height:100%}
+</style>
+</head>
+<body>
+<div id="player"></div>
+<script>
+// HrM Workshop — YouTube relay (upload this file to any of your GitHub Pages
+// repos, e.g. next to SAYWHAT). Because this page is served over https, the
+// inner YouTube embed gets a valid referer and plays even when the museum
+// itself is opened from a local file:// URL (which otherwise causes Error 153).
+//
+// Usage from the museum:
+//   yt.html?v=VIDEO_ID           — play one video (looping)
+//   yt.html?list=PLAYLIST_ID     — play a playlist
+// The museum can control playback by posting messages to this window:
+//   {func:'playVideo'|'pauseVideo'|'unMute'|'mute'}  or the YT-style
+//   {"event":"command","func":...} JSON string — both are forwarded.
+var params = new URLSearchParams(location.search);
+var videoId = params.get('v') || 'jfKfPfyJRdk';
+var listId = params.get('list') || '';
+
+var tag = document.createElement('script');
+tag.src = 'https://www.youtube.com/iframe_api';
+document.head.appendChild(tag);
+
+var player = null;
+window.onYouTubeIframeAPIReady = function(){
+  var opts = {
+    width:'100%', height:'100%',
+    playerVars:{
+      autoplay:1, mute:1, playsinline:1, controls:1,
+      loop: listId ? 0 : 1,
+      playlist: listId ? undefined : videoId,
+      rel:0, modestbranding:1
+    },
+    events:{
+      onReady:function(e){ e.target.mute(); e.target.playVideo(); }
+    }
+  };
+  if(listId){
+    opts.playerVars.listType = 'playlist';
+    opts.playerVars.list = listId;
+  }else{
+    opts.videoId = videoId;
+  }
+  player = new YT.Player('player', opts);
+};
+
+window.addEventListener('message', function(ev){
+  var data = ev.data;
+  if(typeof data === 'string'){
+    try{ data = JSON.parse(data); }catch(e){ return; }
+  }
+  if(!data) return;
+  var func = data.func || (data.event === 'command' ? data.func : null);
+  if(!func || !player || typeof player[func] !== 'function') return;
+  try{ player[func].apply(player, Array.isArray(data.args) ? data.args : []); }catch(e){}
+});
+</script>
+</body>
+</html>
