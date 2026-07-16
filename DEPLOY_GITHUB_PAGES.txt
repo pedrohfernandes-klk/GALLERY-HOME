@@ -1,0 +1,7 @@
+INDEX150 DEPLOYMENT
+
+Upload the complete contents of this folder to the GitHub Pages publishing root. Keep index.html, yt.html, assets/, and regression/ together.
+
+The Studio uses direct YouTube embeds over HTTPS and yt.html only when the museum runs from file://.
+
+For regression captures, serve locally: python3 -m http.server 8765, then run regression/capture_regression.sh.

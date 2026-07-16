@@ -1,0 +1,33 @@
+{
+  "javascript_syntax": [
+    {
+      "script": 1,
+      "ok": true,
+      "stderr": ""
+    }
+  ],
+  "duplicate_element_ids": [],
+  "asset_references": 63,
+  "missing_assets": [],
+  "html_bytes": 13486405,
+  "studio_area_m2": 100,
+  "regression_views": [
+    "hall",
+    "hallDoors",
+    "studioScreen",
+    "studioEntry",
+    "venue",
+    "venueSeats",
+    "tunnelFirst",
+    "tunnelMiddle",
+    "waiting",
+    "thinking",
+    "thinkingWindow",
+    "sunset",
+    "garden",
+    "spark"
+  ],
+  "notes": [
+    "Runtime WebGL screenshots require an HTTP server and access to the Three.js CDN used by the build. The deterministic camera harness and capture script are included."
+  ]
+}
