@@ -4970,10 +4970,22 @@ function buildNightRoom(){
   const floorTex = makeGridTexture('night_salon_floor_v4','#5b5148','rgba(255,244,222,.028)');
   floorTex.repeat.set(hw/2.2, depth/3.6);
 
+  // Wall/ceiling textures (batch: visual improvement phase 6). Only the
+  // floor was textured; the walls and ceiling of this large room were flat
+  // MeshStandardMaterial. Matching the floor's own makeGridTexture family,
+  // with each material's existing hex kept as the texture base so room tone
+  // is unchanged.
+  const wallTex = makeGridTexture('night_salon_wall_v1','#e3dacb','rgba(23,18,13,.05)');
+  wallTex.repeat.set(hw*2/9, h/3.4);
+  const sideWallTex = makeGridTexture('night_salon_sidewall_v1','#d8cebf','rgba(23,18,13,.05)');
+  sideWallTex.repeat.set(depth/9, h/3.4);
+  const ceilingTex = makeGridTexture('night_salon_ceiling_v1','#b39272','rgba(23,18,13,.045)');
+  ceilingTex.repeat.set(hw/2.2, depth/3.6);
+
   const floorMat = new THREE.MeshStandardMaterial({map:floorTex, color:0x5f564c, roughness:.92, metalness:.02});
-  const wallMat = new THREE.MeshStandardMaterial({color:0xe3dacb, roughness:.94, metalness:0});
-  const sideWallMat = new THREE.MeshStandardMaterial({color:0xd8cebf, roughness:.95, metalness:0});
-  const ceilingMat = new THREE.MeshStandardMaterial({color:0xb39272, roughness:.84, metalness:.03});
+  const wallMat = new THREE.MeshStandardMaterial({map:wallTex, roughness:.94, metalness:0});
+  const sideWallMat = new THREE.MeshStandardMaterial({map:sideWallTex, roughness:.95, metalness:0});
+  const ceilingMat = new THREE.MeshStandardMaterial({map:ceilingTex, roughness:.84, metalness:.03});
   const trimMat = new THREE.MeshStandardMaterial({color:0xb99f7a, roughness:.74, metalness:.05});
   const darkWoodMat = new THREE.MeshStandardMaterial({color:0x4d3727, roughness:.72, metalness:.05});
   const leatherMat = new THREE.MeshStandardMaterial({color:0x6b4327, roughness:.78, metalness:.03});
