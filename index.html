@@ -6386,21 +6386,49 @@ function buildHood(){
   for(const dz of [-3.5,3.5]){const spot=new THREE.SpotLight(0xffdfb1,3.2,16,.43,.65,1.45);spot.position.set(wx-24,7.8,wz-12+dz);spot.target.position.set(wx-W/2+.9,4.1,wz-12);scene.add(spot,spot.target);regLight('hood',spot);}
   const artBench=new THREE.Mesh(new THREE.BoxGeometry(5.4,.34,1.05),wood);artBench.position.set(wx-25,.55,wz-12);artBench.rotation.y=Math.PI/2;scene.add(artBench);sitPoint('hood',artBench,'Cadavre Expat IV',new THREE.Vector3(wx-25,1.28,wz-12),-Math.PI/2,-.02);
 
-  // The complete Cadavre Expat sequence now belongs to Headquarters. The
-  // three earlier works occupy a measured opposing-wall sequence; IV remains
-  // the monumental lift-hall anchor. This removes the series from the corridor
-  // and gives it one legible curatorial context.
+  // The complete Cadavre Expat sequence now belongs to Headquarters. All four
+  // works are monumental (11.2 m wide, matching IV): I/II/III were previously
+  // a modest opposing-wall trio, now enlarged to the same scale as IV and
+  // redistributed along the east wall with generous museum-grade spacing
+  // instead of their old cramped pitch. Aspect ratios are preserved exactly
+  // (each width/height pair is the original pairing scaled uniformly), so
+  // nothing is stretched or cropped — see makeFittedCanvasTexture's contain-fit
+  // behaviour inside addFramedWallArt.
   const cadavreHallWorks=[
-    {src:CADAVRE_EXPAT_SRC,title:'CADAVRE EXPAT I',subtitle:'HrM · handmade mixed media collage',w:7.4,h:4.9,z:wz-22},
-    {src:CADAVRE_EXPAT_II_SRC,title:'CADAVRE EXPAT II',subtitle:'HrM · impasto, glue, oil and acrylic echo',w:6.1,h:6.1,z:wz-5},
-    {src:CADAVRE_EXPAT_III_SRC,title:'CADAVRE EXPAT III',subtitle:'HrM · reclaimed cardboard and fading impressions',w:7.6,h:5.5,z:wz+13}
+    {src:CADAVRE_EXPAT_SRC,title:'CADAVRE EXPAT I',subtitle:'HrM · handmade mixed media collage',w:11.2,h:11.2*(4.9/7.4),z:wz-25},
+    {src:CADAVRE_EXPAT_II_SRC,title:'CADAVRE EXPAT II',subtitle:'HrM · impasto, glue, oil and acrylic echo',w:11.2,h:11.2*(6.1/6.1),z:wz-2},
+    {src:CADAVRE_EXPAT_III_SRC,title:'CADAVRE EXPAT III',subtitle:'HrM · reclaimed cardboard and fading impressions',w:11.2,h:11.2*(5.5/7.6),z:wz+21}
   ];
   cadavreHallWorks.forEach((a,i)=>{
     const backing=new THREE.Mesh(new THREE.BoxGeometry(.32,a.h+1.8,a.w+1.6),new THREE.MeshStandardMaterial({color:0xefe8dc,roughness:.88,metalness:.01}));backing.position.set(wx+W/2-.72,a.h/2+1.02,a.z);scene.add(backing);
     addFramedWallArt({src:a.src,title:a.title,subtitle:a.subtitle,width:a.w,height:a.h,x:wx+W/2-.92,y:a.h/2+1.05,z:a.z,rotationY:-Math.PI/2,frameColor:0x201c18,matteColor:0xd5c7b0,showLabel:true});
-    const spot=new THREE.SpotLight(0xffe2bc,2.75,18,.40,.60,1.5);spot.position.set(wx+24,8.2,a.z);spot.target.position.set(wx+W/2-.9,a.h/2+1.1,a.z);scene.add(spot,spot.target);regLight('hood',spot);
+    for(const dz of [-4.2,4.2]){const spot=new THREE.SpotLight(0xffe2bc,3.1,20,.40,.60,1.5);spot.position.set(wx+24,8.4,a.z+dz);spot.target.position.set(wx+W/2-.9,a.h/2+1.1,a.z);scene.add(spot,spot.target);regLight('hood',spot);}
   });
-  const seriesBench=new THREE.Mesh(new THREE.BoxGeometry(7.2,.36,1.12),wood);seriesBench.position.set(wx+24,.57,wz-5);seriesBench.rotation.y=Math.PI/2;scene.add(seriesBench);sitPoint('hood',seriesBench,'Cadavre Expat sequence',new THREE.Vector3(wx+24,1.30,wz-5),Math.PI/2,-.02);
+  cadavreHallWorks.forEach(a=>{const b=new THREE.Mesh(new THREE.BoxGeometry(5.4,.34,1.05),wood);b.position.set(wx+23,.55,a.z);b.rotation.y=Math.PI/2;scene.add(b);sitPoint('hood',b,a.title,new THREE.Vector3(wx+23,1.28,a.z),-Math.PI/2,-.02);});
+
+  // A sunken concrete ramp, cut into the gap between Cadavre Expat II and III,
+  // reads as a real descent rather than another lift call — the basement gets
+  // a walkable second way in. Portals in this engine are click-through
+  // thresholds rather than continuously walkable slopes (see travelTo), so the
+  // ramp itself is built set-dressing: a tilted floor and retaining walls that
+  // visibly drop away, ending at a door that actually performs the transition.
+  function buildRampDescent(cx,z0,y0,z1,y1,width,floorMat,wallMat){
+    const run=z1-z0, drop=y0-y1, slopeLen=Math.hypot(run,drop), tiltX=-Math.PI/2+Math.atan2(drop,run);
+    const midY=(y0+y1)/2, midZ=(z0+z1)/2;
+    const rampFloor=new THREE.Mesh(new THREE.BoxGeometry(width,.22,slopeLen),floorMat);rampFloor.position.set(cx,midY,midZ);rampFloor.rotation.x=tiltX;scene.add(rampFloor);
+    for(const side of [-1,1]){const wall=new THREE.Mesh(new THREE.BoxGeometry(.28,1.5,slopeLen),wallMat);wall.position.set(cx+side*(width/2+.14),midY+.62,midZ);wall.rotation.x=tiltX;scene.add(wall);}
+  }
+  buildRampDescent(wx+27,wz+5,0,wz+11,-3.0,5.0,darkConcrete,concrete);
+  const reserveLanding=new THREE.Mesh(new THREE.BoxGeometry(5.0,.20,1.4),darkConcrete);reserveLanding.position.set(wx+27,-3.0,wz+11.7);scene.add(reserveLanding);
+  const reserveSign=new THREE.Mesh(new THREE.PlaneGeometry(5.6,.72),new THREE.MeshBasicMaterial({map:makeSignTexture('THE RESERVE ↓','basement archive · ramp'),transparent:true}));reserveSign.position.set(wx+27,3.6,wz+4.6);reserveSign.rotation.y=Math.PI;scene.add(reserveSign);
+  const reserveGlow=new THREE.PointLight(0xcfe6ee,1.7,14,1.7);reserveGlow.position.set(wx+27,.4,wz+9.5);scene.add(reserveGlow);regLight('hood',reserveGlow);
+  const reserveDoor=addPremiumPortalDoor({x:wx+27,y:-1.2,z:wz+12.6,width:3.6,height:3.6,orientation:'front',title:'THE RESERVE',subtitle:'basement archive',accent:0x8a9295,dark:0x14171a});
+  registerPortal({
+    mesh:reserveDoor.slab, field:reserveDoor.field, doorParts:reserveDoor.doorParts, openAxis:reserveDoor.openAxis,
+    room:'hood-basement', fromRoom:'hood', label:'The Reserve',
+    targetPos:new THREE.Vector3(wx+27, -5.0+cameraHeight, wz-3.7),
+    targetYaw:0, slideAxis:reserveDoor.openAxis, slideDist:2.5
+  });
 
   // Tower shell and illuminated window grid.
   const towerCore=new THREE.Group();towerCore.position.set(tx,0,tz);scene.add(towerCore);
@@ -6491,6 +6519,21 @@ function buildHood(){
   const bCeil=new THREE.Mesh(new THREE.BoxGeometry(30,.18,20),steel);bCeil.position.set(bcx,by+5.5,bcz);scene.add(bCeil);
   for(const sx of [-1,1]){const wall=new THREE.Mesh(new THREE.BoxGeometry(.25,5.5,20),concrete);wall.position.set(bcx+sx*15,by+2.75,bcz);scene.add(wall);}for(const sz of [-1,1]){const wall=new THREE.Mesh(new THREE.BoxGeometry(30,5.5,.25),concrete);wall.position.set(bcx,by+2.75,bcz+sz*10);scene.add(wall);}
   const bSign=new THREE.Mesh(new THREE.PlaneGeometry(7.0,.82),new THREE.MeshBasicMaterial({map:makeSignTexture('BASEMENT · 600 m²','5.5 m clear · future programme'),transparent:true}));bSign.position.set(bcx,by+3.2,bcz-9.84);bSign.rotation.y=Math.PI;scene.add(bSign);
+
+  // The Reserve's own end of the ramp: a short rise from the basement floor
+  // up to a landing and a return door, aligned under the grand hall's descent
+  // above (same x) so the connection reads as one continuous stair, not two
+  // unrelated features that happen to share a name.
+  buildRampDescent(wx+27,wz-3,-5.0,wz+2,-6.8,5.0,darkConcrete,concrete);
+  const groundZeroLanding=new THREE.Mesh(new THREE.BoxGeometry(5.0,.20,1.4),darkConcrete);groundZeroLanding.position.set(wx+27,-5.0,wz-3.7);scene.add(groundZeroLanding);
+  const groundZeroGlow=new THREE.PointLight(0xffe0b8,1.5,12,1.7);groundZeroGlow.position.set(wx+27,-4.2,wz-1);scene.add(groundZeroGlow);regLight('hood-basement',groundZeroGlow);
+  const groundZeroDoor=addPremiumPortalDoor({x:wx+27,y:-3.5,z:wz-4.5,width:3.2,height:3.0,orientation:'front',title:'GROUND ZERO',subtitle:'return',accent:0xc8b48f,dark:0x1a1712,ceilingY:by+5.5});
+  registerPortal({
+    mesh:groundZeroDoor.slab, field:groundZeroDoor.field, doorParts:groundZeroDoor.doorParts, openAxis:groundZeroDoor.openAxis,
+    room:'hood', fromRoom:'hood-basement', label:'Ground Zero / Grand Hall',
+    targetPos:new THREE.Vector3(wx+27, cameraHeight, wz+11.7),
+    targetYaw:Math.PI, slideAxis:groundZeroDoor.openAxis, slideDist:2.2
+  });
 
   // Formal 160 × 120 m garden, entered through the rear of the grand hall.
   const gx=x0-18,gz=z0+234,gW=160,gD=120;
