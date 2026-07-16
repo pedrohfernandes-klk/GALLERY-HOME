@@ -3096,11 +3096,11 @@ function makePoolTexture(){
 }
 
 
-function makeConcreteTexture(){
+function makeConcreteTexture(base='#b8ad9b'){
   const c = document.createElement('canvas');
   c.width = 1024; c.height = 1024;
   const g = c.getContext('2d');
-  g.fillStyle = '#b8ad9b';
+  g.fillStyle = base;
   g.fillRect(0,0,1024,1024);
   for(let i=0;i<420;i++){
     const x=Math.random()*1024, y=Math.random()*1024, r=18+Math.random()*74;
@@ -3118,6 +3118,79 @@ function makeConcreteTexture(){
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
+  return tex;
+}
+function makeStoneTexture(base='#c9c2b7', vein='rgba(110,102,94,.18)', shadow='rgba(62,58,54,.14)'){
+  const c = document.createElement('canvas');
+  c.width = 768; c.height = 768;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = base; ctx.fillRect(0,0,c.width,c.height);
+  for(let i=0;i<2400;i++){
+    const x=Math.random()*c.width, y=Math.random()*c.height, r=Math.random()*2.4+.3;
+    ctx.fillStyle = `rgba(255,255,255,${.02 + Math.random()*.05})`;
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+  }
+  ctx.lineWidth = 1.3;
+  for(let i=0;i<140;i++){
+    const x = Math.random()*c.width;
+    const y = Math.random()*c.height;
+    ctx.strokeStyle = i%2===0 ? vein : shadow;
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+    ctx.bezierCurveTo(x+40-Math.random()*80, y+50-Math.random()*30, x+90-Math.random()*180, y+120-Math.random()*60, x+140-Math.random()*240, y+180-Math.random()*90);
+    ctx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(1.2,1.2);
+  return tex;
+}
+function makeBrickTexture(base='#6a4034', mortar='rgba(28,24,20,.55)'){
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 512;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = base; ctx.fillRect(0,0,c.width,c.height);
+  const rowH = 42, brickW = 96;
+  for(let y=0;y<c.height;y+=rowH){
+    const row = Math.floor(y/rowH);
+    const offset = row%2 ? brickW/2 : 0;
+    for(let x=-brickW;x<c.width+brickW;x+=brickW){
+      const shade = -14+Math.random()*28|0;
+      ctx.fillStyle = `rgba(${shade>0?255:0},${shade>0?255:0},${shade>0?255:0},${Math.abs(shade)/180})`;
+      ctx.fillRect(x+offset,y,brickW-3,rowH-3);
+    }
+  }
+  ctx.strokeStyle = mortar; ctx.lineWidth = 3;
+  for(let y=0;y<=c.height;y+=rowH){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(c.width,y); ctx.stroke(); }
+  for(let y=0;y<c.height;y+=rowH){
+    const row = Math.floor(y/rowH), offset = row%2 ? brickW/2 : 0;
+    for(let x=-brickW+offset;x<c.width+brickW;x+=brickW){ ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,y+rowH); ctx.stroke(); }
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+function makeWoodTexture(base='#604737', grain='rgba(28,18,10,.16)'){
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 512;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = base; ctx.fillRect(0,0,c.width,c.height);
+  ctx.lineWidth = 1.4;
+  for(let i=0;i<48;i++){
+    const y0 = Math.random()*c.height;
+    ctx.strokeStyle = grain;
+    ctx.beginPath();
+    ctx.moveTo(0,y0);
+    for(let x=0;x<=c.width;x+=64){
+      ctx.lineTo(x, y0 + (Math.sin(x*.02+i)*6) + (Math.random()*4-2));
+    }
+    ctx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   return tex;
 }
 function makeWindowTexture(){
@@ -5354,32 +5427,6 @@ function buildOutdoorSpace(){
   const metalBenchMat = new THREE.MeshStandardMaterial({color:0x5d5853, roughness:.62, metalness:.30});
   const woodBenchMat = new THREE.MeshStandardMaterial({color:0x6d4a31, roughness:.78, metalness:.04});
 
-  function makeStoneTexture(base='#c9c2b7', vein='rgba(110,102,94,.18)', shadow='rgba(62,58,54,.14)'){
-    const c = document.createElement('canvas');
-    c.width = 768; c.height = 768;
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = base; ctx.fillRect(0,0,c.width,c.height);
-    for(let i=0;i<2400;i++){
-      const x=Math.random()*c.width, y=Math.random()*c.height, r=Math.random()*2.4+.3;
-      ctx.fillStyle = `rgba(255,255,255,${.02 + Math.random()*.05})`;
-      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
-    }
-    ctx.lineWidth = 1.3;
-    for(let i=0;i<140;i++){
-      const x = Math.random()*c.width;
-      const y = Math.random()*c.height;
-      ctx.strokeStyle = i%2===0 ? vein : shadow;
-      ctx.beginPath();
-      ctx.moveTo(x,y);
-      ctx.bezierCurveTo(x+40-Math.random()*80, y+50-Math.random()*30, x+90-Math.random()*180, y+120-Math.random()*60, x+140-Math.random()*240, y+180-Math.random()*90);
-      ctx.stroke();
-    }
-    const tex = new THREE.CanvasTexture(c);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(1.2,1.2);
-    return tex;
-  }
   const marbleTex = makeStoneTexture('#eae6de','rgba(168,160,150,.20)','rgba(120,113,104,.12)');
   const stoneTexLite = makeStoneTexture('#d0c8bc','rgba(132,122,111,.15)','rgba(90,84,76,.10)');
   const marbleMat = new THREE.MeshStandardMaterial({map:marbleTex, roughness:.58, metalness:.03});
@@ -6048,17 +6095,28 @@ function hoodLiftTravel(room,mode='main'){
 
 function buildHood(){
   const x0=hoodOrigin.x,z0=hoodOrigin.z,z1=z0+hoodDepth,hw=hoodHalfWidth,mid=(z0+z1)/2;
-  const concrete=new THREE.MeshStandardMaterial({color:0x827e74,roughness:.96,metalness:.025});
-  const paleStone=new THREE.MeshStandardMaterial({color:0xc7bda8,roughness:.82,metalness:.025});
-  const limestone=new THREE.MeshStandardMaterial({color:0xbcae93,roughness:.91,metalness:.015});
-  const darkConcrete=new THREE.MeshStandardMaterial({color:0x343839,roughness:.92,metalness:.06});
-  const brick=new THREE.MeshStandardMaterial({color:0x6a4034,roughness:.98,metalness:0});
+
+  // Textured base materials (batch: Hood design pass, phase 3a). The district
+  // previously used flat MeshStandardMaterial colors throughout, which read
+  // as noticeably "raw" next to textured rooms like the Hall or the Studio.
+  const concreteTex=makeConcreteTexture('#83796c'); concreteTex.repeat.set(hw*2/5, hoodDepth/5);
+  const darkConcreteTex=makeConcreteTexture('#33322f'); darkConcreteTex.repeat.set(6,6);
+  const paleStoneTex=makeStoneTexture('#c7bda8','rgba(150,140,122,.16)','rgba(96,88,76,.12)'); paleStoneTex.repeat.set(5,3);
+  const limestoneTex=makeStoneTexture('#bcae93','rgba(142,130,108,.16)','rgba(90,80,66,.12)'); limestoneTex.repeat.set(5,3);
+  const brickTex=makeBrickTexture('#6a4034'); brickTex.repeat.set(8,3);
+  const woodTex=makeWoodTexture('#604737'); woodTex.repeat.set(2,1);
+
+  const concrete=new THREE.MeshStandardMaterial({map:concreteTex,roughness:.96,metalness:.025});
+  const paleStone=new THREE.MeshStandardMaterial({map:paleStoneTex,roughness:.82,metalness:.025});
+  const limestone=new THREE.MeshStandardMaterial({map:limestoneTex,roughness:.91,metalness:.015});
+  const darkConcrete=new THREE.MeshStandardMaterial({map:darkConcreteTex,roughness:.92,metalness:.06});
+  const brick=new THREE.MeshStandardMaterial({map:brickTex,roughness:.98,metalness:0});
   const steel=new THREE.MeshStandardMaterial({color:0x273238,roughness:.38,metalness:.72});
   const brass=new THREE.MeshStandardMaterial({color:0xa98a50,roughness:.35,metalness:.76});
   const gravel=new THREE.MeshStandardMaterial({color:0x887b68,roughness:1});
   const gardenGround=new THREE.MeshStandardMaterial({color:0x597744,roughness:1});
   const hedgeMat=new THREE.MeshStandardMaterial({color:0x244a2d,roughness:.98});
-  const wood=new THREE.MeshStandardMaterial({color:0x604737,roughness:.78,metalness:.02});
+  const wood=new THREE.MeshStandardMaterial({map:woodTex,roughness:.78,metalness:.02});
   const glass=new THREE.MeshPhysicalMaterial({color:0xcce8ee,roughness:.06,metalness:.02,transmission:.82,thickness:.08,transparent:true,opacity:.24,depthWrite:false,side:THREE.DoubleSide});
   const litGlass=new THREE.MeshPhysicalMaterial({color:0xd9f1f4,roughness:.04,metalness:0,transmission:.92,thickness:.05,transparent:true,opacity:.16,depthWrite:false,side:THREE.DoubleSide});
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(hw*2,hoodDepth),concrete);ground.rotation.x=-Math.PI/2;ground.position.set(x0,0,mid);ground.receiveShadow=true;scene.add(ground);
