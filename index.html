@@ -5204,13 +5204,19 @@ function buildNightRoom(){
     scene.add(rib);
   }
 
+  // Was hw*2-6.1 (29.9) wide against a 6.9 sill — a 4.33 aspect stretched
+  // over a 1.33-aspect photo, so the contain-fit (see makeFittedCanvasTexture)
+  // left the photo occupying under a third of the frame, and the two
+  // mullions this used to carry cut straight through even that. Narrowed to
+  // the photo's own proportions instead of forcing a "panoramic" width the
+  // source image was never shot for.
   createArchitecturalWindow({
     wall:'front', room:'night', toggleable:true,
-    label:'Sunset Lounge panoramic window', title:'River Sunset',
+    label:'Sunset Lounge window', title:'River Sunset',
     roomX:x0, roomHalfWidth:hw, roomBackZ:z0, roomFrontZ:z1,
-    w:hw*2 - 6.1, hgt:6.9, sillY:0.92,
+    w:10, hgt:6.9, sillY:0.92,
     imageSrc:MEDIA.nightRoomView,
-    verticalMullionFractions:[0], horizontalMullionOffsets:[-0.18]
+    verticalMullionFractions:[], horizontalMullionOffsets:[]
   });
 
   // Batch 134: the three side windows are retired. One harbour window remains,
@@ -5324,13 +5330,17 @@ function buildNightRoom(){
 
 
   // Six non-repeated wall pieces: balanced lateral-wall sequences, clear of windows, doors and the central mirror.
+  // Four of these six were declared in a portrait aspect (~0.77-0.9) for
+  // source photos that are actually landscape (real aspect ~1.26-1.36) —
+  // makeFittedCanvasTexture's contain-fit then left visible cream padding
+  // bands on each frame. Re-declared at their real aspect, same frame area.
   const loungeWorks=[
-    {src:REAL_DECOR.lounge.f,w:1.62,h:2.02,x:x0-hw+.14,y:3.60,z:z0+7.0,  r: Math.PI/2},
+    {src:REAL_DECOR.lounge.f,w:2.04,h:1.60,x:x0-hw+.14,y:3.60,z:z0+7.0,  r: Math.PI/2},
     {src:REAL_DECOR.lounge.a,w:1.72,h:1.72,x:x0-hw+.14,y:3.60,z:z0+15.5, r: Math.PI/2},
-    {src:REAL_DECOR.lounge.b,w:1.70,h:1.90,x:x0-hw+.14,y:3.60,z:z0+24.0, r: Math.PI/2},
-    {src:REAL_DECOR.lounge.c,w:1.55,h:2.00,x:x0-hw+.14,y:3.60,z:z0+32.2, r: Math.PI/2},
+    {src:REAL_DECOR.lounge.b,w:2.02,h:1.60,x:x0-hw+.14,y:3.60,z:z0+24.0, r: Math.PI/2},
+    {src:REAL_DECOR.lounge.c,w:2.03,h:1.53,x:x0-hw+.14,y:3.60,z:z0+32.2, r: Math.PI/2},
     {src:SUNSET_CHANG_SRC,w:1.58,h:2.22,x:x0+hw-.14,y:3.72,z:z0+4.7,  r:-Math.PI/2},
-    {src:REAL_DECOR.lounge.e,w:1.50,h:1.96,x:x0+hw-.14,y:3.62,z:z0+31.2, r:-Math.PI/2}
+    {src:REAL_DECOR.lounge.e,w:2.00,h:1.47,x:x0+hw-.14,y:3.62,z:z0+31.2, r:-Math.PI/2}
   ];
   loungeWorks.forEach((w,i)=>addFramedWallArt({src:w.src,title:`Ornament Study ${i+1}`,subtitle:'sunset lounge',
     width:w.w,height:w.h,x:w.x,y:w.y,z:w.z,rotationY:w.r,frameColor:0x3d2a1f,matteColor:0xf0e7da,showLabel:false}));
@@ -8047,11 +8057,15 @@ function buildMazeGarden(){
     createArchitecturalWindow({
       roomX:x0, roomHalfWidth:gw/2, roomBackZ:zBack, roomFrontZ:zFront,
       wall:'back', room:'maze', toggleable:true,
+      // Was 11.2 wide against 4.35 tall (aspect 2.58) for a 1.33-aspect photo
+      // — under half the frame showed the image, and the three mullions cut
+      // straight through that visible strip. Narrowed to the photo's own
+      // proportions and dropped the mullions crossing it.
       label:'Garden landscape window', title:'Landscape',
-      w:11.2, hgt:4.35, sillY:2.275,
+      w:7.5, hgt:4.35, sillY:2.275,
       imageSrc:MEDIA.gardenLandscape,
       revealDepth:.62, renderOrder:42,
-      verticalMullionFractions:[-.25,0,.25], horizontalMullionOffsets:[0],
+      verticalMullionFractions:[], horizontalMullionOffsets:[],
       light, openIntensity:1.28, closedIntensity:.16,
       shadeColor:0xf3eadc, shadeOpacity:.98
     });
@@ -8842,11 +8856,14 @@ function buildSparkToolsLab(){
   createArchitecturalWindow({
     roomX:x0, roomHalfWidth:hw, roomBackZ:z0, roomFrontZ:z1,
     wall:'front', room:'spark', toggleable:true,
+    // Was 14.8 wide against 5.6 tall (aspect 2.64) for a 1.33-aspect photo —
+    // barely half the frame showed the image, chopped further by two
+    // mullions. Narrowed to the photo's own proportions, mullions dropped.
     label:'Spark Tools Labs centre window', title:'Night Promenade',
-    w:14.8, hgt:5.6, sillY:2.0,
+    w:7.5, hgt:5.6, sillY:2.0,
     imageSrc:MEDIA.sparkLabNightWindow,
     revealDepth:.90, renderOrder:46,
-    verticalMullionFractions:[-.33,.33], horizontalMullionOffsets:[0]
+    verticalMullionFractions:[], horizontalMullionOffsets:[]
   });
 
   // Refined signage around the new window, keeping the arcade identity.
@@ -9962,9 +9979,15 @@ function buildThinkingRoom(){
   // The rear wall is mostly a real panoramic window, now built by the canonical helper.
   const sillHeight = 1.10;
   const headMargin = 1.18;
-  const sideMargin = 1.55;
-  const winW = hw*2 - sideMargin*2;
   const winH = h - sillHeight - headMargin;
+  // The window used to span the full wall (hw*2-3.1 = 34.9, an 4.30 aspect)
+  // stretched over a 1.33-aspect photo — the contain-fit left the image
+  // occupying under a third of the frame, sliced further by three mullions.
+  // Narrowed to the photo's own proportions; the wall on either side (which
+  // used to be a thin 1.55m margin sized for the old full-width window) now
+  // fills the rest of the opening instead of leaving a gap.
+  const winTargetW = winH * 1.33;
+  const sideFill = (hw*2 - winTargetW)/2;
   const winY = sillHeight + winH/2;
   const wallZ = z1 - .025;
 
@@ -9975,21 +9998,21 @@ function buildThinkingRoom(){
   const upperWall = new THREE.Mesh(new THREE.PlaneGeometry(hw*2, Math.max(topH,.05)), wallMat);
   upperWall.position.set(x0, h - Math.max(topH,.05)/2, wallZ);
   scene.add(upperWall);
-  const leftWindowWall = new THREE.Mesh(new THREE.PlaneGeometry(sideMargin, winH), wallMat);
-  leftWindowWall.position.set(x0-hw+sideMargin/2, winY, wallZ);
+  const leftWindowWall = new THREE.Mesh(new THREE.PlaneGeometry(sideFill, winH), wallMat);
+  leftWindowWall.position.set(x0-hw+sideFill/2, winY, wallZ);
   scene.add(leftWindowWall);
-  const rightWindowWall = new THREE.Mesh(new THREE.PlaneGeometry(sideMargin, winH), wallMat);
-  rightWindowWall.position.set(x0+hw-sideMargin/2, winY, wallZ);
+  const rightWindowWall = new THREE.Mesh(new THREE.PlaneGeometry(sideFill, winH), wallMat);
+  rightWindowWall.position.set(x0+hw-sideFill/2, winY, wallZ);
   scene.add(rightWindowWall);
 
   createArchitecturalWindow({
     roomX:x0, roomHalfWidth:hw, roomBackZ:z0, roomFrontZ:z1,
     wall:'front', room:'thinking', toggleable:true,
-    label:'Thinking room panoramic window', title:'Coast Pasture',
-    w:winW, hgt:winH, sillY:sillHeight,
+    label:'Thinking room window', title:'Coast Pasture',
+    w:winTargetW, hgt:winH, sillY:sillHeight,
     imageSrc:MEDIA.thinkingPasture,
     revealDepth:1.08, renderOrder:46,
-    verticalMullionFractions:[-.30,0,.30], horizontalMullionOffsets:[0]
+    verticalMullionFractions:[], horizontalMullionOffsets:[]
   });
 
   const sunPatch = new THREE.Mesh(
