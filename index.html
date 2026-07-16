@@ -9282,10 +9282,28 @@ function buildStudio(){
   const hw = studioHalfWidth, depth = studioDepth, h = studioHeight;
   const z1 = z0 + depth, midZ = z0 + depth/2;
 
-  const wallMat   = new THREE.MeshStandardMaterial({color:0xe8dfd2, roughness:.92, metalness:.02});
-  const wallDeep  = new THREE.MeshStandardMaterial({color:0xf2eadf, roughness:.94, metalness:.01});
-  const ceilMat   = new THREE.MeshStandardMaterial({color:0xd0b89b, roughness:.90, metalness:.02});
-  const floorMat  = new THREE.MeshStandardMaterial({color:0x15131b, roughness:.36, metalness:.24});
+  // Textured shell (batch: visual improvement phase 8). Front/side/back
+  // walls and ceiling were flat MeshStandardMaterial -- the same underlying
+  // gap Hood had, just hidden by dense furnishing (speaker stacks, Eames
+  // chairs, the hand-painted carpet below, ~17 lights). The carpet only
+  // covers about a fifth of the floor area, so floorMat gets a subtle
+  // treatment too rather than being skipped.
+  const wallTex = makeGridTexture('studio_frontwall_v1','#e8dfd2','rgba(23,18,13,.04)');
+  wallTex.repeat.set(hw*2/9, h/3.4);
+  const sideWallTex = makeGridTexture('studio_sidewall_v1','#e8dfd2','rgba(23,18,13,.04)');
+  sideWallTex.repeat.set(depth/9, h/3.4);
+  const wallDeepTex = makeGridTexture('studio_backwall_v1','#f2eadf','rgba(23,18,13,.035)');
+  wallDeepTex.repeat.set(hw*2/9, h/3.4);
+  const ceilTex = makeGridTexture('studio_ceiling_v1','#d0b89b','rgba(23,18,13,.04)');
+  ceilTex.repeat.set(hw*2/5, depth/5);
+  const floorTex = makeGridTexture('studio_floor_v1','#15131b','rgba(255,244,222,.03)');
+  floorTex.repeat.set(hw*2/5, depth/5);
+
+  const wallMat   = new THREE.MeshStandardMaterial({map:wallTex, roughness:.92, metalness:.02});
+  const sideWallMat = new THREE.MeshStandardMaterial({map:sideWallTex, roughness:.92, metalness:.02});
+  const wallDeep  = new THREE.MeshStandardMaterial({map:wallDeepTex, roughness:.94, metalness:.01});
+  const ceilMat   = new THREE.MeshStandardMaterial({map:ceilTex, roughness:.90, metalness:.02});
+  const floorMat  = new THREE.MeshStandardMaterial({map:floorTex, roughness:.36, metalness:.24});
   const woodMat   = new THREE.MeshStandardMaterial({color:0x3b2a1f, roughness:.6, metalness:.05});
   const cabMat    = new THREE.MeshStandardMaterial({color:0x0f0d13, roughness:.5, metalness:.16});
   const coneMat   = new THREE.MeshStandardMaterial({color:0x26242e, roughness:.44, metalness:.24});
@@ -9303,9 +9321,9 @@ function buildStudio(){
   backWall.position.set(x0,h/2,z0); scene.add(backWall);
   const frontWall = new THREE.Mesh(new THREE.PlaneGeometry(hw*2, h), wallMat);
   frontWall.rotation.y = Math.PI; frontWall.position.set(x0,h/2,z1); scene.add(frontWall);
-  const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(depth, h), wallMat);
+  const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(depth, h), sideWallMat);
   leftWall.rotation.y = Math.PI/2; leftWall.position.set(x0-hw,h/2,midZ); scene.add(leftWall);
-  const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(depth, h), wallMat);
+  const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(depth, h), sideWallMat);
   rightWall.rotation.y = -Math.PI/2; rightWall.position.set(x0+hw,h/2,midZ); scene.add(rightWall);
 
   // Coffered ceiling strips + neon cove.
