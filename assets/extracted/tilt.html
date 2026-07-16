@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TILT</title>
+<meta name="description" content="TILT — a crooked dictionary of 999 definitions at an angle. Press once; keep the line that makes certainty wobble.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="TILT">
+<meta property="og:description" content="A one-button crooked dictionary for second thoughts. 999 definitions, each named from an angle.">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23041011'/><path d='M6 23 A12 12 0 0 1 26 23' fill='none' stroke='%233df09a' stroke-width='2'/><line x1='16' y1='23' x2='23' y2='8' stroke='%23ffd24a' stroke-width='3' stroke-linecap='round'/><circle cx='16' cy='23' r='2.2' fill='%233df09a'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Saira+Stencil+One&display=swap" rel="stylesheet">
+<style>
+:root{
+ --bg:#02100c;--glass:#04140e;--line:#3df09a;--line2:#9bffd0;--warn:#ff4d6d;--gold:#ffd24a;--ink:#dffff0;--muted:#6fae93;--dim:#3f6a58;
+ --button:#ffd24a;--button2:#a9781a;--buttonInk:#06120c;--grid:rgba(61,240,154,.045)
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#020807;color:var(--ink)}
+body{font-family:'IBM Plex Mono','Courier New',monospace;padding:8px;display:flex;align-items:center;justify-content:center;
+ background:radial-gradient(120% 80% at 50% 0%,rgba(61,240,154,.10),transparent 60%),radial-gradient(80% 60% at 85% 100%,rgba(255,77,109,.06),transparent 60%),#020807}
+body:before{content:"";position:fixed;inset:0;z-index:9;pointer-events:none;
+ background:repeating-linear-gradient(to bottom,rgba(255,255,255,.018) 0,rgba(255,255,255,.018) 1px,transparent 1px,transparent 5px);mix-blend-mode:screen;opacity:.38}
+.app{position:relative;width:100%;max-width:920px;background:linear-gradient(150deg,#0a1f17,#03100b 70%);border:2px solid rgba(61,240,154,.5);border-radius:18px;
+ box-shadow:0 0 0 3px #000,0 22px 62px rgba(0,0,0,.9),0 0 34px rgba(61,240,154,.10);padding:9px;animation:flick 7s ease-in-out infinite}
+/* convex CRT glass */
+.screen{position:relative;overflow:hidden;min-height:calc(100vh - 34px);border:2px solid rgba(61,240,154,.4);border-radius:14px;padding:15px;display:flex;flex-direction:column;gap:14px;
+ background:radial-gradient(130% 100% at 50% 38%,rgba(61,240,154,.07),transparent 62%),linear-gradient(180deg,#06150f,#020a07 82%);
+ box-shadow:inset 0 0 58px rgba(0,0,0,.72),inset 0 0 22px rgba(61,240,154,.08)}
+.screen.power{animation:powerOn .55s ease-out}
+.screen:before{content:"";position:absolute;inset:0;z-index:6;pointer-events:none;border-radius:13px;
+ background:radial-gradient(140% 120% at 50% -10%,rgba(255,255,255,.035),transparent 42%);mix-blend-mode:screen}
+.screen:after{content:"";position:absolute;left:0;right:0;top:-45%;height:45%;z-index:5;pointer-events:none;
+ background:linear-gradient(180deg,transparent,rgba(61,240,154,.028),transparent);animation:scan 11s linear infinite}
+.header{position:relative;text-align:center;padding:4px 0 10px;border-bottom:1px solid rgba(61,240,154,.22)}
+.brand{cursor:pointer}
+h1{display:inline-block;margin:0;font-family:'Saira Stencil One','IBM Plex Mono',monospace;font-weight:400;text-transform:uppercase;color:var(--line);
+ font-size:clamp(2.45rem,11.4vw,6.15rem);line-height:.86;letter-spacing:.032em;text-shadow:0 0 8px rgba(61,240,154,.66),0 0 26px rgba(61,240,154,.28),0 0 54px rgba(61,240,154,.14)}
+h1 .positive{color:var(--warn);text-shadow:0 0 9px rgba(255,77,109,.72),0 0 26px rgba(255,77,109,.32)}
+.tilt-i{position:relative;display:inline-block;padding-top:.02em}
+.i-dot{position:absolute;left:50%;top:-.19em;width:.135em;height:.135em;border-radius:50%;background:var(--warn);transform:translateX(-50%);box-shadow:0 0 10px var(--warn),0 0 24px rgba(255,77,109,.58);animation:beat 1.7s ease-in-out infinite}
+.identity-line{margin-top:4px;color:var(--gold);font-size:clamp(.72rem,2.6vw,.94rem);line-height:1.2;text-transform:uppercase;letter-spacing:.12em;text-shadow:0 0 8px rgba(255,210,74,.26)}
+.status{margin-top:10px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:.70rem;text-transform:uppercase;letter-spacing:.055em}
+.status b{font-weight:normal}.status .green{color:var(--line)}.status .amber{color:var(--gold)}.status .warn{color:var(--warn)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--line);box-shadow:0 0 8px var(--line);margin-right:5px;vertical-align:baseline;animation:beat 1.7s ease-in-out infinite}
+.view{flex:1;display:none;flex-direction:column;gap:12px}.view.on{display:flex}
+.primary{display:flex}
+#ask{position:relative;width:100%;min-height:78px;background:linear-gradient(180deg,#ffe680 0%,var(--button) 48%,var(--button2) 100%);color:var(--buttonInk);border:3px solid #fff0bf;border-radius:10px;
+ font-family:'Saira Stencil One','IBM Plex Mono',monospace;font-size:clamp(1.35rem,6vw,2.3rem);letter-spacing:.08em;text-transform:uppercase;
+ text-shadow:1px 1px 0 rgba(255,255,255,.5);cursor:pointer;transform:rotate(-1.8deg);transform-origin:50% 62%;will-change:transform,filter;box-shadow:0 0 0 3px #000,0 0 28px rgba(255,210,74,.34),0 8px 0 rgba(0,0,0,.85),inset 0 0 18px rgba(255,255,255,.26)}
+#ask:after{content:"";display:none}
+#ask:hover{filter:brightness(1.07);animation:none;transform:rotate(2.4deg) translateY(-1px) scale(1.01)}#ask:active{transform:rotate(-4deg) translateY(4px) scale(.99);animation:none;box-shadow:0 0 0 3px #000,0 3px 0 rgba(0,0,0,.85),inset 0 0 18px rgba(0,0,0,.20)}
+#ask.busy{animation:btnGlitchTilt .1s steps(2,end) 5!important}
+.output{position:relative;flex:1;min-height:318px;border:1px solid rgba(61,240,154,.42);border-radius:12px;overflow:hidden;padding:56px 24px 30px;display:flex;align-items:center;justify-content:center;
+ background:radial-gradient(120% 90% at 50% 40%,rgba(61,240,154,.06),transparent 60%),
+ repeating-linear-gradient(90deg,transparent 0 31px,var(--grid) 31px 32px),
+ repeating-linear-gradient(0deg,transparent 0 31px,var(--grid) 31px 32px),linear-gradient(180deg,rgba(0,0,0,.25),rgba(0,0,0,.5));
+ box-shadow:inset 0 0 34px rgba(0,0,0,.58),inset 0 0 18px rgba(61,240,154,.055)}
+.output:before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:linear-gradient(90deg,transparent,rgba(61,240,154,.22),transparent)}
+.card{position:relative;z-index:2;width:100%;max-width:760px;text-align:center;transition:opacity .16s ease,transform .16s ease;will-change:opacity,transform}
+.card.out-fade{opacity:0;transform:translateY(6px) scale(.985)}
+.spark{display:block;color:var(--gold);font-size:.92rem;margin-bottom:14px;letter-spacing:.30em;opacity:.72;text-shadow:0 0 8px rgba(255,210,74,.34)}
+.text{margin:0;color:var(--line2);font-size:clamp(1.5rem,5.3vw,2.15rem);line-height:1.4;text-shadow:0 0 8px rgba(61,240,154,.24),0 0 22px rgba(61,240,154,.10)}
+.text .term{color:var(--gold);font-weight:600;text-shadow:0 0 9px rgba(255,210,74,.32)}
+.placeholder .text{color:var(--gold);text-shadow:0 0 10px rgba(255,210,74,.30)}
+.placeholder .hint{margin-top:14px;color:var(--muted);font-size:clamp(.88rem,3vw,1rem);line-height:1.55}
+
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button{font-family:inherit;cursor:pointer;text-transform:uppercase;font-weight:700;letter-spacing:.065em;padding:13px 8px;background:#07150f;color:var(--ink);border:1px solid rgba(61,240,154,.42);border-radius:8px}
+button:hover{border-color:var(--line);background:#0c2117}
+#copy{color:var(--line);border-color:rgba(61,240,154,.7)}#copy.ok{color:var(--gold);border-color:var(--gold);background:#1c160a}
+#clear{color:var(--gold);border-color:rgba(255,210,74,.65)}
+.about{flex:1;min-height:318px;overflow:auto;border:1px solid rgba(61,240,154,.42);border-radius:12px;padding:22px;color:var(--ink);white-space:pre-line;
+ font-size:clamp(.95rem,3vw,1.06rem);line-height:1.62;text-shadow:0 0 4px rgba(223,255,240,.08);
+ background:radial-gradient(120% 80% at 50% 0%,rgba(61,240,154,.06),transparent 40%),linear-gradient(180deg,rgba(0,0,0,.22),rgba(0,0,0,.5));box-shadow:inset 0 0 20px rgba(61,240,154,.05)}
+.about b{color:var(--gold);font-weight:700}
+.footer{margin-top:auto;padding-top:10px;border-top:1px dashed rgba(61,240,154,.16);color:var(--dim);font-size:.70rem;text-align:center;letter-spacing:.055em;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.flink{background:none;border:none;color:var(--muted);font-size:.72rem;letter-spacing:.08em;padding:4px 6px;cursor:pointer}.flink:hover{color:var(--gold)}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#04120c;color:var(--ink);border:1px solid rgba(255,210,74,.75);padding:9px 14px;z-index:50;font-size:.84rem;display:none;letter-spacing:.04em;box-shadow:0 0 24px rgba(0,0,0,.65)}.toast.on{display:block}
+@keyframes scan{0%{top:-45%}100%{top:142%}}
+@keyframes beat{0%,100%{opacity:1}50%{opacity:.28}}
+@keyframes powerOn{0%{transform:scaleY(.006);filter:brightness(3);opacity:.2}42%{transform:scaleY(1);filter:brightness(1.5);opacity:1}100%{filter:brightness(1)}}
+@keyframes flick{0%,44%,52%,100%{opacity:1}48%{opacity:.965}84%{opacity:.985}}
+@keyframes btnGlitchTilt{0%{transform:rotate(-5deg) translate(-3px,2px) skewX(-4deg)}50%{transform:rotate(4deg) translate(3px,-2px) skewX(4deg)}100%{transform:rotate(-1.8deg) translate(0,0)}}
+@media(min-width:720px){body{padding:18px}.app{padding:14px}.screen{min-height:668px;padding:24px;gap:15px}.output{min-height:350px;padding:48px 52px}.about{padding:30px}}
+@media(max-width:520px){body{padding:6px}.screen{gap:12px;padding:12px}.header{padding-bottom:9px}h1{font-size:clamp(2.12rem,11.6vw,3.72rem)}.i-dot{width:.14em;height:.14em;top:-.18em}.status{font-size:.64rem;gap:8px}.output{min-height:306px;padding:24px 16px}#ask{min-height:74px}.text{font-size:clamp(1.36rem,6.7vw,1.86rem);line-height:1.4}.controls{gap:7px}.useLine{font-size:.74rem}}
+button:focus-visible,.flink:focus-visible,#ask:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+@media(prefers-reduced-motion:reduce){.app,.screen.power,.screen:after,#ask,.dot,.i-dot{animation:none}.screen:after{display:none}.card{transition:none}}
+
+.spark{position:absolute;top:18px;left:0;right:0;display:flex;justify-content:center;margin:0;z-index:3}
+.tiltmark{width:48px;height:28px;overflow:visible}
+.tiltmark .arc{fill:none;stroke:var(--line);stroke-width:1.4;opacity:.42}
+.tiltmark .pivot{fill:var(--line)}
+.tiltmark .redline{fill:none;stroke:var(--warn);stroke-width:2.6;stroke-linecap:round;opacity:.8;filter:drop-shadow(0 0 4px rgba(255,77,109,.6))}
+.tiltmark .needle{stroke:var(--gold);stroke-width:2.6;stroke-linecap:round;filter:drop-shadow(0 0 5px rgba(255,210,74,.55));transform-origin:24px 24px;transform:rotate(var(--rest,22deg))}
+.spark.spin .needle{animation:tiltneedle .82s cubic-bezier(.2,.85,.3,1)}
+@keyframes tiltneedle{0%{transform:rotate(var(--rest,22deg))}13%{transform:rotate(87deg);stroke:var(--warn)}24%{transform:rotate(71deg);stroke:var(--warn)}34%{transform:rotate(87deg);stroke:var(--warn)}44%{transform:rotate(77deg);stroke:var(--warn)}54%{transform:rotate(85deg);stroke:var(--warn)}72%{stroke:var(--gold)}100%{transform:rotate(var(--rest,22deg));stroke:var(--gold)}}
+@media(prefers-reduced-motion:reduce){.tiltmark .needle{animation:none;transform:rotate(var(--rest,22deg))}}
+</style>
+</head>
+<body>
+<main class="app">
+<section class="screen power" id="screen" aria-label="TILT terminal">
+<header class="header">
+<div class="brand" id="brand" title="Return"><h1>T<span class="tilt-i">I<span class="i-dot" aria-hidden="true"></span></span>LT</h1><div class="identity-line">Definitions at an angle.</div></div>
+<div class="status"><span><span class="dot"></span>CERTAINTY: <b class="amber">OFF</b></span><span>HONESTY: <b class="green">ON</b></span><span>CITATION: <b class="warn">NEEDED</b></span></div>
+</header>
+
+<div class="view on" id="viewMain">
+  <div class="output" aria-live="polite"><span class="spark" id="spark"><svg class="tiltmark" viewBox="0 0 48 28" aria-hidden="true"><path class="arc" d="M6 24 A18 18 0 0 1 42 24"/><path class="redline" d="M37.4 12 A18 18 0 0 1 42 24"/><line class="needle" x1="24" y1="24" x2="24" y2="6"/><circle class="pivot" cx="24" cy="24" r="2.4"/></svg></span><div class="card placeholder" id="card"><p class="text">Make certainty wobble.</p></div></div>
+  <div class="primary"><button id="ask" type="button">TILT</button></div>
+  <div class="controls"><button id="copy" type="button">COPY</button><button id="clear" type="button">CLEAR</button></div>
+</div>
+
+<div class="view" id="viewAbout">
+  <div class="about" id="about">&gt; TILT · CROOKED DICTIONARY
+&gt; DECK: <b id="deckCount">999</b> definitions
+
+TILT is a crooked dictionary for second thoughts.
+
+It deals one definition at a time: a familiar word, named from the wrong angle.
+
+Most cards will miss. Keep the one that makes certainty wobble.
+
+Nothing is saved to a server. The machine runs here, in this browser.
+
+© HRF 2026. All rights reserved.
+
+[ ← RETURN ]  or press ESC</div>
+  <div class="controls"><button id="back" class="flink" type="button" style="grid-column:1 / -1;padding:14px;border:1px solid rgba(61,240,154,.45);border-radius:8px;color:var(--muted)">← RETURN</button></div>
+</div>
+
+<div class="footer"><span>© HRF 2026. All rights reserved.</span><button class="flink" id="aboutLink" type="button">[ ABOUT ]</button></div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+(function(){
+'use strict';
+const CARDS=["The archive: a graveyard where anxiety goes to become permanent.","Bureaucracy: panic stretching itself into geometry.","An audit: a stranger asking your past to prove it happened.","Evidence: the residue left behind when the truth escapes.","A receipt: paper acting as a proxy for memory.","A form: a confession trimmed to fit a standardized box.","A signature: the self traded for permission to proceed.","Administration: the art of moving a problem until it loses its name.","Compliance: exhaustion putting on a uniform.","A metric: a measurement that survived by murdering the context.","Panic: the nervous system refusing the schedule.","Calm: the alarm system drowning quietly.","Numbness: attention frozen at the scene of the crash.","Fatigue: the body collecting on every postponed rest.","Insomnia: the ledger refusing to balance at midnight.","A flinch: history arriving before the threat does.","Tension: the body trying to hold the walls up from the inside.","Relief: the body learning it was allowed to set the weight down.","A sigh: the body exhaling a ghost it couldn't name.","Vertigo: the sudden realization that the floor was a suggestion.","Power: the privilege of never having to explain the joke.","Hierarchy: the distance a mistake has to travel before it becomes a crime.","A meeting: hostages agreeing to the terms of their capture.","Consensus: fatigue voting yes.","Diplomacy: hostility delivered with excellent posture.","Politeness: the soft rope between strangers that keeps the day survivable.","A favour: a debt dressed in civilian clothes.","Networking: collecting accomplices for a crime not yet committed.","Charisma: warmth that bills you later.","Authority: confidence standing on a very tall box.","Slop: filler poured into a shape until it passes for content.","Productivity: anxiety manufacturing proof of motion.","A career: a coping strategy that stayed too long.","Hustle: desperation wearing designer shoes.","Burnout: the machine finally realizing it is made of meat.","Expertise: jargon protecting an empty room.","A deliverable: guilt boxed up for shipping.","Synergy: two people agreeing to drown together.","A deadline: fear borrowing a calendar date.","Optimization: removing the blood so the engine runs cleaner.","Tomorrow: a landfill for today’s unresolved cowardice.","Patience: trust with its sleeves rolled up.","Nostalgia: a forgery of a place that never existed.","Urgency: importance borrowing a siren.","Delay: the truth waiting for a safer room.","Punctuality: anxiety showing up early to check the exits.","A moment: the space between two different kinds of panic.","Eternity: the final two minutes of an unwanted conversation.","History: the winners arranging the furniture.","The future: a threat disguised as a promise.","A mask: the only face allowed to enter.","Identity: a habit that found a mirror.","Character: the scar tissue left by surviving your own choices.","Reputation: a rumour that learned to wear a suit.","Self-awareness: the prison guard moving inside your head.","Authenticity: a performance so rehearsed it forgot its lines.","Ego: the press secretary who believed its own statements.","A nickname: a cage small enough to remember.","Pride: a bruise refusing another inspection.","Shame: a social rule hiding in the nervous system.","Honesty: say the kind true thing, not only the true one.","A lie: the truth wearing the wrong coat.","Transparency: the visible part chosen carefully.","A secret: an explosive waiting for an audience.","Rumour: the truth travelling by the back stairs.","Confession: exhaustion choosing the nearest exit.","Denial: the load-bearing wall of a comfort zone.","A charger: the leash you forgot at home.","Nuance: hesitation trying to sound sophisticated.","Clarity: the simplest story bullying the rest.","Peace: not the absence of trouble, just room to breathe between rounds.","Forgiveness: setting down a weight no one required you to carry.","Revenge: justice with better grammar.","An argument: two loyalties meeting without translation.","Defeat: the first honest measurement of where you actually stand.","Victory: the old problem acquiring a new vocabulary.","Surrender: the first accurate reading of the cost.","A boundary: the kindest thing you can teach people to expect.","Compromise: the smallest truth traded away first.","Betrayal: reality refusing the script it never signed.","Memory: context edited out to make it carry weight.","Forgetfulness: the brain quietly sweeping the crime scene.","A monument: guilt cast in bronze.","A souvenir: proof that you survived being somewhere else.","Regret: knowledge arriving after the door closed.","Experience: the calm of having survived this kind of thing before.","A lesson: the small gift a mistake leaves on its way out.","Trauma: the past refusing to check out of the hotel.","Tradition: a mistake that learned the family name.","An heirloom: a curse passed down with good intentions.","Success: failure learning to photograph well.","Ambition: fear of being ordinary with a better vocabulary.","A mistake: the one teacher reliable enough to always show up.","Luck: a system without a narrator.","Destiny: repetition flattering itself.","Mediocrity: survival choosing the safest route.","Excellence: obsession given a socially acceptable outlet.","A setback: the road quietly correcting your direction.","Waste: tuition paid to reality.","Progress: motion carefully avoiding direction.","Silence: a sentence choosing, kindly, not to become damage.","Chatter: noise trying to keep the silence out.","A question: the small key that opens more than an answer ever could.","An answer: the question hiding its blade.","Jargon: a moat built around a very small castle.","A compliment: a request wearing perfume.","An insult: accuracy delivered without citizenship.","Grammar: the rules of engagement for a dying war.","A metaphor: a lens that clarifies by distorting.","Poetry: a ransom note cut from a dictionary.","A word: the ghost of the thing it points to.","A promise: debt accumulated in advance.","Trust: the small brave bet that lets anything begin.","Suspicion: memory refusing to be caught off guard.","Paranoia: one accurate signal surrounded by noise.","Jealousy: the arithmetic of imagining yourself replaced.","Envy: a map of what you secretly believe you lack.","Resentment: rehearsing an old injury until it learns your name.","A grudge: a pet you feed with your own nervous system.","A scapegoat: the vessel carrying the village's unacknowledged sins.","A low battery: a deadline you can watch shrink.","A victim: a role that guarantees moral superiority without effort.","A perpetrator: a mirror society refuses to look into.","Forgetting: the body's survival mechanism for a mind that won't stop.","Remembering: a selective edit designed to flatter the present.","A photograph: proof that you were once looking away from the camera.","A diary: the lie you tell yourself when no one else is listening.","An autobiography: a defense attorney's opening statement.","Fiction: a lie granted a passport to tell the truth.","A joke: a truth testing the structural integrity of the room.","Irony: commitment with a built-in trapdoor.","Sarcasm: anger hiding behind a shield of vocabulary.","Banter: ranking each other and calling it affection.","Small talk: two nervous systems agreeing not to touch.","A debate: two monologues refusing to yield the microphone.","An apology: name the harm, not your good intentions.","Remorse: regret that only started once there was an audience.","Atonement: the heavy lifting required after the apology fails.","Grace: letting someone be more than their worst day.","Vengeance: pain looking for a permanent address.","Spite: paying full price to make someone’s day slightly worse.","A rival: the person showing you exactly what you value.","An enemy: a boundary made of flesh and bone.","An ally: someone whose current interests happen to intersect with yours.","A friend: the person who makes the bad day smaller by halving it.","A partner: someone who agrees to witness your whole ordinary life.","Romance: the temporary suspension of critical thinking.","Heartbreak: the withdrawal symptoms of a chemical dependency.","Grief: love suddenly left with nowhere to go.","Mourning: the public performance of a private amputation.","A ghost: the unresolved conversation still ringing in the room.","A habit: an old solution outliving its problem.","An addiction: a coping mechanism that learned to drive the car.","Sobriety: meeting the day at full volume, on purpose.","A relapse: the old map feeling more familiar than the new territory.","Recovery: choosing the longer road again, on purpose, today.","Discipline: choosing once so you don’t have to choose all day.","Willpower: not a virtue you lack, a tank you forget to refill.","Motivation: a wave worth using, never worth waiting for.","Inspiration: a brief window before the work demands payment.","A routine: the rails that carry you on days willpower calls in sick.","A ritual: meaning injected into repetition.","A ceremony: a mistake decorated with candles and witnesses.","A festival: permission to briefly abandon the social contract.","A holiday: mandatory relaxation scheduled by the state.","A weekend: two days of borrowed air before the week takes it back.","Monday: the bill arriving for the weekend's oxygen.","A commute: the physical transition between two different performances.","An office: a theater where survival requires bad lighting.","A promotion: a thicker collar for the same leash.","A salary: the exact price of your unlived life.","A bonus: a bribe to forget the previous eleven months.","Retirement: exhaustion finally granted a pension.","Wealth: the ability to build a wall out of other people's labor.","Poverty: the state of being a rounding error in someone else's spreadsheet.","Charity: a tax-deductible apology for systemic failure.","Philanthropy: the billionaire's attempt to buy the history book.","Taxes: the rent you pay for the country you were born standing in.","A fine: a price tag for breaking the rules.","A prison: a warehouse for the consequences society refuses to digest.","The police: violence granted a legal monopoly.","A judge: a person paid to believe the robe removed their opinions.","A jury: twelve people tired enough to agree on a narrative.","A verdict: the gavel attempting to flatten the nuance.","A contract: a declaration of mutual distrust.","A lawsuit: a disagreement outsourced to expensive mercenaries.","A settlement: the truth sold for a predictable sum.","A loophole: the architecture revealing its hidden exit.","A policy: an old panic laminated for future use.","A procedure: responsibility diluted until no one can taste it.","An exception: the rule briefly acknowledging reality.","A protocol: a substitute for thinking under pressure.","A system: the machine designed to survive the people operating it.","An institution: a dead idea still collecting rent.","A tradition: an old habit that learned to bully the present.","A revolution: a change of management with better marketing.","A rebel: the new conformity waiting for its turn.","A conformist: survival by camouflage.","An individual: the brief illusion before the data aggregates.","A remote control: the household’s contested throne.","A spam folder: where enthusiasm goes to be ignored.","A reply-all: a private thought broadcast to a stadium.","A notification: the master pulling lightly on the leash.","A screen: a barrier that promises connection while delivering isolation.","A reminder: your past self nagging your present one.","Data: memory flattened into an asset class.","Privacy: a luxury good traded for convenience.","Surveillance: being watched, and told it is for your safety.","A password: a flimsy lock on a glass door.","A profile: the version of you edited for strangers.","A screenshot: a moment kept as evidence.","A trend: a crowd running in the same direction to escape themselves.","A fad: a hallucination shared by millions.","Fashion: obedience that changes its mind every season.","Style: a refusal to apologize for the shape of the self.","Taste: class insecurity learning to recognize itself.","A masterpiece: an accident that survived the critique.","A classic: a book everyone praises and no one reads.","A genre: a set of walls keeping the imagination safe.","A critic: a disappointed author demanding better entertainment.","An audience: the jury waiting to be manipulated.","Applause: relief that the performance is finally over.","Religion: the dark made bearable with candles, song, and company.","Faith: walking while the floor is still half-dark.","A Sunday evening: rest with one eye on the clock.","A first day: enthusiasm that hasn’t met the printer yet.","A sin: an appetite that showed up at the wrong address.","Virtue: exhaustion that learned to take a bow.","Temptation: the old map whispering it knows a shortcut.","A saint: an exception used to punish the rule.","A prophet: someone punished today for tomorrow's weather.","A cult: a religion that hasn't yet bought real estate.","Philosophy: the mind trying to pick the lock of its own cage.","A last day: a goodbye spread thin across eight hours.","Optimism: hope that hasn’t checked the receipts.","Pessimism: a forecast written by an old injury.","Realism: surrender with cleaner shoes.","Cynicism: intelligence paralyzed by its own accuracy.","A paycheck: a month of your life, deposited.","A tip: gratitude with a decimal point.","A bill: a polite letter that ends in a threat.","Loose change: coins too small to matter and too many to ignore.","Savings: courage kept in a drawer for later.","A budget: a promise you make yourself and renegotiate by Thursday.","A crisis: the structural integrity of the lie finally failing.","An emergency: the future arriving without an appointment.","Hunger: the body filing a complaint you can’t ignore.","Dread: the slow approach of an invoice you cannot pay.","Terror: the realization that the cage has no door.","Horror: the moment the mask slips off the world.","Awe: the ego briefly crushed by scale.","Wonder: the mind grinning instead of grabbing.","Beauty: the world owing us nothing and offering anyway.","The sublime: beauty that threatens to kill you.","Ugliness: a refusal to comfort the eye.","Disgust: a boundary speaking in nausea.","A scent: a ghost entering through the nose.","A taste: memory dissolving on the tongue.","A sound: the air violently rearranged by an event.","A shadow: light confirming the presence of an obstacle.","Light: the condition under which we agree to the illusion.","Darkness: the canvas returning to its default state.","Sleep: the small daily death we look forward to.","A dream: the mind sorting the day’s mail while you’re out.","A nightmare: the body remembering a threat the mind tried to delete.","Waking: the reluctant resumption of the narrative.","Morning: the day’s offer to begin the story differently.","Noon: the shadow hiding directly beneath the object.","Twilight: the contract between day and night renegotiated.","Midnight: the hour everything you postponed comes to collect.","A clock: an instrument that measures how fast you are decaying.","A calendar: a grid used to trap the future.","A season: the earth changing its wardrobe to distract us.","Spring: violence so green we call it beauty.","Summer: heat that turns ambition into a long, slow sit.","Autumn: the year showing off on its way out.","Winter: reality stripped to its bones.","Weather: the sky refusing to be ignored.","A storm: the atmosphere throwing a chair.","A flood: water reclaiming its old address.","A fire: the rapid extraction of stored time.","An earthquake: the ground reminding us it is only a lease.","A landscape: scenery that was here long before the word for it.","A map: a confession of what the surveyor found important.","A border: a fiction enforced by guns.","A nation: a collective hallucination with a flag.","Patriotism: an accident of birth treated as a moral achievement.","Treason: loyalty checking its watch and leaving early.","A flag: cloth asking for blood.","An anthem: a threat set to a catchy melody.","Thirst: the body cancelling every other appointment.","A ruin: architecture returning to geology.","A museum: a mausoleum for dead context.","A gallery: money laundering with better lighting.","A canvas: silence waiting to be interrupted.","A frame: a fence built to keep the meaning from escaping.","A brushstroke: a decision frozen in acrylic.","A sculpture: space forced to apologize for an object.","Architecture: gravity outsmarted by geometry.","A house: a box built to hold a specific set of habits.","A room: a psychological weather system with four walls.","A door: a decision that swings both ways.","A window: a safe distance from the world.","A lock: paranoia cast in brass.","A key: permission you carry in your pocket.","A threshold: the sharpest edge in the house.","A hallway: a corridor built to delay the inevitable.","Stairs: gravity demanding a toll.","A ceiling: the limit of your permitted vertical ambition.","A floor: the only surface guaranteed not to betray you today.","A mirror: the harshest auditor in the room.","A reflection: the self arriving slightly late.","A portrait: an apology for the actual face.","A landscape painting: a window you can pack in a box.","A horizon: the line where the illusion ends.","The sky: a blue roof over a very large prison.","The ocean: a reminder of what the world looked like before us.","A river: gravity finding the easiest way home.","A bridge: a truce between two pieces of land.","A road: a scar left by the need to be elsewhere.","A path: a negotiation between feet and terrain.","A crossroad: anxiety in geographical form.","A vehicle: a prosthesis for impatience.","Speed: the illusion of leaving yourself behind.","Distance: a buffer zone against intimacy.","Proximity: the collapse of plausible deniability.","Gravity: the earth refusing to let you leave.","Friction: reality resisting the plan.","Momentum: the past pushing the present into the future.","Inertia: the comfortable case for staying exactly here.","Equilibrium: the calm just before something gives.","A yawn: honesty that escapes before you choose to be polite.","Release: the moment the string realizes it is broken.","An identity card: a rectangle of plastic that outranks your face.","A nap: a small loan taken against the night’s sleep.","Coffee: borrowed alertness, repaid with interest by afternoon.","Too many tabs: a mind externalised and overloaded.","A checkbox: complexity forced through a meat grinder.","A Terms of Service agreement: a confession signed before the crime.","Breakfast: the meal you skip and then defend.","A loading screen: a bar that fills to teach patience you never asked for.","An error code: the machine refusing to translate its pain.","A backup: paranoia archived for the future.","A free trial: a gift with a hook inside it.","A deletion: a futile attempt to un-ring a digital bell.","Leftovers: yesterday’s ambition, reheated.","A recurring charge: a small leak you keep meaning to find.","A refund: an apology with a receipt.","Customer service: a maze built to outlast your patience.","An audit trace: a breadcrumb trail left for the executioner.","An inbox: a daily invoice for existing in the world.","A draft: a thought still deciding whether to be brave.","A sent message: a small irreversible act you’ll reread all night.","Hold music: optimism on a loop, slowly curdling.","A survey: being asked your opinion so it can be safely ignored.","A spare key: trust, cut in metal.","A forgotten password: locked out of a vault you built yourself.","A sidewalk: a narrow truce between you and the traffic.","A crosswalk: painted lines asking two tons of metal for mercy.","A public square: the one place a crowd can become an argument.","A fence: a polite announcement of exclusion.","A wall: a No, poured in concrete.","A border checkpoint: geography demanding paperwork.","A passport: permission to prove you belong to the earth.","A city council: bureaucracy diluting the anger of the street.","A zoning law: class warfare fought with blueprints.","The fridge: a museum of good intentions slowly spoiling.","A park: nature held hostage for aesthetic relief.","A bench: the city reluctantly offering a pause.","A streetlight: a watchman that only admits to lighting the way.","A siren: the city screaming on behalf of one person.","A pothole: the infrastructure admitting its exhaustion.","A detour: the map admitting defeat.","A grocery list: optimism written in pen.","A neighborhood: proximity forced to invent a shared narrative.","Gentrification: a neighborhood scrubbed clean of its memory.","A bed: the safest place to lie awake.","A landlord: someone who monopolizes the ground you stand on.","Rent: the monthly ransom paid for shelter.","A mortgage: a bet placed on a future you cannot control.","An eviction: a home reduced to a date on a notice.","Equality: giving the same shoes to a giant and a child.","Adaptation: the quiet, grueling labor of justice in unequal circumstances.","An interview: an hour of being your own salesperson.","The law: a net that catches small fish and lets the big ones tear right through.","A courtroom: where the better story usually beats the truer one.","A pillow: where the day’s unfinished arguments go to continue.","An alarm clock: tomorrow reaching back to grab you by the collar.","A sentence: time converted into punishment.","A prison cell: society’s refusal to address the root cause.","Rehabilitation: the kind word said while the spirit is quietly broken.","A pardon: power demonstrating its reach.","The snooze button: a promise to tomorrow that tomorrow won’t keep.","A bribe: a shortcut with someone else’s signature on it.","Corruption: the system functioning exactly as it was privately designed to.","A protest: a boundary finally spoken out loud by the crowd.","A riot: a language spoken by the unheard.","A strike: leverage discovered in stillness.","A boycott: absence used as a weapon.","A to-do list: guilt, alphabetized.","A treaty: a pause in the violence, written in legal terms.","Laundry: a chore that breeds quietly in the dark.","A dictionary: a graveyard of stabilized meanings.","Translation: carrying a meaning across a river, hoping it stays dry.","A comma: a mandated breath.","A period: the door slamming shut on a thought.","An em-dash: a thought interrupting its own funeral.","A quotation mark: holding someone else’s words with tweezers.","A parenthesis: a secret whispered to the reader.","A footnote: the basement where the actual truth is kept.","A headline: complexity amputated to fit the space.","A slogan: a complicated truth amputated to fit a chant.","A cliché: a truth that died of exhaustion.","The dishes: a debt that refills itself.","A junk drawer: the household’s subconscious.","Sincerity: standing in the open without armor.","A rumor: a virus made of vocabulary.","Gossip: the social glue made from someone else’s bones.","A closet: where you keep the people you used to be.","A confession: vomiting the poison to save the stomach.","Clutter: decisions you keep agreeing to make later.","A houseplant: a small life you keep promising to keep alive.","A vow: trying to handcuff a future that hasn't arrived.","A curse: anger hoping language has physical weight.","A prayer: an email sent to an unverified address.","A leaky tap: a problem patient enough to outlast you.","A flickering bulb: a small emergency no one will fund.","Kindness: strength that no longer needs to prove itself.","Rest: not the reward for finishing, the thing that lets you finish.","A doorbell: a sound that rearranges the whole house.","The truth: an uncomfortable guest that refuses to leave.","A heartbeat: the drum setting the pace for the decay.","A breath: the smallest loan, repaid instantly, forever.","A scar: proof the body decided to keep going.","A phantom limb: the mind still setting a place for a guest who left.","An illness: the quiet mutiny of a part you never thanked.","A fever: biology attempting to burn the invader out.","A chill: a warning the skin sends before the mind agrees.","A tremor: the hidden worry that couldn’t keep still.","A tear: pressure finding the only exit it’s allowed.","A smile: a socially mandated contortion of facial muscles.","A frown: a small, honest weather report on the face.","A neighbour: a stranger that geography slowly turns into an ally.","A reflex: the animal beneath the skin taking the wheel.","The feed: an infinite scroll to postpone the encounter with the self.","Content: anything cut small enough to swallow without tasting.","A waiting room: a place designed to make time feel longer.","A follower: an audience of one, multiplied until it pays.","A spreadsheet: chaos forced to stand in rows.","A group project: trust distributed unequally.","A deadline extension: relief that quietly becomes a new emergency.","Jet lag: arriving everywhere except inside your own hours.","A match: a momentary spike in dopamine before the disappointment begins.","A filter: the digital erasure of mortality.","A selfie: a desperate plea for evidence of existence.","An emoji: nuance assassinated by a yellow circle.","A suitcase: indecision, packed.","Cancel culture: the digital guillotine demanding constant feeding.","A hot take: a conclusion that skipped the thinking.","Clickbait: a lie holding a sign that says 'Truth'.","A boarding pass: permission to be nervous somewhere new.","A terms of service update: the cage shifting its bars while you sleep.","A long drive: thinking that needed somewhere to put its hands.","Targeted advertising: your own wants read aloud and sold back at a markup.","A traffic jam: a thousand people agreeing to be late together.","A subscription: a small forever you forgot you agreed to.","A wrong turn: the trip insisting on a longer story.","A dead end: the road admitting it lied.","A new year: a clean page you’ll smudge by February.","A calendar invite: an obligation with a polite RSVP.","A coin toss: a decision already made, asking for permission.","A daydream: a quiet audition for a braver life.","An apology you rehearse: a conversation you keep winning alone.","A held tongue: say it before it hardens into a grudge.","A first date: two resumes trying to become a story.","A deep breath: the cheapest reset ever invented.","A smart home: convenience that listens a little too closely.","A good cry: pressure finally given somewhere to go.","A second wind: proof you had more left than you believed.","A turned-off phone: a small, radical act of vanishing.","An unread book: a future self you keep promising to become.","An ex: a chapter you keep rereading for clues.","A bookmark: a promise to return that you rarely keep.","A pep talk: confidence borrowed from someone who has it to spare.","A worn path: where everyone’s shortcut quietly became the road.","A spare hour: time you’ll spend deciding how to spend it.","A side hustle: the normalization of working until you die.","A life hack: a shortcut around a problem the system created.","A productivity guru: a priest of the cult of efficiency.","A self-help book: someone else’s escape route, sold as yours.","A wellness retreat: a vacation from capitalism, paid for by capitalism.","A juice cleanse: an expensive apology to your liver.","A mindfulness app: the monetization of breathing.","A life coach: someone who charges you to listen to your own advice.","Imposter syndrome: the correct assessment of an absurd situation.","Toxic positivity: a smile held at gunpoint.","Gaslighting: the deliberate restructuring of someone else's reality.","A queue: democracy practised standing up.","Codependency: two people drowning while trying to be the lifeboat.","A trigger warning: a street sign pointing out a landmine.","Emotional labor: the unpaid work of keeping everyone else comfortable.","Empathy fatigue: the heart running out of bandwidth.","A panic attack: a false alarm loud enough to feel true.","Depression: the volume turned down on everything, including you.","Anxiety: paying interest on a disaster that may never arrive.","A coping mechanism: the duct tape holding the psyche together.","A defense mechanism: the armor that eventually suffocates the knight.","Projection: handing someone your flaw, then resenting them for holding it.","A crush: a whole story told about a stranger.","A reunion: proof everyone kept aging without your permission.","A red light: an enforced moment to reconsider your hurry.","An anniversary: a date the calendar won’t let you forget.","A blind spot: the part of the mirror you refuse to look at.","A funeral: love finally allowed to be loud.","The unconscious: the dark matter of the mind.","The ego: the bouncer at the door of the self.","An in-law: a stranger the family insists you adopt.","A sibling: the only witness to the same childhood, remembering it wrong.","A family dinner: everyone twenty years older and somehow twelve again.","A photo album: evidence you were happier than you felt.","A postcard: proof you thought of someone, briefly, abroad.","A keepsake: a small object overloaded with a feeling.","A spare room: a decision the house hasn’t made yet.","A garage: where the car is promised space and never gets it.","An attic: the past, boxed and stacked above your head.","A loose thread: a small temptation to make things worse.","A stubbed toe: the universe’s smallest, sharpest joke.","A monopoly: a game where only one player knows they've already won.","A cartel: competitors holding hands under the table.","A lobbyist: corruption with an ID badge.","A think tank: a factory that manufactures justification for power.","A focus group: an attempt to average out human desire.","A parking spot: a small daily lottery with real stakes.","A basement: where the house keeps its secrets, at the bottom.","A welcome mat: hospitality with conditions.","A lawn: a slow argument with nature you intend to win.","A recipe: someone else’s success you’re trying to reproduce.","A burnt dinner: ambition meeting a notification.","Takeout: surrender, delivered.","A diet: a promise the fridge overhears and laughs at.","A gym membership: a monthly donation to the person you meant to become.","A resolution: a wish with a deadline it won’t survive.","A conspiracy theory: the desperate search for a plot in a chaotic world.","An umbrella: optimism you carry until the day it’s needed, then forget.","A streak: a fragile tower you’re afraid to look at.","A bad habit: a friend who only shows up when you’re weak.","Nail-biting: worry with nowhere to go but inward.","Procrastination: protecting the dream by refusing to test it.","Multitasking: doing several things badly with great confidence.","The void: the quiet that arrives the second the noise stops.","The abyss: the place where the definitions run out.","An epiphany: a sudden, terrifying drop into clarity.","An out-of-office: a small, glorious act of disappearance.","A typo: the truth slipping out before spellcheck can dress it.","Autocorrect: a stranger finishing your sentences wrong.","Mortality: the one deadline that never moves.","A grave: a piece of real estate finally free from rent.","A tombstone: a heavy receipt for a finished life.","A puddle: the sky, briefly, at your feet.","Infinity: the mind breaking against a math problem.","Nothingness: the silence that was there before the first word.","Meaning: a sweater we knit to stay warm in the dark.","Purpose: a direction chosen so the days point somewhere.","A soul: the ghost in the machine demanding a lawyer.","A conscience: the internal auditor that never clocks out.","A cold: the rest you skipped, taken by force.","Hope: refusing to let the worst guess be the only guess.","Despair: the math finally adding up.","Apathy: caring quietly switched off to save power.","Boredom: the soul asking for a stronger prescription.","A distraction: a shiny object thrown at the approaching void.","Entertainment: a temporary anesthetic for the human condition.","Art: someone refusing to let a feeling pass unwitnessed.","A sneeze: an opinion the nose insists on sharing.","A genius: someone who finds the question everyone walked past.","Talent: a head start that still has to finish the race.","Skill: the scar tissue of a thousand mistakes.","A master: someone who failed more times than the beginner has tried.","An amateur: someone who still thinks the tool does the work.","A professional: someone who knows how to hide the seams.","A headache: tension that finally found a voice.","A review: a shrug or a rave, frozen into stars.","A rating: a number trying to capture a heartbeat.","A five-star review: the system successfully flattering itself.","A complaint: a demand that the universe adhere to the brochure.","A warranty: a bet placed against entropy.","Entropy: the quiet certainty that everything tidy comes undone.","Dust: the final resting state of every important document.","Rust: time, eating slowly, in orange.","Decay: the earth slowly recalling its loan.","A weed: a plant that refuses to read the zoning laws.","A garden: patience that agreed to show its work.","A hangover: last night billing you in the morning.","A zoo: the wild, filed and labelled for a Sunday visit.","A pet: a small life that decided, for no clear reason, on you.","A cat: a small landlord who lets you stay on out of pity.","A dog: living proof someone is always glad you came home.","A predator: hunger without a moral filter.","Prey: an animal that learned to read silence for a living.","A parasite: a guest who eats the host.","A virus: information that wants to be biology.","A plague: nature reminding the species who is renting.","A cure: a reprieve we mistake for a pardon.","Medicine: science buying time from mortality.","A hospital: a place built to argue, gently, with endings.","A doctor: a mechanic for a car that is guaranteed to crash.","A surgeon: a stranger you trust to stay calm while opening you.","A bruise: a small receipt for a forgotten collision.","A wound: a place that will ask for gentleness long after it closes.","Blood: the quiet river that only announces itself when spilled.","A pulse: the drumbeat of the eviction notice.","A haircut: a fresh start you can buy in twenty minutes.","A handshake: a small trust, exchanged by grip.","A laugh: the sound relief makes escaping.","Humor: tragedy that finally learned the timing.","A hug: a sentence with no words and no exit.","A punchline: the floor suddenly disappearing.","Comedy: tragedy viewed through the wrong end of a telescope.","Tragedy: a joke that took too long to finish.","Drama: consequence finally asking for the microphone.","Melodrama: emotion demanding to be paid in attention.","Action: the refusal to wait for the instructions.","Stillness: the room your best thoughts only enter once it’s quiet.","Meditation: sitting still until the noise gets bored and leaves.","Courage: fear that quietly decided to go anyway.","A birthday: proof you kept going, said out loud.","A candle: a small fire we agree to make a wish at.","A wedding: a private promise made enormous, on purpose, before witnesses.","A marriage: a long argument about where to put the furniture.","A divorce: two people agreeing the story is finished.","A family: the people obliged to take you back, and sometimes glad to.","A mother: the first language you understood before words.","A father: a shadow trying to cast a light.","A child: a fresh, unembarrassed attempt at being human.","An adult: a child who got good at hiding it.","An elder: someone who made the mistakes so you could ask first.","An ancestor: a ghost we blame for our current posture.","A descendant: an audience that will never show up.","A generation: a group of people traumatized by the same technology.","A century: a neat box drawn around a hundred years of mess.","A millennium: an arbitrary odometer click for a tired planet.","The universe: an explosion that hasn't finished yet.","The earth: a rock that briefly learned to worry about itself.","A gift: a guess about someone, wrapped.","A compass: a needle addicted to the north.","A destination: the place where you realize you brought yourself with you.","A journey: the part of the trip you’ll actually keep.","An arrival: finding the worry you packed was extra weight.","A departure: the first half of every reunion.","A goodbye: a sentence that tries to hold back the tide.","A hello: a small gamble on a stranger.","A conversation: two people building a small shared room out of words.","An excuse: a smaller truth sent in the big one’s place.","Language: a net full of holes that somehow still carries water.","A white lie: kindness cutting a corner.","A voicemail: a message no one hears and everyone dreads.","A paragraph: a small herd of sentences moving the same way.","A book: a graveyard of domesticated thoughts.","A library: a mausoleum for the human ego.","An author: someone who bleeds onto paper and asks you to call it ink.","A reader: a stranger living briefly inside your sentences.","A story: how we carry each other’s lives without living them.","A second alarm: proof you never trusted the first.","A missed call: a tiny mystery with a number attached.","A full inbox: other people’s priorities stacked on yours.","The end: the point where the author finally walked away.",
+"A wallet: a small shrine to your priorities.",
+"Hands: the part of the body that confesses before the mouth.",
+"The spine: the negotiation between standing and kneeling.",
+"The gut: the opinion that arrives before the evidence.",
+"Teeth: the smile’s standing army.",
+"Knuckles: the diary of every door you wanted to punch.",
+"Childhood: the country you can visit but never re-enter.",
+"Adolescence: a war fought entirely inside a bedroom.",
+"Middle age: the moment the future stops being hypothetical.",
+"A eulogy: the kindest edit a life will ever receive.",
+"A honeymoon: the receipt arriving before the bill.",
+"A mentor: someone lending you a map of a country they left.",
+"A boss: a weather system you learn to dress for.",
+"A colleague: a person assigned to your survival.",
+"A customer: a stranger holding a small remote to your mood.",
+"A like: applause that costs nothing and means less.",
+"Doomscrolling: grazing on bad news to feel informed.",
+"A podcast: company that never asks how you are.",
+"A paywall: curiosity sent to the cashier.",
+"Loneliness: a crowd that forgot to include you.",
+"Homesickness: missing a place that has already moved on.",
+"Longing: love practising on someone unavailable.",
+"Contentment: the rare day the wanting takes off.",
+"Anticipation: the best part, quietly.",
+"Embarrassment: the self caught without its costume.",
+"Deja vu: the brain billing you twice for one moment.",
+"Melancholy: sadness with good posture.",
+"Doubt: the mind refusing to sign without reading.",
+"Belief: a decision wearing the costume of a fact.",
+"An opinion: a feeling that hired a lawyer.",
+"A fact: a claim that finally stopped arguing.",
+"Common sense: the prejudice you happen to share.",
+"Intuition: experience moving too fast to explain itself.",
+"Logic: a clean road that never asks where it leads.",
+"Wisdom: scars that learned to give directions.",
+"A resume: a highlight reel that omits the bloopers.",
+"A whiteboard: where good ideas go to be erased by Friday.",
+"Overtime: the hours you donate and call ambition.",
+"A lunch break: freedom rationed into minutes.",
+"A performance review: a year compressed into a flinch.",
+"An airport: a city that exists only to be left.",
+"A hotel room: a home with all the memory removed.",
+"A parking lot: the desert between you and the errand.",
+"A supermarket: a maze that sells you the way out.",
+"An elevator: a small room where strangers practise being statues.",
+"A coupon: a leash disguised as a gift.",
+"A credit card: tomorrow’s regret, available today.",
+"Interest: money charging rent on time.",
+"An invoice: a polite reminder of who owes whom.",
+"A crow: the landscape keeping notes on you.",
+"A moth: devotion mistaking the lamp for the moon.",
+"A spider: patience with a business plan.",
+"The moon: a rock we taught to mean something.",
+"A star: old light still showing up for work.",
+"The cloud: someone else’s computer you learned to trust.",
+"Autocomplete: the machine finishing your sentence and your thought.",
+"A read receipt: proof of a silence you cannot unsee.",
+"A toast: a speech using a glass for courage.",
+"The throat: where the unsaid thing goes to wait.",
+"The jaw: where the day’s tension signs its name.",
+"A blush: the truth reaching the surface uninvited.",
+"A hiccup: the body interrupting itself for no stated reason.",
+"A stapler: the office’s one decisive act.",
+"A sticky note: a promise with no adhesive for the memory.",
+"A name tag: identity rented for the afternoon.",
+"A doormat: the household’s first and most honest greeting.",
+"A thermostat: the household’s quietest civil war.",
+"A smoke alarm: vigilance that only speaks at 3 a.m.",
+"A seatbelt: a small agreement signed with physics.",
+"A speed bump: infrastructure parenting the impatient.",
+"A vending machine: hunger negotiating with exact change.",
+"A shopping cart: a wishlist given wheels.",
+"A gift card: affection rounded to the nearest store.",
+"A group chat: a room you can never fully leave.",
+"A hashtag: a flag planted on a borrowed hill.",
+"A cookie banner: consent manufactured at the door.",
+"A captcha: proof of humanity demanded by a machine.",
+"A mute button: mercy delivered with one finger.",
+"A username: the name you chose when no one was watching.",
+"A leaderboard: anxiety issued a ranking.",
+"Bread: patience you are allowed to eat.",
+"Wine: courage fermented and sold by the glass.",
+"Sugar: comfort that mails the invoice to the body.",
+"The scalp: the soil the self keeps losing.",
+"The chest: where dread sets up its drum.",
+"A fingernail: a small tool the body keeps sharpening.",
+"A hangnail: a tiny grievance the day refuses to ignore.",
+"A wrinkle: a smile that decided to stay.",
+"A grey hair: a receipt for a year you survived.",
+"A callus: proof you kept gripping the wrong thing.",
+"A scab: the body’s rough first draft of repair.",
+"A cramp: a muscle filing a sudden complaint.",
+"Goosebumps: the skin reacting to a ghost.",
+"A wince: honesty escaping through the face.",
+"A clenched fist: an argument the hand is rehearsing.",
+"A paperclip: ambition holding a few pages together.",
+"A rubber band: patience stretched to its one talent.",
+"A lanyard: a leash that signals belonging.",
+"A light switch: the room’s small god.",
+"An extension cord: a promise made past its safe length.",
+"A turn signal: an intention no one is required to honour.",
+"A car horn: an opinion at full volume.",
+"A toll booth: the road charging admission to itself.",
+"A barcode: identity reduced to stripes.",
+"A price tag: a number deciding the argument.",
+"A loyalty card: a leash you applied for.",
+"A coaster: a small defense against the rings of the past.",
+"A coat hanger: the shoulders a shirt borrows.",
+"A mattress: the witness to everything you postpone.",
+"A lamp: a small argument against the dark.",
+"A ceiling fan: motion mistaking itself for progress.",
+"A curtain: privacy you can see the edges of.",
+"A mailbox: a small mouth fed by strangers.",
+"A robocall: a stranger pretending to know you.",
+"A status update: a flare fired into an indifferent sky.",
+"An unsubscribe link: the smallest, hardest door to find.",
+"A dead zone: the rare place the leash cannot reach.",
+"Airplane mode: a monastery that fits in a pocket.",
+"A spam call: persistence without a face.",
+"Butter: permission, softened.",
+"Tea: patience poured into a cup.",
+"Comfort food: a hug you are allowed to chew.",
+"A potluck: community measured in casseroles.",
+"A doggy bag: tomorrow’s lunch, slightly ashamed.",
+"A midnight snack: a decision made by the body, not you.",
+"A craving: the body lobbying for a quick fix.",
+"Dessert: the bribe the meal saved for last.",
+"Frustration: hope hitting a wall it cannot see.",
+"Restlessness: energy without a runway.",
+"Serenity: the rare ceasefire inside the head.",
+"Worry: the mind rehearsing a play that may never open.",
+"Hesitation: the body asking for a second opinion.",
+"Stage fright: the body convinced the room is a court.",
+"Cold feet: the future trying to back out of the door.",
+"A pet peeve: a small injustice you adopted on purpose.",
+"A guilty pleasure: joy that insists on an apology.",
+"A slump: motivation taking an unpaid leave.",
+"A high five: a celebration with a built-in escape.",
+"A wave: a goodbye practising at a distance.",
+"A nod: agreement rationed to a single muscle.",
+"An eye roll: a review delivered without a word.",
+"A cold shoulder: punishment pretending to be weather.",
+"A guilt trip: a request smuggled inside a wound.",
+"An icebreaker: small talk wearing a costume.",
+"A plus-one: a witness brought to dilute the awkwardness.",
+"A rain check: a yes postponed until it expires.",
+"An inside joke: a fence built for two.",
+"A wake-up call: the bill the future phones in.",
+"A reality check: an invoice for the daydream.",
+"A cubicle: a room that forgot to finish its walls.",
+"A break room: a truce zone with bad coffee.",
+"A corner office: a better view of the same trap.",
+"A drive-thru: hunger served without a witness.",
+"A self-checkout: the store letting you work for free.",
+"A fitting room: a mirror with bad intentions.",
+"A bus stop: a small congregation of the patient.",
+"A stairwell: the building’s confession booth.",
+"A lobby: a room built to make waiting look chosen.",
+"A fire exit: the plan no one rehearses.",
+"A cul-de-sac: ambition discovering it has parked.",
+"A rest stop: civilization rationed by the mile.",
+"A wasp: a grudge with wings.",
+"A mosquito: persistence that draws blood.",
+"A seagull: appetite with no manners and no shame.",
+"An ant: a citizen who never questions the line.",
+"A snail: patience carrying its only argument.",
+"A therapist: a stranger paid to be on your side.",
+"A barista: the morning’s first negotiated mercy.",
+"A babysitter: borrowed authority paid by the hour.",
+"A tour guide: a story standing between you and the place.",
+"A middleman: a toll booth that learned to talk.",
+"A ghostwriter: the voice that agreed to disappear.",
+"An understudy: ambition memorizing someone else’s lines.",
+"A consultant: an outsider hired to say the obvious slowly.",
+"A lifeguard: vigilance that hopes to stay bored.",
+"A gatekeeper: a small power guarding a smaller gate.",
+"A whistleblower: loyalty that chose the larger room.",
+"An intern: free labour wearing a hopeful badge.",
+"A freelancer: freedom invoicing for its own anxiety.",
+"A bouncer: a doorway that decided to have opinions.",
+"A hammer: an argument that only knows one word.",
+"A nail: a small commitment driven home.",
+"A screwdriver: persuasion applied in slow circles.",
+"A wrench: the tool and the problem sharing a name.",
+"A level: a small instrument that refuses to flatter you.",
+"A tape measure: ambition checked against reality.",
+"A magnet: a preference with a physical body.",
+"A hinge: the small joint a whole door depends on.",
+"A spring: tension trained to be useful.",
+"A fuse: the part designed to fail so the rest survives.",
+"A funnel: a system for pretending nothing is missing.",
+"A knot: a problem you tied on purpose.",
+"A hook: an offer with a barb inside.",
+"Schadenfreude: comfort borrowed from someone else’s fall.",
+"Wanderlust: dissatisfaction carrying a map for an alibi.",
+"Impostor syndrome: competence refusing to read its own reviews.",
+"Buyer’s remorse: desire meeting the receipt.",
+"Smugness: a small victory worn far too long.",
+"Contempt: disappointment that gave up on repair.",
+"Pity: sympathy looking slightly down.",
+"Empathy: borrowing a wound in order to understand it.",
+"Tenderness: strength choosing to be careful.",
+"Infatuation: a story told fast, before the facts arrive.",
+"The Sunday scaries: Monday casting its shadow backward.",
+"A group photo: a moment arranged to look spontaneous.",
+"A standing ovation: relief and approval, indistinguishable.",
+"A moment of silence: noise agreeing, briefly, to stop.",
+"A do-over: the past granted a rare appeal.",
+"A curtain call: the comfortable lie of one more time.",
+"An encore: applause asking the night not to end.",
+"A victory lap: success circling back to be seen.",
+"A swan song: a goodbye dressed in its very best.",
+"A last call: the night admitting it is finite.",
+"A nightcap: one more reason to delay the silence.",
+"A goodbye text: an ending typed to avoid the face.",
+"A soft launch: a confession disguised as a hint.",
+"A parking meter: a clock that charges you for stopping.",
+"A roundabout: a decision shared by everyone at once.",
+"A speed camera: judgment that arrives later by mail.",
+"A fire hydrant: readiness that spends its life waiting.",
+"A guardrail: a promise made on the worst curve.",
+"A billboard: a sentence built to be read at speed.",
+"A turnstile: a gate that counts as it forgives.",
+"A payphone: a relic that still knows your secrets.",
+"A gutter: where the city admits what it sheds.",
+"A curb: the quiet edge between order and traffic.",
+"A storm drain: the city swallowing what it cannot keep.",
+"A manhole: a lid on a world we agreed not to see.",
+"A blink: maintenance the eye performs in secret.",
+"A stare: attention that forgot its manners.",
+"A shrug: an opinion declining to commit.",
+"A limp: the body negotiating with an old argument.",
+"A stumble: gravity reminding you who hosts.",
+"A twitch: a worry too small to say out loud.",
+"A vein: a private river running on schedule.",
+"A dimple: a flaw the face got away with.",
+"Bedhead: the night’s signature left on the pillow.",
+"Morning breath: honesty the night could not hide.",
+"A dandelion: a weed that learned to look like a wish.",
+"A cactus: a plant that chose armor over charm.",
+"A mushroom: the part of the dark that decided to show.",
+"A jellyfish: drift with a sting attached.",
+"A vulture: optimism circling the inevitable.",
+"An owl: vigilance that prefers the dark shift.",
+"A cockroach: survival that outlasts every opinion of it.",
+"A firefly: a small advertisement for being alive.",
+"A cocoon: a private renovation no one is invited to.",
+"Driftwood: a journey that forgot its destination.",
+"Quicksand: ground that only pretends to be solid.",
+"A tie: a noose promoted to formalwear.",
+"A costume: permission to be someone else for one night.",
+"A glove: a handshake kept at a safe distance.",
+"A zipper: a small daily negotiation with dignity.",
+"A button: a promise to stay closed.",
+"A pocket: a private vault you keep losing track of.",
+"A hand-me-down: a story arriving pre-owned.",
+"Shoelaces: a small order you retie all day.",
+"A uniform: an identity issued, not chosen.",
+"A lullaby: a small spell sung against the dark.",
+"An echo: the room repeating what it couldn’t keep.",
+"A whisper: volume lowered to raise the stakes.",
+"A ringtone: a leash that learned a tune.",
+"White noise: silence that agreed to take a job.",
+"An earworm: a melody that overstayed its welcome.",
+"A chorus: the part the crowd is allowed to own.",
+"A refrain: a thought that insists on coming back.",
+"A coin flip: a decision outsourced to gravity.",
+"A tiebreaker: fairness asked to choose a favourite.",
+"A rematch: a grudge granted a schedule.",
+"A forfeit: a loss you sign for in advance.",
+"A head start: an apology paid before the race.",
+"A spoiler: the ending arriving without consent.",
+"A plot twist: a betrayal you paid to enjoy.",
+"A cliffhanger: a debt the story plans to collect.",
+"A final boss: the fear you saved for last.",
+"A cheat code: a shortcut that quietly costs the win.",
+"An average: the place no one actually stands.",
+"A statistic: a person with the face filed off.",
+"A percentage: certainty pretending it can count.",
+"An asterisk: a doubt parked above the claim.",
+"A countdown: anticipation with the safety off.",
+"Salt: the small lie that makes everything taste true.",
+"Honey: sweetness that remembers it was work.",
+"Vinegar: a temper that finally found a use.",
+"A lemon: optimism’s favourite test.",
+"An onion: honesty that makes you cry to reach it.",
+"A crumb: the evidence the meal leaves behind.",
+"Gum: a habit you can park between meals.",
+"An aftertaste: the opinion the meal saves for later.",
+"A cheat meal: a rule taking the afternoon off.",
+"A cough: the body announcing what it cannot say.",
+"A shiver: a small rehearsal for fear.",
+"A blister: proof you went farther than your skin agreed to.",
+"A sunburn: the body’s receipt for borrowed light.",
+"A paper cut: a small wound with an enormous opinion.",
+"An itch: a demand with no manners.",
+"A chameleon: belonging achieved by surrender.",
+"A peacock: an argument made entirely of feathers.",
+"A goldfish: a witness with a merciful memory.",
+"A sheep: safety found in the middle of the flock.",
+"A tortoise: a home that decided to travel.",
+"A leech: gratitude that takes more than it gives.",
+"A tumbleweed: freedom with no idea where it is going.",
+"A sunflower: loyalty that turns to face the boss.",
+"A sloth: a refusal to be rushed, sanctified.",
+"Kudzu: enthusiasm that forgot how to stop.",
+"A raindrop: the sky’s smallest unit of opinion.",
+"Lightning: the sky losing the argument instantly.",
+"Humidity: the air refusing to mind its business.",
+"A forecast: a guess in a confident voice.",
+"A sunbeam: attention the sky pays out at random.",
+"Dew: the night’s quiet apology to the grass.",
+"Frost: beauty that arrives by ruining things.",
+"A fan: love that asks for nothing and everything.",
+"A heckler: an audience that wanted to be the act.",
+"A sidekick: loyalty filed under someone else’s name.",
+"A martyr: a victim who picked the audience.",
+"A bystander: innocence maintained by careful inaction.",
+"A snitch: honesty timed for maximum damage.",
+"A referee: authority everyone agrees to resent.",
+"A juror: a stranger handed your whole story.",
+"A kingmaker: power that prefers the back room.",
+"A deadbolt: a No reinforced overnight.",
+"A radiator: warmth that clanks about its own labour.",
+"A drainpipe: the house’s quiet digestion.",
+"A broom: order pushed from one place to another.",
+"A shredder: a confession reduced to confetti.",
+"A chimney: the house exhaling its winters.",
+"A doorknob: a small decision you grip on the way out.",
+"A vent: the building breathing through a grille.",
+"A superstition: a deal struck with a universe that isn’t listening.",
+"An omen: anxiety reading the weather for signs.",
+"A jinx: blame assigned before the fall."];
+const $ = id => document.getElementById(id);
+const state={order:[],idx:0,current:-1,struck:0,busy:false,copyTimer:null,toastTimer:null};
+const K_ORDER='tiltSignalOrder', K_IDX='tiltSignalIdx', K_STRUCK='tiltStruck';
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function randRest(){const a=[-22,-15,-10,12,16,20,24,28,31];return a[Math.floor(Math.random()*a.length)];}
+function shuffle(n){const a=Array.from({length:n},(_,i)=>i);for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function load(){
+  try{const o=JSON.parse(sessionStorage.getItem(K_ORDER)||'null');const ix=parseInt(sessionStorage.getItem(K_IDX)||'0',10);
+    if(Array.isArray(o)&&o.length===CARDS.length){state.order=o;state.idx=Math.min(Math.max(ix,0),CARDS.length);}}catch(e){}
+  if(!state.order.length){state.order=shuffle(CARDS.length);state.idx=0;}
+  try{state.struck=parseInt(sessionStorage.getItem(K_STRUCK)||'0',10)||0;}catch(e){}
+}
+function save(){try{sessionStorage.setItem(K_ORDER,JSON.stringify(state.order));sessionStorage.setItem(K_IDX,String(state.idx));sessionStorage.setItem(K_STRUCK,String(state.struck));}catch(e){}}
+function setSeen(){const s=$('seen');if(s)s.textContent=String(state.struck);}
+function next(){if(state.idx>=state.order.length){state.order=shuffle(CARDS.length);state.idx=0;}state.current=state.order[state.idx++];save();return CARDS[state.current];}
+function render(text,fade){
+  const card=$('card');
+  const spin=()=>{const s=$('spark'),m=s&&s.querySelector('.tiltmark');if(m){m.style.setProperty('--rest',randRest()+'deg');s.classList.remove('spin');void s.offsetWidth;s.classList.add('spin');}};
+  const paint=()=>{card.className='card';const ci=text.indexOf(':');const head=ci>=0?escapeHtml(text.slice(0,ci+1)):'';const body=ci>=0?escapeHtml(text.slice(ci+1).replace(/^\s+/,'')):escapeHtml(text);card.innerHTML='<p class="text">'+(head?'<span class="term">'+head+'</span> ':'')+body+'</p>';spin();};
+  if(fade){card.className='card out-fade';window.setTimeout(paint,120);} else paint();
+}
+function clearCard(){
+  state.current=-1;
+  const card=$('card');
+  card.className='card placeholder';
+  card.innerHTML='<p class="text">Make certainty wobble.</p>';
+  const s=$('spark'),m=s&&s.querySelector('.tiltmark');if(m)m.style.setProperty('--rest',randRest()+'deg');
+  toast('CLEARED');
+}
+function draw(){
+  if(state.busy)return;state.busy=true;
+  const btn=$('ask');btn.classList.add('busy');window.setTimeout(()=>btn.classList.remove('busy'),520);
+  state.struck++;setSeen();
+  render(next(),true);
+  window.setTimeout(()=>{state.busy=false;},150);
+}
+function cardText(){return state.current<0?'TILT \u2014 make certainty wobble.':CARDS[state.current];}
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');window.clearTimeout(state.toastTimer);state.toastTimer=window.setTimeout(()=>t.classList.remove('on'),1300);}
+async function copyCard(){const text=cardText()+'\n\nTILT';try{await navigator.clipboard.writeText(text);}catch(e){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(_e){}ta.remove();}const b=$('copy');b.classList.add('ok');b.textContent='COPIED';window.clearTimeout(state.copyTimer);state.copyTimer=window.setTimeout(()=>{b.classList.remove('ok');b.textContent='COPY';},1000);toast('COPIED');}
+function showAbout(on){$('viewMain').classList.toggle('on',!on);$('viewAbout').classList.toggle('on',on);}
+function init(){
+  if(!CARDS.length)return;
+  load();
+  $('deckCount').textContent=String(CARDS.length);
+  { const ds=$('deckStat'); if(ds) ds.textContent=String(CARDS.length); }
+  setSeen();
+  $('ask').addEventListener('click',draw);
+  $('copy').addEventListener('click',copyCard);
+  $('clear').addEventListener('click',clearCard);
+  $('aboutLink').addEventListener('click',()=>showAbout(true));
+  $('back').addEventListener('click',()=>showAbout(false));
+  $('brand').addEventListener('click',()=>showAbout(false));
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){showAbout(false);return;}
+    if($('viewAbout').classList.contains('on'))return;
+    if(e.code==='Space'||e.key==='Enter'){e.preventDefault();draw();}
+  });
+}
+init();
+})();
+</script>
+</body>
+</html>

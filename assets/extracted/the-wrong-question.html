@@ -1,0 +1,1412 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>THE WRONG QUESTION</title>
+<meta name="description" content="THE WRONG QUESTION — a compact text-card app that hands you the question underneath the one you are asking.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2032%2032%27%3E%3Crect%20width%3D%2732%27%20height%3D%2732%27%20rx%3D%277%27%20fill%3D%27%2305080c%27/%3E%3Ccircle%20cx%3D%2716%27%20cy%3D%2716%27%20r%3D%2712%27%20fill%3D%27%230b1115%27%20stroke%3D%27%23ff6a2c%27%20stroke-width%3D%271.4%27/%3E%3Cpath%20d%3D%27M12%2011c1.2-2%203.2-3%205.7-3%203.6%200%206.1%202.3%206.1%205.4%200%202.6-1.4%203.9-3.8%205.2-1.9%201-2.5%201.9-2.5%203.9%27%20fill%3D%27none%27%20stroke%3D%27%23dff8fb%27%20stroke-width%3D%272.2%27%20stroke-linecap%3D%27round%27/%3E%3Ccircle%20cx%3D%2715.5%27%20cy%3D%2724.2%27%20r%3D%271.8%27%20fill%3D%27%23dff8fb%27/%3E%3Cpath%20d%3D%27M25%208l-2.6%204.3h2.5l-2.3%204.1%27%20fill%3D%27none%27%20stroke%3D%27%23ff6a2c%27%20stroke-width%3D%271.8%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Stencil+One&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#04060a;
+  --panel:#0c1014;
+  --panel2:#0e1519;
+  --line:#1e3338;
+  --line2:#2e545a;
+  --glare:#eafdff;
+  --soft:#d4e8eb;
+  --muted:#80979d;
+  --dim:#54666b;
+  --tint:#3fd0d8;
+  --ink:#06100f;
+  --blood:#ff4d2e;
+  --bloodhot:#ff6a2c;
+}
+*{box-sizing:border-box}
+html{min-height:100%;background:#04060a}
+body{
+  margin:0;
+  min-height:100svh;
+  color:var(--soft);
+  font-family:'IBM Plex Mono','Courier New',monospace;
+  padding:clamp(8px,1.8vw,18px);
+  display:flex;
+  align-items:stretch;
+  justify-content:center;
+  background:
+    radial-gradient(760px 420px at 50% -120px,rgba(63,208,216,.13),transparent 68%),
+    radial-gradient(520px 320px at 16% 100%,rgba(224,144,58,.08),transparent 72%),
+    linear-gradient(180deg,#070b0e,#04060a 68%,#03050700);
+}
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:9;
+  pointer-events:none;
+  opacity:.72;
+  background:
+    repeating-linear-gradient(to bottom,rgba(234,253,255,.018) 0,rgba(234,253,255,.018) 1px,transparent 1px,transparent 6px),
+    radial-gradient(circle at 50% 12%,rgba(63,208,216,.05),transparent 50%);
+}
+.app{
+  align-self:center;
+  width:100%;
+  max-width:840px;
+  background:linear-gradient(145deg,#0e161a 0%,#070b0e 56%,#040608 100%);
+  border:1px solid rgba(63,208,216,.26);
+  border-radius:10px;
+  box-shadow:
+    0 0 0 1px #000,
+    0 18px 50px rgba(0,0,0,.86),
+    0 0 44px rgba(63,208,216,.07);
+  padding:clamp(7px,1.4vw,12px);
+}
+.screen{
+  position:relative;
+  overflow:hidden;
+  min-height:calc(100svh - clamp(32px,5vw,54px));
+  padding:clamp(12px,2.2vw,22px);
+  display:flex;
+  flex-direction:column;
+  gap:clamp(12px,2vw,16px);
+  border:1px solid rgba(63,208,216,.24);
+  border-radius:9px;
+  background:
+    radial-gradient(620px 220px at 50% 0%,rgba(234,253,255,.06),transparent 58%),
+    linear-gradient(180deg,#0a1013 0%,#070b0d 60%,#040607 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(234,253,255,.03),
+    inset 0 0 38px rgba(0,0,0,.64);
+}
+.screen.power{animation:powerOn .55s ease-out}
+.screen:before{
+  content:"";
+  position:absolute;
+  inset:8px;
+  z-index:0;
+  pointer-events:none;
+  border:1px solid rgba(63,208,216,.09);
+  border-radius:10px;
+}
+.screen:after{
+  content:"";
+  position:absolute;
+  left:0;right:0;top:-42%;
+  height:35%;
+  z-index:3;
+  pointer-events:none;
+  opacity:.42;
+  background:linear-gradient(180deg,transparent,rgba(234,253,255,.035),rgba(63,208,216,.06),transparent);
+  animation:scan 11s linear infinite;
+}
+.header,.view,.footer{position:relative;z-index:1}
+.header{
+  text-align:center;
+  padding:clamp(7px,1.4vw,12px) 0 clamp(10px,1.8vw,16px);
+  border-bottom:1px solid rgba(63,208,216,.20);
+  overflow:hidden;
+}
+.brand{width:min(100%,760px);margin:0 auto;cursor:pointer}
+.logo{display:inline-flex;flex-direction:column;align-items:center;gap:.1em;max-width:100%}
+h1{
+  margin:0;
+  font-family:'Saira Stencil One','IBM Plex Mono',monospace;
+  font-weight:400;
+  text-transform:uppercase;
+  color:var(--glare);
+  font-size:clamp(2.2rem,9.6vw,4.6rem);
+  line-height:.86;
+  letter-spacing:.05em;
+  text-shadow:0 0 10px rgba(234,253,255,.36),0 0 34px rgba(63,208,216,.16);
+}
+h1 .it{color:var(--bloodhot);text-shadow:0 0 11px rgba(255,77,46,.6),0 0 32px rgba(255,77,46,.32);animation:itFlick 5.2s steps(1,end) infinite}
+h1 .dot{color:var(--tint)}
+.subtitle-bar{
+  width:min(100%,620px);
+  margin:12px auto 0;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  color:#7fd6dc;
+  font-size:clamp(.66rem,2.55vw,.78rem);
+  text-transform:uppercase;letter-spacing:.105em;
+}
+.subtitle-bar:before,.subtitle-bar:after{content:"";height:1px;flex:1 1 auto;background:linear-gradient(90deg,transparent,rgba(63,208,216,.38))}
+.subtitle-bar:after{background:linear-gradient(90deg,rgba(63,208,216,.38),transparent)}
+.subtitle-bar span{padding:5px 11px;border:1px solid rgba(63,208,216,.32);border-radius:999px;background:rgba(63,208,216,.045);color:#9fe2e7;box-shadow:inset 0 0 18px rgba(0,0,0,.22)}
+.status{margin-top:10px;display:flex;justify-content:center;gap:7px;flex-wrap:wrap;color:var(--dim);font-size:.68rem;text-transform:uppercase;letter-spacing:.04em}
+.status span{padding:4px 7px;border:1px solid rgba(63,208,216,.16);border-radius:3px;background:rgba(0,0,0,.2)}
+.status b{font-weight:normal}
+.status .glare{color:var(--glare)}.status .tint{color:var(--tint)}.status .blood{color:var(--bloodhot)}
+.view{flex:1;display:none;flex-direction:column;gap:clamp(11px,1.8vw,15px)}
+.view.on{display:flex}
+.primary{display:flex;flex-direction:column}
+#ask{
+  position:relative;
+  width:100%;
+  min-height:clamp(78px,14svh,96px);
+  border:1px solid rgba(255,106,44,.82);
+  border-radius:6px;
+  background:
+    radial-gradient(240px 90px at 50% 0%,rgba(255,236,224,.10),transparent 72%),
+    linear-gradient(90deg,rgba(63,208,216,.10),transparent 22%,transparent 78%,rgba(63,208,216,.08)),
+    linear-gradient(180deg,#35160f 0%,#22100d 48%,#140b09 100%);
+  color:#f7f3ef;
+  font-family:'Saira Stencil One',Impact,sans-serif;
+  font-weight:400;
+  font-size:clamp(1.18rem,5.8vw,2.05rem);
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  text-shadow:0 0 10px rgba(255,106,44,.38),0 1px 0 #000;
+  cursor:pointer;
+  box-shadow:
+    0 0 0 2px #000,
+    0 8px 0 rgba(0,0,0,.78),
+    0 0 34px rgba(255,106,44,.16),
+    inset 0 1px 0 rgba(255,240,228,.18),
+    inset 0 -16px 24px rgba(0,0,0,.36);
+}
+#ask:after{content:"ANGLE: WRONG";position:absolute;right:12px;bottom:7px;font-size:.58rem;letter-spacing:.2em;color:rgba(255,186,144,.64);text-shadow:none}
+#ask:hover{filter:brightness(1.08) saturate(1.04);border-color:rgba(255,129,72,.9);box-shadow:0 0 0 2px #000,0 8px 0 rgba(0,0,0,.78),0 0 42px rgba(255,106,44,.24),inset 0 1px 0 rgba(255,240,228,.24),inset 0 -14px 22px rgba(0,0,0,.32)}
+#ask:active{transform:translateY(3px) scale(.995);box-shadow:0 0 0 2px #000,0 4px 0 rgba(0,0,0,.82),0 0 26px rgba(255,106,44,.22),inset 0 0 18px rgba(0,0,0,.46)}
+#ask.busy{animation:btnGlitch .09s steps(2,end) 6!important}
+.output{
+  position:relative;
+  overflow:hidden;
+  flex:1;
+  min-height:clamp(240px,42svh,370px);
+  display:flex;align-items:center;justify-content:flex-start;
+  padding:clamp(72px,10vw,86px) clamp(18px,4vw,34px) clamp(22px,4vw,34px);
+  border:1px solid rgba(63,208,216,.26);
+  border-radius:9px;
+  background:
+    radial-gradient(520px 210px at 50% 0%,rgba(234,253,255,.06),transparent 62%),
+    linear-gradient(180deg,rgba(234,253,255,.022),rgba(0,0,0,.22)),
+    #070c0e;
+  box-shadow:inset 0 0 0 1px rgba(234,253,255,.03),inset 0 0 42px rgba(0,0,0,.5),0 1px 0 rgba(234,253,255,.05);
+}
+.output:after{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.18;
+  background:
+    linear-gradient(90deg,transparent 0,rgba(234,253,255,.06) 50%,transparent 100%),
+    repeating-linear-gradient(135deg,rgba(234,253,255,.022) 0,rgba(234,253,255,.022) 1px,transparent 1px,transparent 8px);
+}
+.qtag{
+  position:absolute;
+  z-index:5;
+  top:clamp(14px,2.6vw,22px);
+  left:50%;
+  width:clamp(42px,7.2vw,54px);
+  height:clamp(42px,7.2vw,54px);
+  transform:translateX(-50%);
+  pointer-events:none;
+  color:var(--tint);
+  filter:drop-shadow(0 0 12px rgba(255,106,44,.18));
+  animation:twqIdleTop 5.8s ease-in-out infinite;
+}
+.qtag:before,.qtag:after{
+  content:"";
+  position:absolute;
+  inset:5px;
+  border:1px solid rgba(255,106,44,.30);
+  border-radius:50%;
+  opacity:.55;
+}
+.qtag:after{inset:10px;border-color:rgba(63,208,216,.22);opacity:.4}
+.qtag svg{width:100%;height:100%;display:block;overflow:visible}
+.qtag .q-back{fill:rgba(5,8,12,.74);stroke:rgba(255,106,44,.34);stroke-width:1.4}
+.qtag .q-curve{fill:none;stroke:var(--glare);stroke-width:2.65;stroke-linecap:round;stroke-linejoin:round}
+.qtag .q-dot{fill:var(--glare);filter:drop-shadow(0 0 6px rgba(234,253,255,.3))}
+.qtag .q-spark{fill:none;stroke:var(--bloodhot);stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 7px rgba(255,106,44,.45));animation:twqSpark 2.8s steps(1,end) infinite}
+.qtag .q-main{transform-origin:32px 32px;animation:twqSway 4.8s ease-in-out infinite}
+.output:before{display:none}
+.output.quote-hit{animation:probeFlash .42s ease-out 1}
+.output.quote-hit .qtag{animation:twqHit .46s steps(2,end) 1!important}
+.output.quote-hit .qtag:before{animation:twqRing .46s ease-out 1}
+.output.quote-hit .qtag:after{animation:twqRing2 .46s ease-out 1}
+.output.quote-hit .qtag .q-main{animation:twqSwayHit .46s cubic-bezier(.2,.85,.2,1) 1!important}
+.output.quote-hit .qtag .q-spark{animation:twqSparkHit .46s steps(1,end) 1!important}
+@keyframes probeFlash{0%{box-shadow:inset 0 0 0 1px rgba(255,106,44,.44),inset 0 0 42px rgba(255,106,44,.12),0 0 22px rgba(255,106,44,.14)}100%{box-shadow:inset 0 0 0 1px rgba(234,253,255,.03),inset 0 0 42px rgba(0,0,0,.5),0 1px 0 rgba(234,253,255,.05)}}
+@keyframes twqIdleTop{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-1.5px)}}
+@keyframes twqSway{0%,100%{transform:rotate(0deg) scale(1)}50%{transform:rotate(-4deg) scale(1.02)}}
+@keyframes twqSpark{0%,82%,100%{opacity:.55}83%{opacity:1}86%{opacity:.3}88%{opacity:1}}
+@keyframes twqHit{0%{transform:translateX(-50%) translate(0,0)}25%{transform:translateX(-50%) translate(-2px,1px)}50%{transform:translateX(-50%) translate(2px,-1px)}75%{transform:translateX(-50%) translate(-1px,1px)}100%{transform:translateX(-50%) translate(0,0)}}
+@keyframes twqRing{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.18)}}
+@keyframes twqRing2{0%{opacity:.8;transform:scale(1)}100%{opacity:0;transform:scale(1.26)}}
+@keyframes twqSwayHit{0%{transform:rotate(0deg) scale(1)}20%{transform:rotate(-11deg) scale(1.06)}48%{transform:rotate(8deg) scale(.98)}78%{transform:rotate(-5deg) scale(1.03)}100%{transform:rotate(0deg) scale(1)}}
+@keyframes twqSparkHit{0%{opacity:1}20%{opacity:.2}40%{opacity:1}60%{opacity:.3}100%{opacity:1}}
+#text{
+  position:relative;z-index:2;width:100%;max-width:720px;text-align:left;
+  color:#e3f7f9;
+  font-size:clamp(1.5rem,5.8vw,2.1rem);line-height:1.46;
+  text-shadow:0 0 12px rgba(63,208,216,.24);
+  transition:opacity .16s ease;
+}
+#text.out-fade{opacity:0}
+.line{display:block}
+.cue{color:var(--tint);margin-right:.45ch;font-weight:500;text-shadow:0 0 10px rgba(63,208,216,.5)}
+.caret{display:inline-block;width:.6ch;height:1.02em;margin-left:.22ch;vertical-align:-.16em;background:var(--bloodhot);box-shadow:0 0 9px rgba(255,180,84,.6);animation:caret 1.06s steps(1,end) infinite}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+#text .hot{color:var(--bloodhot);text-shadow:0 0 10px rgba(255,180,84,.45)}
+.controls{display:flex;gap:8px}
+#copy,#clear,.controls .flink{min-height:44px;padding:12px 8px;border-radius:5px;font-family:inherit;cursor:pointer;text-transform:uppercase;font-weight:bold;letter-spacing:.1em;font-size:.8rem;box-shadow:inset 0 0 0 1px rgba(234,253,255,.025)}
+#copy{flex:1;color:var(--glare);background:linear-gradient(180deg,#11191c,#0b1012);border:1px solid rgba(63,208,216,.35)}
+#copy:hover{background:#162024;border-color:rgba(234,253,255,.52)}
+#copy.ok{color:var(--tint);border-color:var(--tint);background:#0f181a}
+#clear{flex:1;color:#86989c;background:linear-gradient(180deg,#0c1113,#080c0d);border:1px solid rgba(63,208,216,.2)}
+#clear:hover{color:var(--soft);border-color:rgba(63,208,216,.42);background:#111719}
+.about{
+  flex:1;overflow:auto;min-height:clamp(260px,52svh,420px);
+  border:1px solid rgba(63,208,216,.24);border-radius:14px;
+  background:
+    radial-gradient(440px 180px at 50% 0%,rgba(63,208,216,.05),transparent 66%),
+    linear-gradient(180deg,rgba(234,253,255,.022),rgba(0,0,0,.24)),
+    #070c0e;
+  padding:20px;color:#cfe4e7;white-space:pre-line;font-size:clamp(.9rem,3vw,1rem);line-height:1.6;
+}
+.about b{color:var(--glare);font-weight:normal}
+.footer{margin-top:auto;padding-top:10px;border-top:1px dashed rgba(63,208,216,.2);color:var(--dim);font-size:.66rem;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.footer .flink{background:none;border:1px solid transparent;border-radius:7px;color:#83cdd3;padding:4px 6px;font-size:.66rem;letter-spacing:.1em;cursor:pointer}
+.footer .flink:hover{color:var(--glare);border-color:rgba(63,208,216,.28);background:rgba(63,208,216,.04)}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#0e1519;color:var(--glare);border:1px solid rgba(63,208,216,.6);padding:9px 14px;z-index:50;font-size:.86rem;display:none;letter-spacing:.04em;box-shadow:0 10px 30px rgba(0,0,0,.55)}
+.toast.on{display:block}
+button:focus-visible,.footer .flink:focus-visible,#ask:focus-visible{outline:2px solid var(--tint);outline-offset:3px}
+@keyframes scan{to{transform:translateY(340%)}}
+@keyframes powerOn{0%{opacity:0;transform:scale(.985)}100%{opacity:1;transform:none}}
+@keyframes btnGlitch{0%{transform:translate(-3px,2px) skewX(-4deg)}50%{transform:translate(3px,-2px) skewX(4deg)}100%{transform:translate(0,0)}}
+@media(max-width:560px){
+  body{padding:7px;align-items:stretch}
+  .app{align-self:stretch;border-radius:14px;padding:6px}
+  .screen{min-height:calc(100svh - 14px);padding:11px;border-radius:11px;gap:11px}
+  .screen:before{inset:6px;border-radius:8px}
+  .header{padding-top:5px;padding-bottom:10px}
+  h1{font-size:clamp(2rem,11vw,3.4rem);letter-spacing:.04em}
+  .subtitle-bar span{padding:4px 8px}
+  .status{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;font-size:.55rem}
+  .status span{padding:4px 4px;text-align:center;white-space:nowrap}
+  #ask{min-height:76px;font-size:clamp(1.08rem,6vw,1.55rem)}
+  .output{min-height:250px;padding:66px 14px 22px}
+  .qtag{width:42px;height:42px;top:14px;left:50%}
+  #text{font-size:clamp(1.35rem,6.6vw,1.7rem);line-height:1.42}
+  .controls{gap:7px}
+  #copy,#clear,.controls .flink{min-height:42px;font-size:.76rem}
+  .footer{font-size:.58rem;gap:6px}
+}
+@media(max-width:360px){
+  .status{grid-template-columns:1fr;display:flex}
+  .status span{font-size:.52rem}
+  h1{font-size:1.9rem}
+}
+.output.quote-hit #text{animation:qGlitch .24s steps(2,end) 1}
+@keyframes qGlitch{
+  0%{transform:translateX(0);text-shadow:0 0 12px rgba(63,208,216,.24)}
+  30%{transform:translateX(-2px);text-shadow:-2px 0 0 rgba(255,77,46,.6),2px 0 0 rgba(63,208,216,.6)}
+  60%{transform:translateX(2px);text-shadow:2px 0 0 rgba(255,77,46,.5),-2px 0 0 rgba(63,208,216,.5)}
+  100%{transform:translateX(0);text-shadow:0 0 12px rgba(63,208,216,.24)}
+}
+@keyframes itFlick{0%,92%,100%{opacity:1}93%{opacity:.45}94%{opacity:1}96%{opacity:.6}97%{opacity:1}}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<main class="app">
+<section class="screen power" id="screen" aria-label="THE WRONG QUESTION terminal">
+<header class="header">
+<div class="brand" id="brand" title="Return"><span class="logo"><h1>THE <span class="it">WRONG</span> QUESTION</h1></span><div class="subtitle-bar"><span>the question under the question</span></div></div>
+<div class="status"><span>ANGLE: <b class="blood">WRONG</b></span><span>PREMISE: <b class="tint">UNCHECKED</b></span><span>MERCY: <b class="glare">OFF</b></span></div>
+</header>
+
+<div class="view on" id="vMain">
+  <div class="primary"><button id="ask" type="button">ASK AWAY</button></div>
+  <div class="output"><span class="qtag" aria-hidden="true"><svg viewBox="0 0 64 64"><circle class="q-back" cx="32" cy="32" r="25"/><g class="q-main"><path class="q-curve" d="M24 22c1.6-4.1 5.4-6.4 10.2-6.4 6.2 0 10.8 3.8 10.8 9.2 0 4.3-2.3 6.5-6.4 8.8-3.8 2.1-5.5 4.2-5.5 7.8"/><circle class="q-dot" cx="29.6" cy="48.3" r="2.8"/></g><path class="q-spark" d="M46 12l-4.5 7h4.4l-4 6.7"/></svg></span><div id="text" aria-live="polite"><span class="line"><span class="cue">&gt;</span>What are you actually asking?<span class="caret" aria-hidden="true"></span></span></div></div>
+  <div class="controls"><button id="copy" type="button">COPY</button><button id="clear" type="button">CLEAR</button></div>
+</div>
+
+<div class="view" id="vAbout">
+  <div class="about">&gt; THE WRONG QUESTION  &middot;  the question under the question
+&gt; ON FILE: <b id="deckCount">999</b> questions you weren&rsquo;t asking yet
+
+THE WRONG QUESTION doesn&rsquo;t answer. It relocates.
+
+One button. One question. The one sitting underneath the one you walked in with &mdash; the premise you never checked, the cost you left off the list, the person whose approval you&rsquo;re still waiting for.
+
+Most problems don&rsquo;t need a better answer. They need a better question. This is the instrument for finding it.
+
+Use it on a stuck decision, a loop you keep running, a thing you keep calling complicated, or any sentence that starts with &ldquo;I just need to figure out how to&hellip;&rdquo;
+
+Nothing saved. No account. No advice. Just the next question.
+
+&copy; HRF 2026. All rights reserved.
+
+[ &larr; RETURN ]  or press ESC</div>
+  <div class="controls"><button id="back" class="flink" type="button" style="flex:1;padding:14px;border:1px solid var(--line);border-radius:8px;color:var(--muted)">&larr; RETURN</button></div>
+</div>
+
+<div class="footer"><span>&copy; HRF 2026. All rights reserved.</span><button class="flink" id="aboutLink" type="button">[ ABOUT ]</button></div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+var PREFIX='';
+var TAG='THE WRONG QUESTION';
+var CARDS=["What would you do if you weren’t allowed to be busy?",
+"Who taught you this was the rule?",
+"If it worked, what would you have to give up?",
+"What are you protecting by staying confused?",
+"Whose approval are you actually waiting for?",
+"What would change if no one were watching this decision?",
+"What problem does this problem let you avoid?",
+"If you already knew the answer, what would it be?",
+"Who benefits from you believing this is your fault?",
+"What would you have to admit to stop arguing?",
+"What are you practising every day without meaning to?",
+"If this were easy, why would that bother you?",
+"What did you decide before you went looking for reasons?",
+"Who would you disappoint by choosing the obvious thing?",
+"What are you keeping just busy enough to never finish?",
+"What question are you hoping nobody asks?",
+"If the deadline vanished, would you still want this?",
+"What are you treating as permanent that you actually chose?",
+"Whose voice is inside the word “should” there?",
+"What are you waiting to be given that you could just take?",
+"If you trusted yourself, what would you stop checking?",
+"What is the cost you keep leaving off the list?",
+"Who are you still trying to prove wrong?",
+"What would you attempt if it didn’t have to be the best version?",
+"What are you calling a personality that started as a defence?",
+"If you weren’t afraid of looking lazy, what would you drop?",
+"What does winning this actually get you?",
+"What are you refusing to want out loud?",
+"Who decided this was urgent, and do you still report to them?",
+"What are you loyal to that stopped being loyal to you?",
+"If the worst happened, what would you finally be free of?",
+"What are you rehearsing instead of doing?",
+"Whose problem did you quietly adopt as your own?",
+"What are you trying to prove by being tired?",
+"If you couldn’t complain about it, would you change it?",
+"What are you waiting for permission to stop?",
+"What does the part of you that already decided know?",
+"Who are you protecting by refusing to be clear?",
+"What would you ask for if the answer were guaranteed to be yes?",
+"What are you keeping unmeasured so it can’t be judged?",
+"What are you about to do because it’s familiar, not because it’s right?",
+"What question would embarrass the one you’re asking now?",
+"What are you calling complicated because simple would make it your job?",
+"Who benefits from you treating this as urgent?",
+"What becomes visible the moment you stop explaining yourself?",
+"What are you pretending not to know because knowing it means moving?",
+"What would you do if nobody rewarded your exhaustion?",
+"Which part of this problem is just a permission slip?",
+"What are you protecting by calling this a phase?",
+"What answer are you avoiding by asking for advice?",
+"What changes if this stops being just how you are?",
+"Who trained you to confuse pressure with importance?",
+"What are you keeping alive by postponing the decision?",
+"What is the hidden reward for staying stuck?",
+"What would you lose if this finally made sense?",
+"What are you calling timing because fear sounds less professional?",
+"What are you asking permission to want?",
+"Which rule are you obeying that nobody remembers making?",
+"What are you calling impossible because it would just be awkward?",
+"What is the smallest honest version of what you keep dramatizing?",
+"What would you quit if nobody mistook suffering for depth?",
+"Who would be disappointed if you got easier to understand?",
+"What are you calling loyalty because it’s cheaper than change?",
+"What would you choose if your reputation couldn’t hear you?",
+"What has to stay vague for you to keep saying yes?",
+"What are you making mysterious because you dislike the obvious answer?",
+"What do you already know that you’re still shopping around?",
+"What are you calling humility because claiming it feels dangerous?",
+"What is the problem without the story you decorate it with?",
+"Which part of your confusion is doing useful work?",
+"What becomes non-negotiable the moment you admit you’re tired?",
+"What are you proving to someone who stopped watching?",
+"Who taught you that rest has to be earned?",
+"What would you attempt if you weren’t managing the audience?",
+"What are you delaying until it can’t be your fault?",
+"What have you made sacred because revising it scares you?",
+"What are you calling realism because hope would expose you?",
+"What would you ask if you weren’t trying to sound reasonable?",
+"What are you calling a crisis because a quiet decision feels too adult?",
+"What are you protecting by needing one more explanation?",
+"Which answer would make your current identity inconvenient?",
+"What would you stop defending if you were allowed to be inconsistent?",
+"What are you calling research because avoidance has bad optics?",
+"What have you mistaken for duty because it stood nearby too long?",
+"What won’t you learn because it would make the past look avoidable?",
+"What would you want if achievement stopped laundering desire?",
+"What does your busyness keep other people from asking of you?",
+"What are you calling independence because you hate receiving?",
+"What would you refuse if no one asked for your reasons?",
+"What part of this ambition is fear in better shoes?",
+"What are you using as evidence that only proves you’re tired?",
+"What would you do if being impressive stopped counting?",
+"What is the question you keep translating into productivity?",
+"What do you call a plan because it postpones contact with reality?",
+"What is left of this worry if nobody admires it?",
+"What are you calling a boundary that’s actually a bunker?",
+"What would you see if you stopped defending the old map?",
+"Who are you obeying when you say “that’s just how it is”?",
+"What is the price of staying the reasonable one?",
+"What are you calling peace because you’ve stopped asking for anything?",
+"What gets easier the moment it stops needing to be noble?",
+"What are you calling your nature to avoid calling it a habit?",
+"What are you preserving by never testing the claim?",
+"What would you do if the next step had to be small?",
+"What is the real question hiding inside your need for certainty?",
+"What are you complicating because plain grief would be too naked?",
+"What would you choose if your future self refused to be impressed?",
+"What part of this turns absurd the moment you say it plainly?",
+"What do you call impossible only because nobody nearby has done it?",
+"What are you calling patience because you fear the confrontation?",
+"What would you stop repeating if it no longer sounded smart?",
+"What are you trying not to owe?",
+"What would you admit if the room were empty?",
+"What has your anxiety been hired to protect?",
+"What are you using morality to avoid deciding?",
+"What do you keep rehearsing because the real act is too short?",
+"What changes if the obstacle isn’t the villain?",
+"Which belief survived only because you never made it answer questions?",
+"What are you calling generosity because you don’t know how to leave?",
+"What happens if you stop auditioning for your own life?",
+"What are you making dramatic to avoid making it practical?",
+"What answer would cost you the most convenience?",
+"What won’t you finish because unfinished things can’t be judged?",
+"What are you calling fate because you dislike negotiating?",
+"What have you mistaken for depth because it hurts?",
+"What would you stop explaining if you just acted honestly?",
+"Who profits from your self-doubt being permanent?",
+"What is the maintenance cost of this version of you?",
+"What are you treating as personal that’s actually structural?",
+"What are you treating as structural that’s actually personal?",
+"What would you decide if the perfect reason never came?",
+"What are you waiting to feel before doing the obvious thing?",
+"What would happen if you believed your first reaction?",
+"What are you calling caution because you fear being seen trying?",
+"What is the laziest honest answer?",
+"What are you keeping complicated so nobody checks the maths?",
+"What would you ask if the goal were truth, not relief?",
+"Which part of your life is a museum of old permissions?",
+"What are you still negotiating with that already said no?",
+"What would you do if you didn’t need a crisis to change?",
+"What are you calling “one day” because today would implicate you?",
+"What are you afraid will happen if you stop being useful?",
+"What are you calling kindness because you fear being disliked?",
+"What would you choose if guilt weren’t allowed in the room?",
+"What did you turn into a principle because preferring it felt vulgar?",
+"What are you over-explaining when the real sentence is short?",
+"What are you preserving by refusing to name the trade-off?",
+"What changes if disappointment stops being proof?",
+"What are you leaving broken because it gives you a role?",
+"What do you call impossible because it would mean asking?",
+"What are you protecting by pretending the options are equal?",
+"What would stop being your problem if you drew the map right?",
+"What are you calling maturity that’s just lowered expectations?",
+"What would you want if no one could accuse you of wanting it?",
+"What are you calling chaos that someone benefits from?",
+"What is the simplest question that makes this whole performance unnecessary?",
+"What won’t you count because the total would decide for you?",
+"What would you change if nobody had to understand first?",
+"What did you normalize because resisting it got tiring?",
+"What are you calling support because control would sound impolite?",
+"What are you protecting by being hard to help?",
+"What would be obvious if you were advising someone else?",
+"What are you calling uncertainty because you dislike the known answer?",
+"What is the old bargain you’re still paying for?",
+"What would your excuse become if it had to be a contract?",
+"What do you gain by needing this to be someone else’s fault?",
+"What are you calling standards because vulnerability failed once?",
+"What would you do if your fear were accurate but not in charge?",
+"What part of your plan exists only to delay exposure?",
+"What are you calling balance because commitment frightens you?",
+"What are you leaving unsaid so the situation can pretend to be fine?",
+"What would you do if you couldn’t turn this into a lesson?",
+"What are you mistaking for intuition because it arrived loudly?",
+"What would have to be true for your strategy to make sense?",
+"What evidence would you accept against your favourite excuse?",
+"What are you calling your limit because nobody offered better terms?",
+"What would you stop tolerating if you stopped narrating it beautifully?",
+"What are you asking the future to solve that the present already explained?",
+"What part of you needs the problem unsolved?",
+"What are you calling your path because choosing a door scares you?",
+"What are you making inevitable by refusing to act early?",
+"What would change if you treated your attention as property?",
+"What are you spending your life proving that nobody disputed?",
+"What would you admit if effort weren’t proof of virtue?",
+"What are you calling simplicity because you stopped imagining better?",
+"What would you do if “busy” weren’t an acceptable answer?",
+"What are you calling freedom because nobody expects anything of you?",
+"What are you calling responsibility because freedom scares you?",
+"What would you stop fixing if you didn’t need a place in the room?",
+"What are you keeping alive because its collapse would make you quiet?",
+"What are you calling a dilemma because you dislike the cost of choosing?",
+"What question would the person you envy ask immediately?",
+"What are you calling wisdom that’s just past disappointment?",
+"What would you change if nobody praised endurance?",
+"What are you hiding inside good taste?",
+"What are you making ugly so you can reject it safely?",
+"What happens if the boring answer is the right one?",
+"What are you calling instinct to avoid examining the training?",
+"What do you keep asking because the answer lets you not act?",
+"What would you notice if the problem stopped flattering you?",
+"What are you treating as identity because grieving a phase is harder?",
+"What have you mistaken for destiny because it repeated?",
+"What are you calling “not ready” because readiness can’t be disproved?",
+"What becomes possible if you stop needing to be discovered?",
+"What are you defending because you sacrificed too much to question it now?",
+"What would you do if nobody confused your suffering with seriousness?",
+"What are you calling the real world because imagination makes demands?",
+"What part of this is hard only because you’re trying not to change?",
+"What are you calling mixed feelings because one feeling is forbidden?",
+"What are you using as a shield that used to be a tool?",
+"What would you choose if the explanation could come after?",
+"What are you calling “too late” because “now” feels humiliating?",
+"What are you still proving to the version of you that needed proof?",
+"What are you calling a problem because calling it a preference feels selfish?",
+"What are you protecting by asking everyone except the person involved?",
+"What would this look like if nobody could perform innocence?",
+"What are you pretending is a question that’s actually a refusal?",
+"What would you lose if you stopped being misunderstood?",
+"What are you calling loyalty to others that’s disloyalty to yourself?",
+"What would you do if comfort couldn’t impersonate truth?",
+"What are you calling generosity because you expect a receipt?",
+"What are you asking from life that you refuse to ask from people?",
+"What are you calling mystery because measuring it would end the romance?",
+"What are you trying to make timeless that already expired?",
+"What would you stop calling failure if you stopped worshipping the original plan?",
+"What are you protecting by being the one who “doesn’t mind”?",
+"What is the question with no audience, no witness, and no prize?",
+"What are you calling “complicated history” because “pattern” sounds prosecutable?",
+"What would you do if nobody came to rescue the old arrangement?",
+"What are you accepting because refusing would require language?",
+"What are you calling realism because it lets you stay small without apologising?",
+"What would your answer be if you had to act on it today?",
+"What are you calling helping because wanting feels dangerous?",
+"What have you confused with love because it needs constant maintenance?",
+"What would you ask if you trusted yourself to survive the answer?",
+"What are you calling normal because the alternative would shame the room?",
+"What would you stop postponing if your life weren’t a draft?",
+"What are you asking forgiveness for before doing anything?",
+"What are you calling “too much” because someone else has a small appetite?",
+"What is the real cost of keeping everyone comfortable?",
+"What are you calling confusion because clarity would be expensive?",
+"What would you choose if you couldn’t explain it beautifully?",
+"What are you calling safety because you know the route too well?",
+"What are you calling danger because it would change how you describe yourself?",
+"What would you do if the past were evidence, not law?",
+"What are you calling “just how I am” because revision would be public?",
+"What do you keep describing instead of deciding?",
+"What are you trying to make fair because you can’t make it honest?",
+"What would you stop admiring if you had to live inside it?",
+"What are you calling potential because it’s never been tested?",
+"What are you asking for in code?",
+"What would you say if politeness stopped being a hiding place?",
+"What are you calling a boundary that only holds if nobody tests it?",
+"What are you calling a dream because planning would make it answerable?",
+"What if the thing you fear isn’t the thing stopping you?",
+"What have you made into a riddle because the plain answer feels rude?",
+"What are you calling open-minded because choosing would close doors?",
+"What would you do if no one could accuse you of changing?",
+"What are you keeping reversible because commitment leaves evidence?",
+"What are you calling “my standards” that’s just hardened disappointment?",
+"What is your life without the alibi of exceptional circumstances?",
+"What are you pretending not to want because wanting it lowers your status?",
+"What are you calling waiting because refusing sounds too active?",
+"What would you be forced to learn if this worked?",
+"What becomes impossible if you stop being confused?",
+"What are you calling realistic because the first attempt failed?",
+"What are you borrowing from the future to skip the present?",
+"What are you calling “not the right time” because the right time still needs courage?",
+"What part of your certainty is exhaustion in a uniform?",
+"What are you calling self-knowledge because it excuses the repeat?",
+"What would you do if you couldn’t be interesting about your pain?",
+"What are you keeping private because public words would make it solvable?",
+"What changes if you stop asking whether you deserve it and ask whether you want it?",
+"What are you calling dignity because you’re afraid to ask twice?",
+"What are you keeping intact because repairing it would reveal the damage?",
+"What are you calling “a lot going on” to avoid naming the centre?",
+"What would you do if the decision didn’t have to explain your whole life?",
+"What is the oldest fear currently posing as fresh information?",
+"What are you calling “the problem” because “the bargain” sounds too voluntary?",
+"What would you stop carrying if nobody could call you selfish?",
+"What are you calling connection because it spares you asking for intimacy?",
+"What would you ask if the polite version weren’t available?",
+"What are you trying to learn about someone that you refuse to learn about yourself?",
+"What changes if your favourite memory is evidence, not nostalgia?",
+"What are you using as charm because honesty would arrive too soon?",
+"What part of your life is waiting for a better opening question?",
+"What are you calling conversation because silence might ask for something real?",
+"What would you say if you weren’t trying to stay easy to like?",
+"What are you hiding inside your sense of humour?",
+"What would your answer be if no one rewarded cleverness?",
+"What are you calling curiosity because commitment sounds too heavy?",
+"What would you ask if you’d already been accepted?",
+"What are you pretending is taste because desire would expose you?",
+"What would you choose if nobody asked whether it was sensible?",
+"What are you calling personality that once just helped you survive a room?",
+"What would you stop performing if the conversation got honest?",
+"What are you using as an icebreaker because the real subject is too warm?",
+"What would you admit if you didn’t have to make it entertaining?",
+"What are you calling a fun fact because the serious one has teeth?",
+"What would you ask if you believed the answer could change the relationship?",
+"What part of your friendliness is crowd control?",
+"What are you keeping light that’s already heavy?",
+"What would you ask if the other person couldn’t misunderstand you?",
+"What are you calling “just catching up” because repair sounds too direct?",
+"What would you say if being interesting weren’t the fee?",
+"What are you using as a safe topic because the unsafe one is the point?",
+"What are you hoping someone notices so you don’t have to say it?",
+"What question would make your usual answer unusable?",
+"What are you calling getting to know someone because judging them is less flattering?",
+"What would you ask if you didn’t need the conversation to stay pretty?",
+"What are you repeating because it’s become your social costume?",
+"What would you stop saying if people actually listened?",
+"What are you calling openness when you only reveal what can’t hurt you?",
+"What would you confess if the room had no memory?",
+"What part of your story is too polished to be useful?",
+"What are you calling vulnerability because it still keeps you in control?",
+"What would you ask if you wanted truth more than chemistry?",
+"What are you protecting by being good at first impressions?",
+"What would you do if nobody mistook mystery for depth?",
+"What would you learn if you stopped asking what people do?",
+"What are you asking indirectly because a direct question reveals need?",
+"What would you say if the safest person in the room were you?",
+"What are you calling a good conversation that never challenged your script?",
+"What would you ask if you were allowed to be awkward first?",
+"What are you hiding in the phrase “I’m just curious”?",
+"What becomes obvious the moment you stop managing your tone?",
+"What would you ask if the answer couldn’t be turned into a story?",
+"What are you avoiding by being agreeable?",
+"What are you calling warmth when confrontation would be more loving?",
+"What would you ask if you didn’t need to sound deep?",
+"What are you calling depth because it flatters your sadness?",
+"What is left of your identity without the anecdote you always tell?",
+"What would you ask if you stopped auditioning for closeness?",
+"What part of your honesty is still edited for applause?",
+"What are you calling “my truth” because evidence would complicate it?",
+"What would you ask if nobody had to leave impressed?",
+"What are you keeping unspoken because naming it creates a debt?",
+"What are you calling a red flag because it spares you the context?",
+"What are you calling a green flag because it lets you overlook the rest?",
+"What would you ask if attraction couldn’t answer for character?",
+"What are you calling discernment that’s fear with better vocabulary?",
+"What would you choose if comfort and truth disagreed?",
+"What are you making charming so nobody calls it avoidance?",
+"What would you ask if your future hinged on the boring detail?",
+"What are you calling “just my type” because repetition feels like destiny?",
+"What would you notice if you stopped confusing intensity with information?",
+"What are you calling standards because you won’t risk hope?",
+"What would you ask if the answer mattered more than the mood?",
+"What are you calling independence because needing someone feels dangerous?",
+"What would you want if you didn’t have to be low-maintenance?",
+"What would you ask if you weren’t afraid of sounding needy?",
+"What are you protecting by staying hard to read?",
+"What would you stop offering if affection didn’t have to be earned?",
+"What are you calling patience when you have no plan to be respected?",
+"What would you admit if the other person weren’t responsible for fixing it?",
+"What are you calling love because it resembles your oldest hunger?",
+"What would you ask if your loneliness were allowed to be intelligent?",
+"What are you calling devotion because you forgot you could leave?",
+"What changes if care didn’t have to arrive dramatically?",
+"What are you calling “spark” because stability feels unfamiliar?",
+"What would you ask if peace weren’t mistaken for boredom?",
+"What are you treating as intimacy because it happens late at night?",
+"What would you stop excusing if you believed calm counted?",
+"What are you calling forgiveness because confrontation failed?",
+"What would you ask if resentment had to speak plainly?",
+"What are you protecting by never asking for repair?",
+"What would you say if your disappointment were allowed to be specific?",
+"What are you calling distance because “hurt” sounds too exposed?",
+"What would you ask if you didn’t need the other person to guess?",
+"What changes if you stop making your needs legally defensible?",
+"What are you trying to win by being the easy one?",
+"What would you ask if the answer didn’t have to save the relationship?",
+"What are you calling peace because nobody’s currently objecting?",
+"What would you know if you stopped confusing relief with love?",
+"What are you calling commitment because you’re both dodging the question?",
+"What would you ask if the relationship could survive accuracy?",
+"What are you making romantic so it doesn’t look like neglect?",
+"What would you stop calling complicated if you drew the timeline honestly?",
+"What are you calling fate because the pattern has good lighting?",
+"What would you want if you stopped translating desire into service?",
+"What are you calling support because it keeps you indispensable?",
+"What would you ask if your kindness weren’t allowed to erase you?",
+"What are you calling generosity because it prevents rejection?",
+"What would you stop giving if gratitude weren’t guaranteed?",
+"What are you trying to buy with your availability?",
+"What would you ask if reciprocity mattered more than being admired?",
+"What are you calling maturity because you’ve stopped expecting repair?",
+"What would you do if the old role weren’t assigned to you?",
+"What are you calling family because nobody renegotiated the terms?",
+"What becomes visible when obligation has to justify itself?",
+"What are you calling tradition because nobody lasted long enough to question it?",
+"What would you ask if respect weren’t confused with obedience?",
+"What are you protecting by keeping the old story flattering?",
+"What would you refuse if guilt lost its licence?",
+"What are you calling gratitude because anger would be inconvenient?",
+"What would you say if love didn’t require historical amnesia?",
+"What are you treating as sacred because it hurts too much to inspect?",
+"What changes if the past is allowed to be mixed?",
+"What are you calling forgiveness because the room dislikes consequences?",
+"What would you ask if the family myth answered under oath?",
+"What are you calling care that’s control learning to smile?",
+"What would you stop inheriting if nobody praised endurance?",
+"What are you carrying because nobody else admitted it was heavy?",
+"What would you ask if belonging didn’t require silence?",
+"What are you calling “how I was raised” because choice starts tomorrow?",
+"What would you do if your younger self weren’t the judge?",
+"What are you still proving to a house you no longer live in?",
+"What gets lighter the moment you stop defending the origin story?",
+"What are you calling respect because fear got there first?",
+"What would you ask if the child in you weren’t running PR?",
+"What are you protecting by staying fluent in old pain?",
+"What would you choose if nostalgia lost its vote?",
+"What are you calling home because leaving would mean grieving twice?",
+"What are you still obeying from a room that no longer exists?",
+"What would you want if no one had taught you to pre-shrink it?",
+"What are you calling ambition because desire needed formal clothes?",
+"What would you do if success stopped being a character witness?",
+"What are you calling discipline because you’re afraid to enjoy the work?",
+"What would you pursue if it didn’t have to become impressive?",
+"What are you calling a goal that you can’t admit is revenge?",
+"What would you stop chasing if the right person apologised?",
+"What are you calling progress because stillness feels like guilt?",
+"What would you ask if your work couldn’t love you back?",
+"What are you making measurable because meaning is harder to defend?",
+"What would you build if nobody asked for a business case?",
+"What are you calling professionalism that your body already objected to?",
+"What would you stop accepting if burnout counted as data?",
+"What are you calling opportunity because refusing would reveal your values?",
+"What would you ask if money were part of the question, not the whole answer?",
+"What are you using deadlines to avoid deciding?",
+"What would you do if urgency stopped dressing as purpose?",
+"What are you calling productive because it keeps you from being present?",
+"What becomes clear once you remove the applause from the plan?",
+"What are you calling focus because obsession sounds less elegant?",
+"What are you calling your dream because it hasn’t inconvenienced you yet?",
+"What would you abandon if sunk cost could speak honestly?",
+"What are you protecting by keeping every option theoretically open?",
+"What would you choose if the menu expired tonight?",
+"What are you calling strategy because you’re afraid to begin?",
+"What would you ask if expertise didn’t get to intimidate you?",
+"What are you calling “no time” because priorities would expose you?",
+"What would your calendar say about your values if it told the truth?",
+"What are you calling a season that you’ve built permanent furniture inside?",
+"What would you ask if your fatigue had authority?",
+"What are you calling resilience that’s just postponed collapse?",
+"What would change if your body were the first witness?",
+"What are you calling “fine” because the alternative has paperwork?",
+"What would you stop minimising if pain got minutes in the meeting?",
+"What are you calling health because you can still function?",
+"What would you ask if survival stopped being the standard?",
+"What are you calling coping because nobody’s seen the invoice?",
+"What would you refuse if rest weren’t treated as theft?",
+"What are you calling strength because help would shift the hierarchy?",
+"What would you do if your nervous system got a vote?",
+"What becomes urgent the moment you stop numbing the signal?",
+"What are you calling normal because you can explain it?",
+"What are you calling self-control because aliveness makes demands?",
+"What would you stop consuming if emptiness were allowed a name?",
+"What are you calling comfort because it reliably deletes the question?",
+"What would you do if pleasure didn’t need moral clearance?",
+"What are you calling balance that’s just diplomatic exhaustion?",
+"What would you ask if the problem weren’t your mood but your arrangement?",
+"What are you calling “just stress” because the structure is harder to indict?",
+"What changes if the symptom is the honest part?",
+"What are you calling healing because it photographs better than confrontation?",
+"What are you trying to optimise that actually needs to end?",
+"What would you ask if the wound didn’t have to become content?",
+"What are you calling self-care because changing the system sounds expensive?",
+"What would you do if no one clapped for your recovery?",
+"What are you calling growth while staying available for the same harm?",
+"What would you protect if you believed your attention was finite?",
+"What are you giving away because it feels too small to defend?",
+"What would you stop reading if you trusted the first clear sentence?",
+"What are you calling information because it keeps you from contact?",
+"What would you ask if scrolling couldn’t answer loneliness?",
+"What are you calling awareness because action would be awkward?",
+"What would you notice if distraction had to submit receipts?",
+"What are you feeding that feeds on your attention?",
+"What becomes possible if your boredom isn’t rescued immediately?",
+"What are you calling “staying informed” because helplessness wants company?",
+"What are you calling entertainment because silence would raise evidence?",
+"What would you make if your inputs stopped colonising your imagination?",
+"What are you calling connection because a machine keeps the count?",
+"What would you ask if the screen went dark at the honest moment?",
+"What are you calling choice when the algorithm set the menu?",
+"What would you want if your wanting weren’t being trained?",
+"What are you calling taste that’s repetition in disguise?",
+"What would you stop believing if virality weren’t proof?",
+"What are you calling your opinion that arrived already sponsored?",
+"What would you ask if the crowd weren’t available as a conscience?",
+"What are you calling outrage because grief was too slow?",
+"What changes if you stop mistaking exposure for understanding?",
+"What are you calling participation because you clicked near the disaster?",
+"What are you calling freedom because nobody interrupts your consumption?",
+"What would you do if the feed stopped handing you a self?",
+"What are you calling your voice that’s learned the platform’s accent?",
+"What would you ask if attention weren’t the rent?",
+"What are you calling reality because enough people performed agreement?",
+"What would you know if popularity were removed from the evidence?",
+"What are you calling truth because it made your side feel clean?",
+"What would you ask if your certainty had to name its diet?",
+"What are you calling judgement because disgust answered first?",
+"What would you think if your enemy said something accurate?",
+"What are you protecting by keeping the other side stupid?",
+"What gets harder if the person you dislike has a point?",
+"What are you calling principle because it lets you avoid a person?",
+"What would you ask if your politics couldn’t replace perception?",
+"What are you calling justice because revenge has better manners?",
+"What would you stop believing if belonging weren’t at stake?",
+"What are you calling nuance because commitment frightens your friends?",
+"What would you ask if the slogan had to survive a real case?",
+"What are you calling compassion because it costs you nothing?",
+"What would you do if fairness required losing status?",
+"What are you calling courage when your group already agrees?",
+"What would you ask if the victim were inconvenient?",
+"What are you calling morality because it keeps you innocent?",
+"What changes if your ethics had to pass through your habits?",
+"What are you calling kindness because you want to stay unchallenged?",
+"What would you ask if the good answer implicated you?",
+"What are you calling “the right thing” because it protects your image?",
+"What would you choose if no one could admire your sacrifice?",
+"What are you calling empathy because you recognised the feeling, not the person?",
+"What would you ask if mercy and accountability shared one chair?",
+"What would you defend if it made you look less virtuous?",
+"What are you calling honesty that’s cruelty in a clean shirt?",
+"What would you ask if being right weren’t enough?",
+"What are you calling wisdom because it can’t be disproved?",
+"What would you learn if your oldest certainty were only a souvenir?",
+"What are you calling experience that’s just well-aged repetition?",
+"What would you ask if your beliefs had expiry dates?",
+"What are you calling common sense without checking who benefits?",
+"What would you think if the obvious answer were just a local habit?",
+"What are you calling truth because it survived your childhood?",
+"What would you ask if memory were a witness, not a judge?",
+"What are you calling “how life works” because no one showed you alternatives?",
+"What would you believe if the first explanation had arrived later?",
+"What are you calling meaning because the coincidence was useful?",
+"What would you ask if your story had to include what it leaves out?",
+"What are you calling destiny because randomness feels insulting?",
+"What would you choose if meaning were something you owe, not find?",
+"What are you calling emptiness because the old meanings stopped working?",
+"What would you ask if purpose were smaller and repeatable?",
+"What are you calling a sign because deciding would be lonelier?",
+"What would you do if the universe refused to personalise the message?",
+"What would you trust if certainty never arrived?",
+"What are you calling doubt because refusing sounds too harsh?",
+"What would you ask if the answer had to be lived before explained?",
+"What would you keep doing if meaning stayed quiet?",
+"What are you calling despair because you’ve been using the wrong scale?",
+"What would you ask if hope were a practice, not a mood?",
+"What are you calling your purpose because it looks good from outside?",
+"What would you do if your life didn’t need a thesis?",
+"What are you calling failure because the wrong metric got there first?",
+"What would you ask if being ordinary weren’t a punishment?",
+"What are you calling significance because attention confused you?",
+"What becomes sacred if nobody calls it that?",
+"What are you calling a calling because it gives fear prestige?",
+"What would you choose if meaning were allowed to be local?",
+"What are you postponing because the future politely stays abstract?",
+"What would you do if the eulogy started writing itself today?",
+"What are you calling “later” because death still feels theoretical?",
+"What would you keep if it all had to fit in one afternoon?",
+"What are you calling success because it postpones the question of death?",
+"What would you stop fearing if time weren’t negotiable?",
+"What are you saving for a life that hasn’t signed a contract?",
+"What would you ask if the calendar were honest about its ending?",
+"What are you calling important because it helps you forget the finite?",
+"What would you forgive if you had less time to be correct?",
+"What are you refusing to enjoy until it becomes official?",
+"What would you do if this weren’t the rehearsal?",
+"What are you calling preparation when the real thing already started?",
+"What becomes urgent if you believe your days are countable?",
+"What are you calling legacy because presence feels too exposed?",
+"What would you ask if your future self could interrupt you?",
+"What are you still collecting that can’t come with you?",
+"What would you stop owning if use mattered more than possession?",
+"What are you calling security because impermanence scares you?",
+"What would you give away if abundance weren’t just a mood?",
+"What are you calling accumulation because enough never introduced itself?",
+"What would you repair if replacing it stopped being easy?",
+"What are you treating as disposable because attachment would slow you down?",
+"What would your objects say about your priorities if they told the truth?",
+"What are you buying because becoming would take longer?",
+"What would you stop wanting if nobody could see it?",
+"What are you calling style because identity needed armour?",
+"What stays beautiful when comparison isn’t available?",
+"What are you calling taste because belonging came with a catalogue?",
+"What would you ask if envy were translated into instructions?",
+"What are you calling admiration because desire is embarrassing?",
+"What would you do if the person you envy handed you their cost?",
+"What are you calling inspiration to avoid admitting imitation?",
+"What would you make if originality stopped policing you?",
+"What are you calling influence because theft sounds impolite?",
+"What would you ask if your creativity didn’t need quality’s permission?",
+"What are you calling a block that’s just judgement arriving early?",
+"What would you create if usefulness weren’t watching?",
+"What are you calling discipline because play makes you nervous?",
+"What would you finish if embarrassment weren’t fatal?",
+"What are you calling research because the first bad draft scares you?",
+"What would you attempt if nobody compared it to your best work?",
+"What are you protecting by keeping the idea perfect and unreal?",
+"What would you ask if the work were allowed to disappoint you first?",
+"What would you make if the audience arrived after the object?",
+"What happens if the silly version is the doorway?",
+"What are you calling seriousness when play might reveal more?",
+"What would you choose if beauty didn’t have to justify itself?",
+"What are you calling failure because the experiment told the truth?",
+"What would you ask if curiosity outranked dignity?",
+"What are you calling a bad idea because it threatens the good one?",
+"What survives if the cleverness has to be removed?",
+"What are you calling “not ready” because the material might answer back?",
+"What would you ask if the question itself were the project?",
+"What are you calling originality because you fear ordinary clarity?",
+"What would you make if the first rule were usefulness, not brilliance?",
+"What are you protecting by refusing to simplify?",
+"What are you calling depth because nobody understood the draft?",
+"What would you cut if confusion stopped counting as intelligence?",
+"What are you calling subtle because the point hasn’t arrived?",
+"What would you say if you weren’t allowed to decorate evasion?",
+"What is the question underneath the one you keep asking?",
+"What are you calling real because it keeps hurting you?",
+"What would stop existing if you stopped believing in it?",
+"What part of you is visible only because someone keeps resisting it?",
+"What are you treating as imaginary because it has no paperwork?",
+"What would you still owe if nobody remembered the promise?",
+"What are you calling “just an idea” because ideas get to rule quietly?",
+"What would be left of the problem if its name disappeared?",
+"What are you protecting by insisting this was always the same thing?",
+"What part of your identity got replaced so slowly you still call it original?",
+"What are you calling continuity because admitting rupture costs more?",
+"What would you recognise as yourself if memory stopped cooperating?",
+"What are you preserving: the object, the story, or the right to say “mine”?",
+"What becomes false the moment you describe it without metaphor?",
+"What are you calling essence that history just impersonates well?",
+"What is the smallest change that would make you no longer you?",
+"What are you calling a phase because identity sounds too expensive?",
+"What would you still be if nobody could describe you?",
+"What are you mistaking for your self because it answers quickly?",
+"What would vanish if you stopped being witnessed?",
+"What do you know that would fail in court?",
+"What are you calling knowledge because confidence got there first?",
+"What would you believe if your best evidence were removed?",
+"What are you certain of only because doubting it would cost you socially?",
+"What are you calling proof because it agrees with your exhaustion?",
+"What would you stop knowing if nobody rewarded certainty?",
+"What are you calling truth because it survived a bad method?",
+"What belief chose you before you chose it?",
+"What would you doubt if doubt had no moral penalty?",
+"What are you calling an opinion because believing it would make you accountable?",
+"What do you keep verifying because you hope it will change?",
+"What are you calling scepticism because trust would take courage?",
+"What would count as evidence against your favourite conclusion?",
+"What are you calling open-mindedness because you refuse to close the case?",
+"What do you believe only because the alternative would reorganise your life?",
+"What are you calling obvious because nobody nearby asks better questions?",
+"What would you know if language stopped flattering you?",
+"What are you calling a fact because it became useful?",
+"What question are you dodging because it would demote your answer?",
+"What are you pretending to investigate after already deciding?",
+"What are you calling consciousness because it narrates well?",
+"What would your mind be without the voice explaining it?",
+"What are you calling feeling because thought got too fast to see?",
+"What would you trust if your inner narrator were only one witness?",
+"What part of your pain proves nothing and still deserves attention?",
+"What are you calling intuition because it feels older than language?",
+"What would your body testify if your mind couldn’t interrupt?",
+"What are you calling choice because you watched the decision from inside?",
+"What are you calling free will because the chain is too long to trace?",
+"What changes if your reasons arrived after your actions?",
+"What are you calling character because habit has a better publicist?",
+"What would you forgive yourself for if causes were admitted to the room?",
+"What are you calling responsibility because randomness feels indecent?",
+"What would you blame if blame had to understand its causes?",
+"What are you calling a mistake because calling it a pattern would be worse?",
+"What would you do if your mind weren’t automatically on your side?",
+"What are you calling sanity because the room agrees?",
+"What turns strange the moment you stop calling it normal?",
+"What are you calling perception when interpretation slipped in unnoticed?",
+"What would reality look like without your usual emotional lighting?",
+"What are you calling “the world” because it keeps confirming your mood?",
+"What would change if reality were only a very convincing interface?",
+"What are you calling outside because it reliably shows up when you look?",
+"What would matter if this were a simulation but the pain still counted?",
+"What are you calling artificial because you dislike the maker?",
+"What would be less real for being generated?",
+"What are you calling authentic because you can’t see the mechanism?",
+"What would you still love if you learned it was built?",
+"What are you calling illusion because you hoped reality would be simpler?",
+"What would you stop trusting if accuracy and vividness came apart?",
+"What are you calling nothing because you can’t imagine its rules?",
+"What would nothing have to be for you to fear it?",
+"What are you calling emptiness now that absence has started doing work?",
+"What would you ask if something didn’t need permission to exist?",
+"What are you calling origin because your mind refuses an unmarked beginning?",
+"What changes if “why anything?” has no human-sized answer?",
+"What are you calling cause because you dislike coincidence?",
+"What are you calling coincidence because you dislike cause?",
+"What would you stop explaining if mystery weren’t failure?",
+"What are you making cosmic because the local answer is embarrassing?",
+"What are you calling value because enough people compete for it?",
+"What stays valuable if nobody can own it?",
+"What are you calling good because it keeps the system tidy?",
+"What would you choose if the moral answer made you less admirable?",
+"What are you calling harmless because the harm is spread out?",
+"What would your ethics look like if inconvenience counted as evidence?",
+"What are you calling fairness because you like the current scale?",
+"What would be unjust if you weren’t the one benefiting?",
+"What are you calling a right because you’ve never needed permission?",
+"What would you defend if it cost you belonging?",
+"What are you calling beauty because it agrees with your training?",
+"What turns beautiful the moment status stops interpreting it?",
+"What are you calling ugly because it refuses your categories?",
+"What would you admire if no one had taught you what admiration buys?",
+"What are you calling taste because the repetition went invisible?",
+"What would move you if you stopped asking whether it was important?",
+"What are you calling art because it survived explanation?",
+"What would you make if meaning didn’t have to arrive first?",
+"What question would remain if every clever question were removed?",
+"What are you really asking when you ask what is real?",
+"What would you pack if the emergency were finally emotional?",
+"What are you calling survival because you forgot to unpack afterwards?",
+"What would your emergency bag reveal about what you secretly trust?",
+"What are you saving for disaster that you refuse to use for joy?",
+"What would you take if usefulness were banned?",
+"What are you calling preparedness because fear enjoys making lists?",
+"What would you leave behind if nostalgia had a weight limit?",
+"What are you keeping close because losing it would expose the real loss?",
+"What would you protect first if nobody could praise the choice?",
+"What are you treating as essential because you bought it during panic?",
+"What would your favourite smell accuse you of missing?",
+"What memory keeps returning through the wrong doorway?",
+"What are you calling comfort because it smells like an earlier safety?",
+"What would you notice if memory stopped arriving as argument?",
+"What are you trying to preserve by repeating the same atmosphere?",
+"What place still owns you through one ordinary sensation?",
+"What are you calling taste because longing went domestic?",
+"What would you ask the past if it arrived as a smell?",
+"What are you refusing to grieve because it still shows up in small pleasures?",
+"What would vanish if the room stopped reminding you who you were?",
+"What animal would tell the truth about your social strategy?",
+"What would your pet say you pretend not to need?",
+"What are you calling intelligence because it speaks in your accent?",
+"What creature would understand you better with language removed?",
+"What are you projecting onto animals because people make it risky?",
+"What would you learn if the least impressive animal judged your life?",
+"What are you calling instinct because you admire it from a safe distance?",
+"What would you ask a bird if escape weren’t the subject?",
+"What are you calling freedom because wings make good metaphors?",
+"What would your favourite animal dislike about your routine?",
+"What object in your house has witnessed the most convincing version of you?",
+"What would your chair report if comfort were cross-examined?",
+"What are your objects keeping quiet out of politeness?",
+"What possession would turn useless if your identity relaxed?",
+"What do you own because a future self once made a threat?",
+"What would your desk say you’re really building?",
+"What are you calling clutter because unfinished decisions look better in piles?",
+"What would your shoes reveal about where you keep pretending to go?",
+"What survives in your life only because guilt dusts it regularly?",
+"What would your room remove first if it could edit you?",
+"What strange talent are you wasting because it doesn’t monetize cleanly?",
+"What are you hiding by being competent at sensible things?",
+"What useless skill knows something your career won’t admit?",
+"What would you practise if no one asked what it was for?",
+"What are you calling ridiculous because nobody pays for it yet?",
+"What secret ability embarrasses your official personality?",
+"What would you do well if dignity stopped supervising you?",
+"What are you refusing to master because it would make you too visible?",
+"What talent did you abandon because it failed to explain itself?",
+"What turns serious if you let yourself be absurd a little longer?",
+"What would your shower thoughts become if you had to act on one?",
+"What are you discovering only when nobody can ask a follow-up?",
+"What does solitude let you know before the manners return?",
+"What thought keeps arriving naked because public life overdresses it?",
+"What are you calling random because it hasn’t been given jurisdiction yet?",
+"What would your mind say if it weren’t interrupted by presentation?",
+"What private question turns stupid the moment you respect it?",
+"What do you only understand when water is louder than language?",
+"What are you calling a passing thought because it threatens permanence?",
+"What would you write down if you trusted the absurd entrance?",
+"What would you ask if the answer had to come from a garden gnome?",
+"What are you dismissing because it looks unserious enough to be honest?",
+"What ridiculous witness would make the room less able to lie?",
+"What would a useless ornament know about staying?",
+"What are you calling decoration when its only job is endurance?",
+"What object became your philosopher by refusing to move?",
+"What would you learn from something with no ambition?",
+"What are you calling foolish because it escaped productivity?",
+"What tiny absurd thing keeps the whole scene human?",
+"What would you preserve if usefulness no longer outranked affection?",
+"What would you ask a zombie version of yourself?",
+"What are you doing automatically that already looks undead?",
+"What hunger keeps walking after the person has gone missing?",
+"What would you stop consuming if appetite had to explain itself?",
+"What routine would survive your personality?",
+"What are you feeding that no longer recognises you?",
+"What part of you keeps moving without consent?",
+"What would your life become if numbness had a face?",
+"What are you calling momentum because aliveness left early?",
+"What would you shoot first in the apocalypse: fear, habit, or politeness?",
+"What would you ask if you woke up where everyone could hear your thoughts?",
+"What are you protecting by keeping your inner weather unpublished?",
+"What thought would ruin your reputation only because it’s honest?",
+"What would stay private if shame were removed?",
+"What are you calling discretion because exposure might free you?",
+"What would people misunderstand first if they heard your mind raw?",
+"What are you hiding that isn’t actually dangerous?",
+"What secret got more powerful than the truth it guards?",
+"What would you stop editing if nobody confused roughness with failure?",
+"What would your first unfiltered sentence be?",
+"What would you ask if every answer came from your childhood bedroom?",
+"What are you still asking from furniture that couldn’t protect you?",
+"What room taught you the wrong size for your life?",
+"What are you calling nostalgia because the original wound had curtains?",
+"What would your old bed say you rehearsed too often?",
+"What part of you is still arranged like a former room?",
+"What would you rearrange if memory stopped owning the floorplan?",
+"What are you keeping because it proves a place existed?",
+"What would home mean if no object could testify?",
+"What are you still storing in a room you left years ago?",
+"What would you ask if your reflection answered one question too honestly?",
+"What are you checking in mirrors that no mirror can report?",
+"What would you stop adjusting if being seen weren’t a trial?",
+"What are you calling appearance because identity needs a surface?",
+"What does your reflection know before your explanation arrives?",
+"What would you change if mirrors showed habits instead of faces?",
+"What are you trying to fix outside because the inside negotiates badly?",
+"What would your face stop doing if it were off duty?",
+"What expression became your public contract?",
+"What would you look like if no one had ever corrected you?",
+"What would you ask if every clock in the house disagreed?",
+"What are you timing that should be felt?",
+"What are you calling late because you obeyed the wrong calendar?",
+"What would you stop rushing if clocks stopped giving moral opinions?",
+"What part of you still believes life begins after the next deadline?",
+"What turns urgent the moment time stops pretending to be unlimited?",
+"What are you calling delay because you prefer imaginary readiness?",
+"What would you do if the hour refused to reset?",
+"What are you measuring because you can’t yet value it?",
+"What would change if your day had to defend itself?",
+"What would you ask if your phone could tell the truth just once?",
+"What are you outsourcing to a device because your attention feels unreliable?",
+"What would your search history say you’re really afraid of?",
+"What question do you keep giving machines because humans might answer back?",
+"What are you calling convenience because dependency sounds unromantic?",
+"What would you remember if reminders stopped rescuing you?",
+"What are you avoiding by being reachable?",
+"What would silence recover if notifications lost citizenship?",
+"What are you calling connection because the device buzzed?",
+"What would you ask if the battery percentage described your soul?",
+"What would you eat forever if appetite had to confess its loyalties?",
+"What are you calling pleasure because repetition became edible?",
+"What craving knows your history better than your principles?",
+"What would your comfort food say you still need?",
+"What are you feeding that hunger never asked for?",
+"What would you refuse if fullness counted as an argument?",
+"What are you calling taste because the body voted before the mind?",
+"What would you choose if no meal could become identity?",
+"What does your favourite food forgive too easily?",
+"What would you stop swallowing if politeness left the table?",
+"What would you ask if your dreams were badly translated instructions?",
+"What are you calling nonsense because it dodges your usual censorship?",
+"What recurring dream keeps applying for a job in your life?",
+"What would your nightmare say if it dropped the special effects?",
+"What are you rehearsing at night that daylight rejects?",
+"What dream image has been more faithful than your plans?",
+"What would you ask sleep if it couldn’t lie in symbols?",
+"What are you calling fear because it arrives wearing fiction?",
+"What stays frightening once the monster costume comes off?",
+"What part of you only speaks when logic is unconscious?",
+"What would you ask if aliens treated your routine as sacred ritual?",
+"What are you doing that only seems normal because everyone nearby does it?",
+"What would look insane described without cultural subtitles?",
+"What habit would you struggle to defend to a patient outsider?",
+"What are you calling civilisation because enough people queued for it?",
+"What would an alien think you worshipped from your calendar?",
+"What part of your life runs on collective pretending?",
+"What would you stop doing if the strangeness became visible again?",
+"What are you calling normal because the tribe signed off on it?",
+"What would you ask if Earth culture lost its publicist?",
+"What would you ask if every stranger remembered you differently?",
+"What stranger has more authority over your life than you admit?",
+"What are you calling a small encounter because it left without paperwork?",
+"What would you say to the stranger who quietly changed your standards?",
+"What do you owe to people who never learned your name?",
+"What are you calling chance because gratitude needs a target?",
+"What memory survives because someone briefly behaved better than expected?",
+"What would you ask the person you never thanked?",
+"What are you still carrying from someone who didn’t stay?",
+"What would your life prove about brief contact?",
+"What would you ask if your worst habit became a tiny employee?",
+"What job did you give your anxiety without reading its résumé?",
+"What part of you keeps showing up late and still gets paid?",
+"What inner employee should have been fired years ago?",
+"What are you delegating to panic because trust feels inefficient?",
+"What would your laziness say if it got a defence?",
+"What habit is secretly middle management?",
+"What are you calling discipline because fear runs the office?",
+"What internal department keeps losing the same file?",
+"What would improve if your mind held a staff meeting?",
+"What would you ask if your life were a badly labelled museum?",
+"What exhibit would explain you better than your autobiography?",
+"What are you preserving because throwing it out would rewrite history?",
+"What would the curator remove from your self-image?",
+"What object would future archaeologists completely misread about you?",
+"What are you displaying that was never meant to be permanent?",
+"What would your archive say you avoided becoming?",
+"What are you calling memory because the label stayed on?",
+"What would you restore if the damage became part of the exhibit?",
+"What would you hide if the museum opened tomorrow?",
+"What would you ask if the world answered only in wrong metaphors?",
+"What are you calling clarity because the metaphor got comfortable?",
+"What comparison has been quietly steering the whole decision?",
+"What would collapse if you stopped describing yourself as a machine?",
+"What are you calling a journey because “mess” has fewer postcards?",
+"What metaphor are you living inside without paying rent?",
+"What would you choose if the story stopped providing scenery?",
+"What are you calling the wrong question because the right one knows your address?",
+"What question keeps knocking after you change the subject?",
+"What are you really asking by needing one more question?",
+"What are you calling a boundary that’s really a dare?",
+"What would you admit if it couldn’t be used against you?",
+"What would embarrass you more: failing, or being seen wanting it?",
+"What are you calling fine that hasn’t been checked in years?",
+"Who gets to stay comfortable because you stayed quiet?",
+"What would you stop performing if the camera were definitely off?",
+"What are you calling a plan that’s really a hiding place?",
+"What would you do if nobody graded the effort?",
+"What are you defending that already lost?",
+"What would you risk if humiliation healed in a week?",
+"What are you calling a standard that’s just a fear in a tie?",
+"What would you say if apology weren’t the goal?",
+"What are you waiting for that already happened?",
+"What changes if you stop flinching first?",
+"What are you calling closure because revenge wasn’t on the menu?",
+"What would you build if no one could call it a phase?",
+"What are you protecting that never protected you?",
+"What would you cut if grief weren’t watching?",
+"What are you calling a relationship that’s mostly logistics?",
+"What would you do if being chosen stopped mattering?",
+"What are you calling tired that’s actually done?",
+"What would you keep if approval ran out tonight?",
+"What confrontation are you rehearsing that will never happen?",
+"What would you stop apologising for if it weren’t a reflex?",
+"What are you calling a question that’s really a complaint?",
+"What would you want if shame took the night off?",
+"What are you calling humble that’s just scared of the spotlight?",
+"What would you finish if no one could improve it?",
+"What are you treating as fragile that’s been through worse?",
+"What would you admit if the other person already knew?",
+"What are you calling a season that became the whole climate?",
+"What would you stop carrying if no one called it loyalty?",
+"What are you calling an accident that you arranged?",
+"What would you say if being misread were free?",
+"What are you keeping warm that should have ended?",
+"What would you choose if the consequence were only yours?",
+"What are you calling support that’s surveillance with snacks?",
+"What would you do if the right time were a story they told you?",
+"What are you calling patience that’s just postponed anger?",
+"What would you risk if you couldn’t blame the timing?",
+"What are you protecting by always being the calm one?",
+"What would you say if the silence cost you nothing?",
+"What are you calling realistic that’s just defeated early?",
+"What would you keep doing if no one ever found out?",
+"What are you calling a memory that’s actually a grudge?",
+"What would you stop measuring if you trusted the answer?",
+"What are you calling a favour that’s really a leash?",
+"What would you build if failure stayed private?",
+"What are you calling fate to avoid signing your name?",
+"What would you admit if competence weren’t the costume?",
+"What are you calling a hobby that’s actually grief?",
+"What would you stop defending if it cost nothing to drop?",
+"What are you calling love that’s really fear of the quiet?",
+"What would you do if no one needed you to be okay?",
+"What decision do you keep un-making?",
+"What would you risk if the worst case were survivable?",
+"What are you protecting by staying a little bit broken?",
+"What would you say if politeness didn’t get a vote?",
+"What are you calling growth that’s just a newer excuse?",
+"What would you keep if nostalgia stopped paying you?",
+"What are you calling a red flag that you find attractive?",
+"What would you do if the version of you they like retired?",
+"What are you calling busy that’s actually hiding?",
+"What would you choose if you couldn’t make it a story later?",
+"What are you defending that you’d mock in someone else?",
+"What would you stop fixing if it weren’t your job?",
+"What are you calling honesty that’s aimed, not offered?",
+"What would you risk if being wrong weren’t fatal?",
+"What are you keeping unfinished so it can stay perfect?",
+"What would you do if the audience left mid-sentence?",
+"What are you calling forgiveness that’s just exhaustion?",
+"What would you say if the other person couldn’t leave?",
+"What goal would you be relieved to fail?",
+"What would you stop chasing if it never looked back?",
+"What are you protecting that wants to be put down?",
+"What would you do if the rule were never enforced?",
+"What are you calling a flaw that’s actually a refusal?",
+"What would you keep if it couldn’t impress anyone?",
+"What are you calling a maybe that’s a no in slow motion?",
+"What would you admit if regret weren’t the punishment?"];
+
+var state={current:null,recent:[],casting:false};
+
+function escapeHtml(s){return String(s).replace(/[&<>]/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[m]})}
+function choose(){
+ var n=CARDS.length,i,t=0;
+ do{ i=Math.floor(Math.random()*n); t++; }while(state.recent.indexOf(i)>=0 && t<60);
+ state.recent.unshift(i); state.recent=state.recent.slice(0,Math.min(20,n-1));
+ return i;
+}
+function lineHtml(s){ return '<span class="line"><span class="cue">&gt;</span>'+escapeHtml(s)+'<span class="caret" aria-hidden="true"></span></span>'; }
+function dump(){
+ if(state.casting) return;
+ state.casting=true;
+ var btn=$('ask'); btn.classList.add('busy');
+ var t=$('text'); t.classList.add('out-fade');
+ setTimeout(function(){
+   var i=choose();
+   state.current=CARDS[i];
+   t.innerHTML=lineHtml(CARDS[i]);
+   var out=t.closest('.output');
+   if(out){ out.classList.remove('quote-hit'); void out.offsetWidth; out.classList.add('quote-hit'); setTimeout(function(){out.classList.remove('quote-hit')},460); }
+   t.classList.remove('out-fade');
+   btn.classList.remove('busy');
+   state.casting=false;
+ },150);
+}
+function copyText(txt){
+ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(copied).catch(function(){fallback(txt)}); }
+ else fallback(txt);
+}
+function copied(){ var c=$('copy'); c.classList.add('ok'); c.textContent='COPIED'; setTimeout(function(){c.classList.remove('ok');c.textContent='COPY'},900); toast('copied'); }
+function fallback(txt){ var ta=document.createElement('textarea'); ta.value=txt; ta.style.position='fixed'; ta.style.left='-9999px'; ta.style.fontSize='16px'; document.body.appendChild(ta); ta.focus(); ta.select(); try{document.execCommand('copy');copied();}catch(e){toast('copy failed');} document.body.removeChild(ta); }
+function show(v){ ['vMain','vAbout'].forEach(function(x){$(x).classList.toggle('on',x===v)}); }
+function toast(s){ var t=$('toast'); t.textContent=s; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(function(){t.classList.remove('on')},1400); }
+
+function bind(){
+ $('ask').addEventListener('click',dump);
+ $('copy').addEventListener('click',function(){ if(state.current) copyText(PREFIX+state.current+'\n\n'+TAG); else toast('press the button first'); });
+ $('clear').addEventListener('click',function(){ state.current=null; var t=$('text'); t.classList.add('out-fade'); setTimeout(function(){ t.innerHTML=lineHtml('What are you actually asking?'); t.classList.remove('out-fade'); },150); var c=$('copy'); c.classList.remove('ok'); c.textContent='COPY'; });
+ $('aboutLink').addEventListener('click',function(){ $('deckCount').textContent=CARDS.length; show('vAbout'); });
+ $('back').addEventListener('click',function(){show('vMain')});
+ $('brand').addEventListener('click',function(){show('vMain')});
+ document.addEventListener('keydown',function(e){
+   if((e.key==='Enter'||e.key===' ')&&$('vMain').classList.contains('on')&&document.activeElement.tagName!=='BUTTON'){ e.preventDefault(); dump(); }
+   if(e.key==='Escape'){ if(!$('vMain').classList.contains('on')) show('vMain'); }
+ });
+ setTimeout(function(){$('screen').classList.remove('power')},700);
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind); else bind();
+})();
+</script>
+</body>
+</html>

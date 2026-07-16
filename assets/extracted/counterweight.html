@@ -1,0 +1,1431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>COUNTERWEIGHT</title>
+<meta name="description" content="COUNTERWEIGHT — a compact text-card app that gives you the strongest fair objection to your position.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2032%2032%27%3E%3Crect%20width%3D%2732%27%20height%3D%2732%27%20rx%3D%277%27%20fill%3D%27%23050607%27%2F%3E%3Ccircle%20cx%3D%2716%27%20cy%3D%2716%27%20r%3D%2712%27%20fill%3D%27%23100f0d%27%20stroke%3D%27%23d6ad5a%27%20stroke-width%3D%271.4%27%2F%3E%3Cpath%20d%3D%27M8%2015h16M12%2015l-4%207h8l-4-7ZM20%2015l-4%207h8l-4-7ZM16%207v18M12%2025h8%27%20fill%3D%27none%27%20stroke%3D%27%23dfe7e5%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3Ccircle%20cx%3D%2716%27%20cy%3D%2715%27%20r%3D%272.5%27%20fill%3D%27%23d6ad5a%27%2F%3E%3C%2Fsvg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Stencil+One&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050607;
+  --panel:#11100e;
+  --panel2:#17130f;
+  --line:#403428;
+  --line2:#7d5435;
+  --glare:#f7efe1;
+  --soft:#d8d1c4;
+  --muted:#9b9183;
+  --dim:#625b51;
+  --tint:#e0964c;
+  --ink:#100806;
+  --blood:#a94f33;
+  --bloodhot:#e0964c;
+  --spark:#f2c16e;
+  --steel:#bcc6c8;
+  --steel2:#6f7a7d;
+}
+*{box-sizing:border-box}
+html{min-height:100%;background:#050607}
+body{
+  margin:0;
+  min-height:100svh;
+  color:var(--soft);
+  font-family:'IBM Plex Mono','Courier New',monospace;
+  padding:clamp(8px,1.8vw,18px);
+  display:flex;
+  align-items:stretch;
+  justify-content:center;
+  background:
+    radial-gradient(760px 420px at 50% -120px,rgba(214,173,90,.15),transparent 68%),
+    radial-gradient(520px 320px at 16% 100%,rgba(143,162,173,.09),transparent 72%),
+    linear-gradient(180deg,#090a09,#050607 68%,#03030300);
+}
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:9;
+  pointer-events:none;
+  opacity:.72;
+  background:
+    repeating-linear-gradient(to bottom,rgba(234,253,255,.018) 0,rgba(234,253,255,.018) 1px,transparent 1px,transparent 6px),
+    radial-gradient(circle at 50% 12%,rgba(224,150,76,.05),transparent 50%);
+}
+.app{
+  align-self:center;
+  width:100%;
+  max-width:840px;
+  background:linear-gradient(145deg,#141411 0%,#090908 56%,#050504 100%);
+  border:1px solid rgba(224,150,76,.26);
+  border-radius:10px;
+  box-shadow:
+    0 0 0 1px #000,
+    0 18px 50px rgba(0,0,0,.86),
+    0 0 44px rgba(224,150,76,.08);
+  padding:clamp(7px,1.4vw,12px);
+}
+.screen{
+  position:relative;
+  overflow:hidden;
+  min-height:calc(100svh - clamp(32px,5vw,54px));
+  padding:clamp(12px,2.2vw,22px);
+  display:flex;
+  flex-direction:column;
+  gap:clamp(12px,2vw,16px);
+  border:1px solid rgba(224,150,76,.24);
+  border-radius:9px;
+  background:
+    radial-gradient(620px 220px at 50% 0%,rgba(234,253,255,.06),transparent 58%),
+    linear-gradient(180deg,#11110e 0%,#090908 60%,#050504 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(234,253,255,.03),
+    inset 0 0 38px rgba(0,0,0,.64);
+}
+.screen.power{animation:powerOn .55s ease-out}
+.screen:before{
+  content:"";
+  position:absolute;
+  inset:8px;
+  z-index:0;
+  pointer-events:none;
+  border:1px solid rgba(224,150,76,.10);
+  border-radius:10px;
+}
+.screen:after{
+  content:"";
+  position:absolute;
+  left:0;right:0;top:-42%;
+  height:35%;
+  z-index:3;
+  pointer-events:none;
+  opacity:.42;
+  background:linear-gradient(180deg,transparent,rgba(234,253,255,.035),rgba(224,150,76,.06),transparent);
+  animation:scan 11s linear infinite;
+}
+.header,.view,.footer{position:relative;z-index:1}
+.header{
+  text-align:center;
+  padding:clamp(7px,1.4vw,12px) 0 clamp(10px,1.8vw,16px);
+  border-bottom:1px solid rgba(224,150,76,.20);
+  overflow:hidden;
+}
+.brand{width:min(100%,760px);margin:0 auto;cursor:pointer}
+.logo{display:inline-flex;flex-direction:column;align-items:center;gap:.1em;max-width:100%}
+h1{
+  margin:0;
+  font-family:'Saira Stencil One','IBM Plex Mono',monospace;
+  font-weight:400;
+  text-transform:uppercase;
+  color:var(--glare);
+  font-size:clamp(2.55rem,13.8vw,4.75rem);
+  line-height:.78;
+  letter-spacing:.045em;
+  text-shadow:0 0 10px rgba(234,253,255,.36),0 0 34px rgba(224,150,76,.16);
+}
+h1 .title-line{display:block;white-space:nowrap}
+h1 .it{color:var(--bloodhot);text-shadow:0 0 11px rgba(197,212,220,.58),0 0 32px rgba(214,173,90,.20);animation:itFlick 5.2s steps(1,end) infinite}
+h1 .dot{color:var(--tint)}
+.subtitle-bar{
+  width:min(100%,620px);
+  margin:12px auto 0;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  color:#d8a15f;
+  font-size:clamp(.66rem,2.55vw,.78rem);
+  text-transform:uppercase;letter-spacing:.105em;
+}
+.subtitle-bar:before,.subtitle-bar:after{content:"";height:1px;flex:1 1 auto;background:linear-gradient(90deg,transparent,rgba(224,150,76,.38))}
+.subtitle-bar:after{background:linear-gradient(90deg,rgba(224,150,76,.38),transparent)}
+.subtitle-bar span{padding:5px 11px;border:1px solid rgba(224,150,76,.32);border-radius:999px;background:rgba(224,150,76,.055);color:#f0d3a0;box-shadow:inset 0 0 18px rgba(0,0,0,.22)}
+.status{margin-top:10px;display:flex;justify-content:center;gap:7px;flex-wrap:wrap;color:var(--dim);font-size:.68rem;text-transform:uppercase;letter-spacing:.04em}
+.status span{padding:4px 7px;border:1px solid rgba(224,150,76,.16);border-radius:3px;background:rgba(0,0,0,.2)}
+.status b{font-weight:normal}
+.status .glare{color:var(--glare)}.status .tint{color:var(--tint)}.status .blood{color:var(--bloodhot)}
+.view{flex:1;display:none;flex-direction:column;gap:clamp(11px,1.8vw,15px)}
+.view.on{display:flex}
+.primary{display:flex;flex-direction:column}
+#ask{
+  position:relative;
+  width:100%;
+  min-height:clamp(78px,14svh,96px);
+  border:1px solid rgba(224,150,76,.62);
+  border-radius:6px;
+  background:
+    radial-gradient(220px 80px at 50% 0%,rgba(247,239,225,.10),transparent 72%),
+    linear-gradient(90deg,rgba(224,150,76,.18),transparent 24%,transparent 76%,rgba(214,173,90,.15)),
+    linear-gradient(180deg,#2c2119 0%,#1b1511 48%,#100d0b 100%);
+  color:#f7efe1;
+  font-family:'Saira Stencil One',Impact,sans-serif;
+  font-weight:400;
+  font-size:clamp(1.18rem,5.8vw,2.05rem);
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  text-shadow:0 0 10px rgba(224,150,76,.36),0 1px 0 #000;
+  cursor:pointer;
+  box-shadow:
+    0 0 0 2px #000,
+    0 8px 0 rgba(0,0,0,.78),
+    0 0 34px rgba(224,150,76,.16),
+    inset 0 1px 0 rgba(247,239,225,.16),
+    inset 0 -16px 24px rgba(0,0,0,.36);
+}
+#ask:after{content:"FAIR CASE";position:absolute;right:12px;bottom:7px;font-size:.58rem;letter-spacing:.2em;color:rgba(242,193,110,.58);text-shadow:none}
+#ask:hover{filter:brightness(1.08) saturate(1.04);border-color:rgba(242,193,110,.78);box-shadow:0 0 0 2px #000,0 8px 0 rgba(0,0,0,.78),0 0 42px rgba(224,150,76,.24),inset 0 1px 0 rgba(247,239,225,.22),inset 0 -14px 22px rgba(0,0,0,.32)}
+#ask:active{transform:translateY(3px) scale(.995);box-shadow:0 0 0 2px #000,0 4px 0 rgba(0,0,0,.82),0 0 26px rgba(224,150,76,.22),inset 0 0 18px rgba(0,0,0,.46)}
+#ask.busy{animation:btnGlitch .09s steps(2,end) 6!important}
+.output-shell{
+  position:relative;
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  padding-top:0;
+}
+.output{
+  position:relative;
+  overflow:hidden;
+  flex:1;
+  min-height:clamp(240px,42svh,370px);
+  display:flex;align-items:flex-start;justify-content:flex-start;
+  padding:clamp(72px,10vw,86px) clamp(18px,4vw,34px) clamp(22px,4vw,34px);
+  border:1px solid rgba(224,150,76,.26);
+  border-radius:9px;
+  background:
+    radial-gradient(520px 210px at 50% 0%,rgba(234,253,255,.06),transparent 62%),
+    linear-gradient(180deg,rgba(234,253,255,.022),rgba(0,0,0,.22)),
+    #090806;
+  box-shadow:inset 0 0 0 1px rgba(234,253,255,.03),inset 0 0 42px rgba(0,0,0,.5),0 1px 0 rgba(234,253,255,.05);
+}
+.output:after{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.18;
+  background:
+    linear-gradient(90deg,transparent 0,rgba(234,253,255,.06) 50%,transparent 100%),
+    repeating-linear-gradient(135deg,rgba(234,253,255,.022) 0,rgba(234,253,255,.022) 1px,transparent 1px,transparent 8px);
+}
+.qtag{
+  position:absolute;
+  z-index:5;
+  top:clamp(14px,2.6vw,22px);
+  left:50%;
+  width:clamp(42px,7.2vw,54px);
+  height:clamp(42px,7.2vw,54px);
+  transform:translateX(-50%);
+  pointer-events:none;
+  color:var(--tint);
+  filter:drop-shadow(0 0 12px rgba(214,173,90,.22));
+  animation:cwIdleTop 5.8s ease-in-out infinite;
+}
+.qtag:before,.qtag:after{
+  content:"";
+  position:absolute;
+  inset:5px;
+  border:1px solid rgba(214,173,90,.32);
+  border-radius:50%;
+  opacity:.55;
+}
+.qtag:after{inset:10px;border-color:rgba(197,212,220,.24);opacity:.38}
+.qtag svg{width:100%;height:100%;display:block;overflow:visible}
+.qtag .cw-back{fill:rgba(5,6,7,.72);stroke:rgba(214,173,90,.38);stroke-width:1.4}
+.qtag .cw-stem,.qtag .cw-beam,.qtag .cw-foot{fill:none;stroke:var(--steel);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.qtag .cw-pan{fill:rgba(214,173,90,.10);stroke:var(--tint);stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
+.qtag .cw-dot{fill:var(--spark)}
+.qtag .cw-spark{fill:none;stroke:var(--steel);stroke-width:2.25;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 6px rgba(188,198,200,.32));animation:cwSpark 2.9s steps(1,end) infinite}
+.qtag .cw-rig{transform-origin:32px 19px;animation:cwRig 4.6s ease-in-out infinite}
+.qtag .cw-left{animation:cwPanL 4.6s ease-in-out infinite}
+.qtag .cw-right{animation:cwPanR 4.6s ease-in-out infinite}
+.output:before{display:none}
+.output-shell.quote-hit .output{animation:probeFlash .42s ease-out 1}
+.output-shell.quote-hit .qtag{animation:cwHit .46s steps(2,end) 1!important}
+.output-shell.quote-hit .qtag:before{animation:cwRing .46s ease-out 1}
+.output-shell.quote-hit .qtag:after{animation:cwRing2 .46s ease-out 1}
+.output-shell.quote-hit .qtag .cw-rig{animation:cwRigHit .46s cubic-bezier(.2,.85,.2,1) 1!important}
+.output-shell.quote-hit .qtag .cw-spark{animation:cwSparkHit .46s steps(1,end) 1!important}
+@keyframes probeFlash{0%{box-shadow:inset 0 0 0 1px rgba(214,173,90,.52),inset 0 0 42px rgba(214,173,90,.15),0 0 22px rgba(214,173,90,.16)}100%{box-shadow:inset 0 0 0 1px rgba(234,253,255,.03),inset 0 0 42px rgba(0,0,0,.5),0 1px 0 rgba(234,253,255,.05)}}
+@keyframes cwIdleTop{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-2px)}}
+@keyframes cwRig{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
+@keyframes cwPanL{0%,100%{transform:translateY(1px)}50%{transform:translateY(-2px)}}
+@keyframes cwPanR{0%,100%{transform:translateY(-2px)}50%{transform:translateY(1px)}}
+@keyframes cwOrbit{to{stroke-dashoffset:-32}}
+@keyframes cwSpark{0%,82%,100%{opacity:.34}83%{opacity:1}85%{opacity:.12}87%{opacity:.88}}
+@keyframes cwHit{0%{transform:translateX(-50%) translate(0,0) scale(1)}20%{transform:translateX(-50%) translate(-3px,2px) skewX(-6deg) scale(1.04)}40%{transform:translateX(-50%) translate(3px,-2px) skewX(6deg) scale(.98)}68%{transform:translateX(-50%) translate(-1px,1px) scale(1.06)}100%{transform:translateX(-50%) translate(0,0) scale(1)}}
+@keyframes cwRigHit{0%{transform:rotate(0)}35%{transform:rotate(-15deg)}72%{transform:rotate(12deg)}100%{transform:rotate(0)}}
+@keyframes cwSparkHit{0%,100%{opacity:.45}20%{opacity:1}36%{opacity:.16}52%{opacity:1}70%{opacity:.24}}
+@keyframes cwRing{0%{transform:scale(.85);opacity:.8;border-color:rgba(214,173,90,.62)}100%{transform:scale(1.45);opacity:0}}
+@keyframes cwRing2{0%{transform:scale(.9);opacity:.65;border-color:rgba(197,212,220,.52)}100%{transform:scale(1.9);opacity:0}}
+#text{
+  position:relative;z-index:2;width:100%;max-width:660px;margin-top:0;text-align:left;
+  color:#f3ead9;
+  font-size:clamp(1.12rem,4.7vw,1.62rem);line-height:1.52;
+  text-shadow:0 0 12px rgba(224,150,76,.24);
+  transition:opacity .16s ease;
+}
+#text.out-fade{opacity:0}
+.line{display:block}
+.cue{display:none}
+.caret{display:inline-block;width:.6ch;height:1.02em;margin-left:.22ch;vertical-align:-.16em;background:var(--bloodhot);box-shadow:0 0 9px rgba(255,180,84,.6);animation:caret 1.06s steps(1,end) infinite}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+#text .hot{color:var(--bloodhot);text-shadow:0 0 10px rgba(255,180,84,.45)}
+.controls{display:flex;gap:8px}
+#copy,#clear,.controls .flink{min-height:44px;padding:12px 8px;border-radius:5px;font-family:inherit;cursor:pointer;text-transform:uppercase;font-weight:bold;letter-spacing:.1em;font-size:.8rem;box-shadow:inset 0 0 0 1px rgba(234,253,255,.025)}
+#copy{flex:1;color:var(--glare);background:linear-gradient(180deg,#181410,#0e0c0a);border:1px solid rgba(224,150,76,.35)}
+#copy:hover{background:#1d1712;border-color:rgba(234,253,255,.52)}
+#copy.ok{color:var(--tint);border-color:var(--tint);background:#19130f}
+#clear{flex:1;color:#938779;background:linear-gradient(180deg,#100e0c,#090806);border:1px solid rgba(63,208,216,.2)}
+#clear:hover{color:var(--soft);border-color:rgba(224,150,76,.42);background:#17110e}
+.about{
+  flex:1;overflow:auto;min-height:clamp(260px,52svh,420px);
+  border:1px solid rgba(224,150,76,.24);border-radius:14px;
+  background:
+    radial-gradient(440px 180px at 50% 0%,rgba(224,150,76,.05),transparent 66%),
+    linear-gradient(180deg,rgba(234,253,255,.022),rgba(0,0,0,.24)),
+    #090806;
+  padding:20px;color:#ded5c1;white-space:pre-line;font-size:clamp(.9rem,3vw,1rem);line-height:1.6;
+}
+.about b{color:var(--glare);font-weight:normal}
+.footer{margin-top:auto;padding-top:10px;border-top:1px dashed rgba(63,208,216,.2);color:var(--dim);font-size:.66rem;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.footer .flink{background:none;border:1px solid transparent;border-radius:7px;color:#d6ad5a;padding:4px 6px;font-size:.66rem;letter-spacing:.1em;cursor:pointer}
+.footer .flink:hover{color:var(--glare);border-color:rgba(224,150,76,.28);background:rgba(224,150,76,.05)}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#16110e;color:var(--glare);border:1px solid rgba(224,150,76,.62);padding:9px 14px;z-index:50;font-size:.86rem;display:none;letter-spacing:.04em;box-shadow:0 10px 30px rgba(0,0,0,.55)}
+.toast.on{display:block}
+button:focus-visible,.footer .flink:focus-visible,#ask:focus-visible{outline:2px solid var(--tint);outline-offset:3px}
+@keyframes scan{to{transform:translateY(340%)}}
+@keyframes powerOn{0%{opacity:0;transform:scale(.985)}100%{opacity:1;transform:none}}
+@keyframes btnGlitch{0%{transform:translate(-3px,2px) skewX(-4deg)}50%{transform:translate(3px,-2px) skewX(4deg)}100%{transform:translate(0,0)}}
+
+@media(max-width:560px){
+  body{padding:7px;align-items:stretch}
+  .app{align-self:stretch;border-radius:14px;padding:6px}
+  .screen{min-height:calc(100svh - 14px);padding:11px;border-radius:11px;gap:11px}
+  .screen:before{inset:6px;border-radius:8px}
+  .header{padding-top:5px;padding-bottom:10px}
+  h1{font-size:clamp(2.35rem,15.2vw,3.7rem);letter-spacing:.035em;line-height:.76}
+  .subtitle-bar span{padding:4px 8px}
+  .status{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;font-size:.55rem}
+  .status span{padding:4px 4px;text-align:center;white-space:nowrap}
+  #ask{min-height:76px;font-size:clamp(1.08rem,6vw,1.55rem)}
+  .output-shell{padding-top:0}
+  .output{min-height:260px;padding:70px 14px 22px}
+  .qtag{width:42px;height:42px;top:14px;left:50%}
+  #text{font-size:clamp(1.08rem,5.4vw,1.36rem);line-height:1.46}
+  .controls{gap:7px}
+  #copy,#clear,.controls .flink{min-height:42px;font-size:.76rem}
+  .footer{font-size:.58rem;gap:6px}
+}
+@media(max-width:360px){
+  .status{grid-template-columns:1fr;display:flex}
+  .status span{font-size:.52rem}
+  h1{font-size:2.1rem;line-height:.78}
+}
+.output-shell.quote-hit #text{animation:qGlitch .24s steps(2,end) 1}
+@keyframes qGlitch{
+  0%{transform:translateX(0);text-shadow:0 0 12px rgba(224,150,76,.24)}
+  30%{transform:translateX(-2px);text-shadow:-2px 0 0 rgba(214,173,90,.7),2px 0 0 rgba(197,212,220,.58)}
+  60%{transform:translateX(2px);text-shadow:2px 0 0 rgba(214,173,90,.62),-2px 0 0 rgba(197,212,220,.52)}
+  100%{transform:translateX(0);text-shadow:0 0 12px rgba(224,150,76,.24)}
+}
+@keyframes itFlick{0%,92%,100%{opacity:1}93%{opacity:.45}94%{opacity:1}96%{opacity:.6}97%{opacity:1}}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<main class="app">
+<section class="screen power" id="screen" aria-label="COUNTERWEIGHT terminal">
+<header class="header">
+<div class="brand" id="brand" title="Return"><span class="logo"><h1><span class="title-line">COUNTER</span><span class="title-line it">WEIGHT</span></h1></span><div class="subtitle-bar"><span>the fair objection</span></div></div>
+<div class="status"><span>CASE: <b class="blood">AGAINST</b></span><span>FAIRNESS: <b class="tint">ON</b></span><span>PROOF: <b class="glare">DUE</b></span></div>
+</header>
+
+<div class="view on" id="vMain">
+  <div class="primary"><button id="ask" type="button">WEIGH THE CASE</button></div>
+  <div class="output-shell"><div class="output"><span class="qtag cw-icon" aria-hidden="true"><svg viewBox="0 0 64 64"><circle class="cw-back" cx="32" cy="32" r="25"/><g class="cw-rig"><path class="cw-stem" d="M32 11v41"/><path class="cw-beam" d="M17 20h30"/><path class="cw-pan cw-left" d="M20 20l-8 16h16l-8-16Z"/><path class="cw-pan cw-right" d="M44 20l-8 16h16l-8-16Z"/><path class="cw-foot" d="M24 52h16"/><circle class="cw-dot" cx="32" cy="20" r="4"/></g><path class="cw-spark" d="M48 8l-7 10h7l-6 10"/></svg></span><div id="text" aria-live="polite"><span class="line">the fair objection has not spoken yet.<span class="caret" aria-hidden="true"></span></span></div></div></div>
+  <div class="controls"><button id="copy" type="button">COPY</button><button id="clear" type="button">CLEAR</button></div>
+</div>
+
+<div class="view" id="vAbout">
+  <div class="about">&gt; COUNTERWEIGHT  &middot;  the fair objection
+&gt; ON FILE: <b id="deckCount">999</b> opposing cases you have not answered yet
+
+COUNTERWEIGHT doesn&rsquo;t flatter your position. It argues the other side at its strongest.
+
+One button. One line. The strongest case against the thing you walked in defending &mdash; the objection with evidence, the exception that survives, the cost you left in a footnote.
+
+Most positions don&rsquo;t fail because an enemy attacks them. They fail because the fairest opposing case was never allowed into the room.
+
+Use it on a plan, belief, draft, decision, grievance, argument, project, or any moment when being right has become too comfortable.
+
+Nothing saved. No account. No bad faith. Just the weight-test.
+
+&copy; HRF 2026. All rights reserved.
+
+[ &larr; RETURN ]  or press ESC</div>
+  <div class="controls"><button id="back" class="flink" type="button" style="flex:1;padding:14px;border:1px solid var(--line);border-radius:8px;color:var(--muted)">&larr; RETURN</button></div>
+</div>
+
+<div class="footer"><span>&copy; HRF 2026. All rights reserved.</span><button class="flink" id="aboutLink" type="button">[ ABOUT ]</button></div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+var PREFIX='';
+var TAG='COUNTERWEIGHT';
+var CARDS=["The strongest argument against you: your certainty has not met its burden of proof.",
+"The case for stopping: continuing now protects the fantasy more than the work.",
+"The opposing case is serious: your resistance may be information, not weakness.",
+"The strongest argument against your plan: it stars a future you with a poor attendance record.",
+"The case against your urgency: the deadline may be real, but the panic is ornamental.",
+"The strongest argument against continuing: effort has become your proof, and effort proves very little.",
+"The case for doing less: most of the extra work is there to protect you from judgement.",
+"The inconvenient case: the objection you keep dismissing is the part that has evidence.",
+"The strongest argument against your certainty: you have not seriously tried to be wrong.",
+"The case for the boring option: it has survived without needing theatre.",
+"The opposing case is not stupid: the simple objection explains more than your elaborate defence.",
+"The strongest argument against your anger: it may be accurate about harm and wrong about remedy.",
+"The case for their position: they may be protecting a cost you are pretending not to see.",
+"The strongest argument against your plan: it asks reality to behave like your outline.",
+"The inconvenient case: you are calling it strategy because fear sounds too small.",
+"The case for cutting it: the best part is no longer carrying the whole thing.",
+"The strongest argument against adding more: the missing piece may be discipline, not material.",
+"The case for subtraction: complexity is currently doing the work of courage.",
+"The strongest argument against your explanation: it accounts for everything except your behaviour.",
+"The other side is defensible: they are judging the pattern, not the apology.",
+"The case against your innocence: impact does not require intention to be real.",
+"The strongest argument against your resentment: you delayed the sentence until it became poisonous.",
+"The case for directness: kindness has started to rot inside tact.",
+"The opposing case is fair: silence has been cheaper for you than honesty.",
+"The strongest argument against staying: loyalty has become a name for unmanaged fear.",
+"The case for leaving: the arrangement only works when you disappear.",
+"The strongest argument against leaving: you may be mistaking discomfort for danger.",
+"The case for repair: the damage is real, but not yet conclusive.",
+"The strongest case against repair: remorse without structure is just weather.",
+"The opposing case has weight: trust cannot be rebuilt with explanations alone.",
+"The case for refusing: the request assumes your availability without earning it.",
+"The strongest argument against saying yes: your consent is being extracted through guilt.",
+"The case for saying yes: refusal has become your favourite disguise for fear.",
+"The strongest argument against your boundary: it may be a wall built where a sentence would do.",
+"The case for your boundary: the person objecting to it benefited from its absence.",
+"The opposing case is serious: your flexibility has trained people not to believe you.",
+"The strongest argument against your patience: it has no exit criteria.",
+"The case against your standards: some of them are old disappointments wearing formal clothes.",
+"The case for your standards: lowering them would only make the wound easier to repeat.",
+"The strongest argument against your taste: it may be fear with cultural vocabulary.",
+"The case for the plain version: clarity is carrying more weight than cleverness.",
+"The strongest argument against the clever version: it makes you harder to help.",
+"The case for the ugly draft: it is at least in contact with the work.",
+"The strongest argument against perfection: it keeps producing nothing with excellent manners.",
+"The case for shipping: the object can only be improved after it exists.",
+"The strongest argument for not shipping: you are calling impatience a launch.",
+"The case against your block: it has become a judge with no credentials.",
+"The case for your block: it is warning you that the terms are unsustainable.",
+"The strongest argument against pushing through: you have already confused discipline with self-harm.",
+"The case for pushing through: the fear has had the microphone long enough.",
+"The opposing case is practical: five minutes of contact would teach more than another theory.",
+"The strongest argument against more research: you are feeding the fear that only preparation counts.",
+"The case for research: the missing evidence is not decorative this time.",
+"The strongest argument against your intuition: it has mistaken familiarity for truth before.",
+"The case for your intuition: the body noticed the pattern before the story caught up.",
+"The strongest argument against trusting your memory: it has improved the story in your favour.",
+"The case for believing the pattern: repetition has already done most of the arguing.",
+"The opposing case is uncomfortable: their criticism is badly delivered, not automatically false.",
+"The strongest argument against dismissing them: contempt is easier than engagement.",
+"The case for dismissing them: not every objection deserves a courtroom.",
+"The strongest argument against defending yourself: the defence is louder than the evidence.",
+"The case for defending yourself: silence is useful only when the record is not being rewritten.",
+"The opposing case is fair: you want the benefit of ambiguity without paying for clarity.",
+"The strongest argument against your complaint: you have not yet made a clean request.",
+"The case for your complaint: a system that requires constant translation is already failing.",
+"The strongest argument against blaming the system: your local choices still matter.",
+"The case against blaming yourself: the system was built so the bill always looks personal.",
+"The strongest argument against your optimism: it has no plan for friction.",
+"The case for optimism: despair is currently overclaiming the evidence.",
+"The strongest argument against your pessimism: it protects you from embarrassment more than harm.",
+"The case for pessimism: someone needs to price the downside before the room gets drunk on hope.",
+"The strongest argument against your ambition: it may be revenge with a calendar.",
+"The case for ambition: wanting more is not automatically vanity.",
+"The strongest argument against your modesty: it is a polite way to vanish.",
+"The case for modesty: scale is not the same thing as value.",
+"The strongest argument against the big plan: it lets you avoid the first small act.",
+"The case for the big plan: the small acts need somewhere to point.",
+"The opposing case is strong: you keep changing tools because changing behaviour is harder.",
+"The strongest argument against the new tool: it may only professionalise the same avoidance.",
+"The case for the new tool: the old environment has already trained the old failure.",
+"The strongest argument against your routine: it preserves order without producing truth.",
+"The case for routine: freedom has repeatedly failed without scaffolding.",
+"The strongest argument against improvising: you call it freedom when it spares you measurement.",
+"The case for improvising: the plan has become a substitute for contact.",
+"The strongest argument against your confidence: it grows when the evidence gets thinner.",
+"The case for confidence: no decision arrives with perfect clearance.",
+"The strongest argument against doubt: it has become a luxury you use to postpone consequence.",
+"The case for doubt: conviction has not yet earned custody of the decision.",
+"The strongest argument against your interpretation: it gives you exactly the role you prefer.",
+"The case for their interpretation: it explains the facts without flattering you.",
+"The strongest argument against your forgiveness: it is being used to avoid naming the damage.",
+"The case for forgiveness: punishment has stopped producing information.",
+"The strongest argument against your loyalty: it has survived by ignoring evidence.",
+"The case for loyalty: not everything difficult is a betrayal.",
+"The strongest argument against your independence: it sometimes looks like fear of being owed.",
+"The case for independence: the help being offered comes with invisible terms.",
+"The strongest argument against the safe choice: you never learn the risk was survivable.",
+"The case for the safe choice: not every life has to be organised around proving fear wrong.",
+"The strongest argument against the risk: you are romanticising consequences you have not priced.",
+"The counterweight: the objection doesn’t defeat your position; it removes what was never holding it up.",
+"The case against your rule: if it fails the first painful exception, it is not yet a rule.",
+"The strongest refutation: you call it a principle, but you suspend it whenever it costs you status.",
+"The opposing case: your definition only works while nobody inconvenient enters the room.",
+"The case against your certainty: it survives examples, not counterexamples.",
+"The strongest argument against your claim: it explains the easy case and collapses at the human one.",
+"The cross-examination is simple: if you believe this generally, apply it where it embarrasses you.",
+"The case against your position: you have confused a slogan with a tested definition.",
+"The strongest objection: your answer sounds universal because you have hidden the exception.",
+"The opposing case: you are defending the clean version because the real version contradicts you.",
+"The case against your confidence: you have not yet let your belief meet its hardest case.",
+"The strongest argument against your fairness: your scale changes when you are the one being weighed.",
+"The case against your mercy: it appears only when consequences start approaching you.",
+"The opposing case: you call it honesty when you deliver it and cruelty when it returns.",
+"The strongest refutation: your standard depends on who is holding the weapon.",
+"The case against your loyalty: it becomes optional the moment truth becomes expensive.",
+"The opposing case: if the same act is noble for you and selfish for them, your rule is not moral.",
+"The strongest argument against your outrage: it exempts your own side from the law it announces.",
+"The case against your patience: it is praised as virtue only because nobody has asked what it enables.",
+"The opposing case: your forgiveness is generous in theory and avoidant in practice.",
+"The strongest refutation: your kindness disappears exactly where it would become useful.",
+"The case against your boundary: you call it sacred, but move it whenever approval knocks.",
+"The case for their objection: your boundary was not stated until resentment needed evidence.",
+"The opposing case: you treat silence as consent when it benefits you and as harm when it costs you.",
+"The strongest argument against your innocence: you understood enough to enjoy the advantage.",
+"The case against your explanation: it proves why you did it, not why it was acceptable.",
+"The opposing case: an understandable mistake is still a mistake with consequences.",
+"The strongest refutation: you want context for yourself and conclusions for everyone else.",
+"The case against your judgement: you are using one bad example as if it were a definition.",
+"The opposing case: your evidence is real, but your conclusion is overfed.",
+"The strongest argument against your complaint: it wants to be believed without being checked.",
+"The case against your grievance: the wound is real; the verdict still has to be earned.",
+"The opposing case: the pain was real, so you made it a licence.",
+"The strongest refutation: being hurt explains the force of your claim, not the truth of it.",
+"The case against your anger: it has found the guilty party too quickly.",
+"The opposing case: the exception you dismiss is the exact place your theory should have worked.",
+"The strongest argument against your optimism: it calls the bridge safe because the first step held.",
+"The case against your pessimism: it calls the whole road closed because one gate was locked.",
+"The opposing case: you are generalising from injury and calling it wisdom.",
+"The strongest refutation: your caution has become a universal law written from one incident.",
+"The case against your hope: it has not explained the previous collapse.",
+"The case against your despair: it has not explained the thing that still survives.",
+"The opposing case: your conclusion ignores the evidence that did not fit the mood.",
+"The strongest argument against your realism: it selects facts that make courage look childish.",
+"The case against your dream: it selects feelings that make logistics look vulgar.",
+"The opposing case: your plan is brave only because someone else absorbs the risk.",
+"The strongest refutation: your sacrifice is noble only if the person affected consented to it.",
+"The case against your generosity: it becomes less generous when refusal is punished.",
+"The opposing case: the gift is not clean if it quietly invoices the future.",
+"The strongest argument against your help: it keeps you powerful and them grateful.",
+"The case against refusing help: independence loses its shine when everyone works around your pride.",
+"The opposing case: you are calling it self-respect because fear of need sounds worse.",
+"The strongest refutation: your independence fails if nobody is available to admire it.",
+"The case against your humility: it disappears the moment someone else receives credit.",
+"The opposing case: your modesty is often ambition with the lights off.",
+"The strongest argument against your ambition: it claims purpose, but behaves like revenge.",
+"The case for your ambition: wanting more is not disproved by the fact that envy noticed first.",
+"The opposing case: your restraint may be fear pretending to have taste.",
+"The strongest refutation: your taste refuses too conveniently what would expose you.",
+"The case against your seriousness: it protects you from the vulnerability of play.",
+"The case against your playfulness: it protects you from the discipline of finishing.",
+"The opposing case: your joke becomes weak when it always arrives before responsibility.",
+"The strongest argument against your depth: it cannot survive a plain sentence.",
+"The case against your simplicity: it may be erasing exactly what needed care.",
+"The opposing case: if clarity removes the wound, it is tidiness, not truth.",
+"The strongest refutation: if complexity hides the centre, it is fog, not depth.",
+"The case against your draft: the part you love is making the whole less honest.",
+"The opposing case: the ugly sentence may be the only one not lying.",
+"The strongest argument against polishing: the surface is improving while the structure stays false.",
+"The case against cutting: the excess may be where the pulse still lives.",
+"The opposing case: your edit improves elegance and weakens evidence.",
+"The strongest refutation: your project claims urgency but behaves like a museum.",
+"The case against quitting: the first true difficulty is not the same as a verdict.",
+"The case for quitting: endurance is not proof that the object deserves to live.",
+"The opposing case: sunk cost is currently speaking in the voice of loyalty.",
+"The strongest argument against continuing: the original purpose has already left.",
+"The case for continuing: the new purpose may be better than the original one.",
+"The opposing case: you are defending the plan because revising it would expose the false premise.",
+"The strongest refutation: if the plan cannot survive new evidence, it was not a plan.",
+"The case against changing course: novelty has become your favourite escape route.",
+"The case for changing course: consistency is not virtue when the evidence has moved.",
+"The opposing case: you call it integrity when it may only be reluctance to update.",
+"The strongest argument against your certainty: you have made changing your mind look like humiliation.",
+"The case against their certainty: they have made doubt look like betrayal.",
+"The opposing case: their disagreement isn’t stupidity; it’s your premise meeting daylight.",
+"The strongest refutation: if you cannot state their case well, you have not defeated it.",
+"The case against your victory: you won against the weakest version and called it understanding.",
+"The opposing case: the real objection has not yet been answered, only outperformed.",
+"The strongest argument against your rhetoric: it persuades faster than it proves.",
+"The case against their rhetoric: eloquence is doing work that evidence should do.",
+"The opposing case: the beautiful argument still has to survive the ugly example.",
+"The strongest refutation: your moral rule fails the moment affection enters the case.",
+"The case against your exception: it is just self-interest wearing a difficult hat.",
+"The opposing case: not every exception is corruption; some are where the rule learns humility.",
+"The strongest argument against your rule-following: it returns the weapon because the receipt says so.",
+"The case against your flexibility: it keeps bending in the direction of convenience.",
+"The opposing case: courage is not endurance if the endurance is foolish.",
+"The strongest refutation: wisdom is not caution if caution never risks anything.",
+"The case against your justice: it speaks truth and pays debts without asking who will be harmed.",
+"The opposing case: if your virtue produces vice in the hard case, the definition is wrong.",
+"The counterweight: no enemy defeated your claim; one honest exception did.",
+"The strongest argument against you: you made the claim and handed everyone else the proof.",
+"The case for their doubt: disbelief is not a failure until your evidence gives it something to answer.",
+"The countercase is procedural: your conclusion is moving faster than your exhibits.",
+"The strongest objection: you are treating confidence as if it were sworn testimony.",
+"The case against your certainty: the record does not yet support the sentence you want to pass.",
+"The opposing case is admissible: your best evidence still explains less than your tone implies.",
+"The strongest argument against you: you have mistaken a good story for a proven case.",
+"The case for cross-examination: the claim sounds strongest before anyone asks for dates.",
+"The counterweight: your position has charisma, but the facts are underfed.",
+"The strongest objection: you keep objecting to the witness because you dislike the testimony.",
+"The case against your argument: it wins by pressure where it should win by proof.",
+"The opposing case is fair: you have not distinguished what happened from what it meant.",
+"The strongest argument against your version: it edits motive into evidence.",
+"The case for their resistance: they are not denying your feeling; they are disputing your conclusion.",
+"The countercase is simple: the harm may be real and your theory of blame may still be wrong.",
+"The strongest objection: your argument depends on treating one example as a verdict.",
+"The case against your pattern: three repetitions are evidence, not yet destiny.",
+"The opposing case has weight: the exception you wave away is exactly where your rule should hold.",
+"The strongest argument against your complaint: you are asking sympathy to do the work of proof.",
+"The case for their scepticism: a wound can explain the accusation without proving it.",
+"The counterweight: your pain belongs in evidence, but not alone on the bench.",
+"The strongest objection: you have confused plausibility with demonstration.",
+"The case against your defence: “I meant well” is mitigation, not acquittal.",
+"The opposing case is inconvenient: intention lowers the sentence, but impact proves the event.",
+"The strongest argument against your innocence: you benefited too neatly from not knowing.",
+"The case for their suspicion: ignorance becomes less persuasive when it repeats.",
+"The countercase: you are calling it a misunderstanding because mistake sounds less expensive.",
+"The strongest objection: your apology is arguing for release before proving repair.",
+"The case against forgiveness: it is being requested as a shortcut around consequence.",
+"The case for forgiveness: punishment has stopped producing truth.",
+"The strongest argument against staying angry: the grudge has become more loyal than useful.",
+"The case for anger: calm has been used too often to close the file.",
+"The counterweight: outrage is not wrong, but it still has to propose a remedy.",
+"The strongest objection: you are cross-examining their failure and declining to testify about your own.",
+"The case against your accusation: it prosecutes motive without proving knowledge.",
+"The opposing case is serious: incompetence explains more than malice in this record.",
+"The strongest argument against giving them credit: incompetence can still cause real damage.",
+"The case for their excuse: not every bad outcome proves bad faith.",
+"The countercase: not every explanation is an escape attempt.",
+"The strongest objection: you are treating a fallacy as harmless because it flatters your side.",
+"The case against your rhetoric: it makes the weak evidence sound better dressed.",
+"The opposing case is sharp: your analogy is doing more work than your facts.",
+"The strongest argument against your analogy: the two cases rhyme but do not match.",
+"The case for their analogy: it reveals the structure you are trying to keep local.",
+"The counterweight: your metaphor is useful only until it starts replacing evidence.",
+"The strongest objection: you moved the goalposts and called the new field nuance.",
+"The case against your standard: it rises whenever someone else meets it.",
+"The opposing case is fair: you keep demanding precision from them and accepting vibes from yourself.",
+"The strongest argument against your side: it wins only after lowering the standard of proof.",
+"The case for the other side: their weaker rhetoric is still carrying stronger evidence.",
+"The countercase: your opponent can be annoying and correct in the same sentence.",
+"The strongest objection: contempt is letting you skip the argument.",
+"The case against dismissal: a badly phrased objection can still locate a real fault.",
+"The case for dismissal: not every thrown stone is evidence of a building defect.",
+"The strongest argument against engaging: the objection is designed to exhaust, not clarify.",
+"The case for engaging: you have been calling discomfort bad faith too quickly.",
+"The counterweight: good advocacy listens for the strongest sentence inside the mess.",
+"The strongest objection: you are attacking the person because the point survived first contact.",
+"The case against their point: sincerity does not make bad reasoning sound.",
+"The opposing case is clean: your position depends on an inconsistency you keep calling context.",
+"The strongest argument against your context: it appears only after accountability arrives.",
+"The case for context: a verdict without conditions is just speed wearing robes.",
+"The countercase: speed is not justice, but endless context can become acquittal by fog.",
+"The strongest objection: you have turned complexity into a place to hide.",
+"The case against simplicity: the clean answer is clean because it threw away the body.",
+"The opposing case has merit: your clear rule becomes cruel at the first human edge.",
+"The strongest argument against flexibility: it bends most when your convenience is at stake.",
+"The case for flexibility: a rule that cannot survive reality is only furniture.",
+"The counterweight: your principle is admirable until it returns the weapon to the mad friend.",
+"The strongest objection: you are paying the debt without asking whom it harms.",
+"The case against your honesty: you are using truth as delivery, not responsibility.",
+"The case for honesty: tact has become a warehouse for unsentenced facts.",
+"The countercase: truth does not become kindness merely by being accurate.",
+"The strongest objection: you are calling it kindness because cowardice learned a soft voice.",
+"The case for kindness: directness without care is just impatience with witnesses.",
+"The opposing case is humane: the right point delivered badly can become the wrong act.",
+"The strongest argument against your timing: you waited until truth could do maximum damage.",
+"The case for speaking now: delay has already become part of the harm.",
+"The counterweight: silence has consequences even when it feels neutral.",
+"The strongest objection: you are claiming neutrality from the safest chair in the room.",
+"The case against neutrality: the status quo is already an argument.",
+"The case for neutrality: not every conflict deserves your borrowed certainty.",
+"The opposing case is disciplined: abstaining is not cowardice when the evidence is still assembling.",
+"The strongest argument against waiting: “more evidence” has become the polite name for no decision.",
+"The case for waiting: a rushed verdict flatters whoever is loudest.",
+"The counterweight: the loudest witness is not automatically the lying one.",
+"The strongest objection: you distrust emotion only when it interrupts your preferred conclusion.",
+"The case against emotion: intensity cannot authenticate the claim it carries.",
+"The opposing case is precise: feeling proves experience, not interpretation.",
+"The strongest argument against your interpretation: it gives you the cleanest possible role.",
+"The case for their interpretation: it accounts for the facts without making you the centre.",
+"The countercase: not being the villain does not automatically make you the judge.",
+"The strongest objection: you have confused acquittal with innocence.",
+"The case against self-condemnation: guilt is not nobler when it ignores evidence.",
+"The opposing case is merciful: you can be responsible without being the whole cause.",
+"The strongest argument against blame: it arrives too early and explains too much.",
+"The case for blame: some harms stay vague until someone names the actor.",
+"The counterweight: naming the actor is not the same as understanding the scene.",
+"The strongest objection: your closing argument is powerful because it omits the hardest exhibit.",
+"The counterweight: the other side doesn’t hate you; it just read the evidence without flinching.",
+"The strongest argument against you: your reason only convinces people already inside your story.",
+"The case for their resistance: you’re asking them to obey something only you can see.",
+"The opposing case is fair: you can mean it completely and still not justify it to the person it binds.",
+"The strongest objection: your certainty is spending other people’s money.",
+"The case against your position: it asks for public consequences on private proof.",
+"The counterweight: if they can’t honestly accept your reason, you haven’t earned their yes.",
+"The strongest argument against you: your conclusion works only if everyone first agrees to be you.",
+"The case for disagreement: they are not rejecting reason; they are rejecting your ownership of it.",
+"The opposing case is serious: your “obvious” answer depends on values you have not made shareable.",
+"The strongest objection: your argument persuades the converted and coerces the rest.",
+"The case against your moral confidence: it has not explained itself to anyone outside your camp.",
+"The countercase: a principle that cannot face strangers is not ready to govern them.",
+"The strongest argument against your rule: it demands respect while refusing translation.",
+"The case for their objection: they should not have to become you before your claim makes sense.",
+"The opposing case is disciplined: your language declares victory before public reasons arrive.",
+"The strongest objection: you have mistaken intensity inside the room for legitimacy outside it.",
+"The case against your demand: it calls disagreement bad faith before asking if it’s a different life.",
+"The counterweight: not being persuaded by you is not yet a moral defect.",
+"The strongest argument against your side: it calls the other side irrational whenever persuasion fails.",
+"The case for their side: they may share the problem and reject only your justification.",
+"The opposing case is exact: the conclusion may be right, but nobody else can walk your route to it.",
+"The strongest objection: you haven’t separated what you believe from what you can ask others to carry.",
+"The case against your urgency: speed is being used to outrun justification.",
+"The countercase: urgency does not cancel the duty to explain the burden you impose.",
+"The strongest argument against your solution: it makes the quietest people pay for the loudest certainty.",
+"The case for delay: an answer that governs others needs more than your relief.",
+"The opposing case is humane: a belief can run your life without getting a vote in theirs.",
+"The strongest objection: your freedom grows in the exact place where theirs shrinks.",
+"The case against your fairness: the procedure is neutral only from your chair.",
+"The counterweight: a rule is not fair because it treats unequal burdens with equal language.",
+"The strongest argument against your principle: it only gets expensive outside the room that wrote it.",
+"The case for their suspicion: the abstraction is clean because someone else is doing the bleeding.",
+"The opposing case is practical: the person paying the cost gets standing to question the theory.",
+"The strongest objection: you are arguing as if consequences were footnotes.",
+"The case against your cleverness: it makes the argument harder to catch, not truer.",
+"The countercase: the smart version may be worse because it hides the weak joint better.",
+"The strongest argument against your rhetoric: it is built to win the room, not survive inspection.",
+"The case for slowing down: a fast argument often smuggles its premise past the guard.",
+"The opposing case is clean: the insult was easier than answering the claim.",
+"The strongest objection: you attacked the messenger because the message was still standing.",
+"The case against your dismissal: irrelevance does not become relevance because it feels satisfying.",
+"The counterweight: their past may explain caution, but it does not disprove this claim.",
+"The strongest argument against your argument: the example is vivid because it was chosen for effect.",
+"The case for their scepticism: one memorable case is not the same thing as a representative one.",
+"The opposing case is strong: the anecdote moves people because evidence has not been asked to compete.",
+"The strongest objection: you have mistaken emotional availability for evidentiary weight.",
+"The case against your analogy: it imports agreement from a case that is not actually the same.",
+"The countercase: the comparison is doing the work your proof refused.",
+"The strongest argument against your slippery slope: you named the bottom without showing the road.",
+"The case for their doubt: feared consequences are not evidence until the mechanism appears.",
+"The opposing case is fair: you are predicting disaster with more confidence than causality allows.",
+"The strongest objection: your argument uses fear as a bridge where evidence should be.",
+"The case against your optimism: it skips the mechanism and calls the landing safe.",
+"The countercase: hope is not a plan unless it can explain the path.",
+"The strongest argument against your pessimism: it treats possible failure as if it were testimony.",
+"The case for optimism: possibility cuts both ways, and despair is not the only sober witness.",
+"The opposing case has merit: your certainty about decline is still a forecast, not a fact.",
+"The strongest objection: you are using “could” as if it meant “will.”",
+"The case against their fear: possibility is not probability.",
+"The counterweight: probability still matters after the room has been frightened.",
+"The strongest argument against your side: it elects their worst member as spokesman.",
+"The case for their complaint: nobody wants to be judged by the weakest version of their position.",
+"The opposing case is disciplined: steelmanning them would cost you some easy victories.",
+"The strongest objection: you have been winning against a cardboard opponent.",
+"The case against your victory: it disappears the moment their best argument walks in.",
+"The countercase: if you cannot state their position well, you have not earned dismissal.",
+"The strongest argument against your cleverness: it keeps substituting surprise for truth.",
+"The case for plainness: a good argument should not need smoke to enter the room.",
+"The opposing case is severe: your wit is arriving where evidence was expected.",
+"The strongest objection: the line is memorable because it simplified away the hard part.",
+"The case against your quote: borrowed brilliance is not your argument.",
+"The counterweight: an aphorism can illuminate a case, but it cannot carry it alone.",
+"The strongest argument against your confidence: you have confused being articulate with being correct.",
+"The case for their doubt: fluency is often what bad reasoning wears to formal occasions.",
+"The opposing case is uncomfortable: the stupid-sounding objection may be structurally sound.",
+"The strongest objection: you dismissed the form and ignored the substance.",
+"The case against their polish: eloquence can make missing evidence feel present.",
+"The countercase: a weakly spoken truth is still entitled to the record.",
+"The strongest argument against your impatience: understanding is not obstruction.",
+"The case for their questions: they are testing the load before standing under it.",
+"The opposing case is reasonable: if your claim cannot survive clarification, it was not ready.",
+"The strongest objection: you call it pedantry because the distinction hurts your conclusion.",
+"The case for the distinction: small differences become large injustices under pressure.",
+"The counterweight: precision is not delay when the wrong word moves the burden.",
+"The strongest argument against your neutrality: the current arrangement already has a side.",
+"The case for neutrality: not every contested room requires your borrowed outrage.",
+"The opposing case is careful: refusing certainty can be more responsible than importing it.",
+"The strongest objection: your “both sides” posture treats unequal evidence as equal discomfort.",
+"The case against your balance: symmetry is not fairness when the facts are asymmetrical.",
+"The countercase: fairness is not achieved by giving falsehood equal furniture.",
+"The strongest argument against your moral clarity: it may be clarity produced by exclusion.",
+"The case for clarity: complexity can become a hiding place for the actor.",
+"The opposing case is honest: the public reason standard may exclude truths that matter.",
+"The strongest objection: what is shareable is not always what is deepest.",
+"The case against your public argument: it may be acceptable because it says too little.",
+"The countercase: saying less may be the price of governing people who disagree deeply.",
+"The strongest argument against your private truth: it can steer your conscience, not theirs.",
+"The case for their refusal: they do not owe obedience to reasons they cannot reasonably inspect.",
+"The opposing case is final: your argument doesn’t fail for being personal; it fails to travel.",
+"The counterweight: a reason meant to rule others must first survive a room that doesn’t love it.",
+"The strongest argument against you: your confidence is louder than your contact with the thing.",
+"The case for their doubt: they are refusing your certainty, not refusing reality.",
+"The opposing case is fair: you may be honest and still badly calibrated.",
+"The strongest objection: your view has not adjusted since the evidence changed.",
+"The case against your certainty: it treats a partial view as if it were the whole room.",
+"The counterweight: your view isn’t false for being yours — just incomplete for the same reason.",
+"The strongest argument against you: you are mistaking fluency for understanding.",
+"The case for caution: the sentence sounds finished before the thinking is.",
+"The opposing case is serious: your intelligence may be improving the defence, not the claim.",
+"The strongest objection: you have made being wrong too humiliating to investigate.",
+"The case against your position: it survives because you keep testing it with friendly instruments.",
+"The countercase: your belief has not met an opponent strong enough to educate it.",
+"The strongest argument against your judgement: it explains their flaws better than your own.",
+"The case for their version: it makes your convenience less central to the story.",
+"The opposing case is uncomfortable: you describe the bias perfectly while doing it.",
+"The strongest objection: you call it tribal when they do it and discernment when you do.",
+"The case against your side: it has confused shared vocabulary with shared truth.",
+"The counterweight: agreement inside your circle is not independent verification.",
+"The strongest argument against your certainty: you can’t yet state the other side at its best.",
+"The case for slowing down: contempt is arriving before comprehension.",
+"The opposing case is disciplined: their argument may be unfamiliar rather than dishonest.",
+"The strongest objection: you called it bad faith because translating it looked like work.",
+"The case for their sincerity: people can be wrong without secretly knowing you are right.",
+"The countercase: disagreement is not automatically a moral failure.",
+"The strongest argument against your interpretation: it gives you the cleanest conscience available.",
+"The case for theirs: it explains the same facts without needing your innocence.",
+"The opposing case is precise: your motives are obvious only from the inside.",
+"The strongest objection: you want your intentions read as facts and their pain read as weather.",
+"The case against your defence: it asks to be understood before it has repaired anything.",
+"The counterweight: self-knowledge is not a substitute for restitution.",
+"The strongest argument against your apology: it is asking for emotional closure before practical change.",
+"The case for withholding forgiveness: they are protecting the future from your vocabulary.",
+"The opposing case is humane: forgiveness without boundaries may only rebrand the old harm.",
+"The strongest objection: your patience has become permission without consent.",
+"The case against your anger: it is now governing cases it never witnessed.",
+"The countercase: anger may be the only witness that refused to leave early.",
+"The strongest argument against your calm: it arrived by excluding the people most affected.",
+"The case for calm: accuracy often improves after the nervous system stops drafting laws.",
+"The opposing case is practical: ten honest minutes a day would catch what your confidence keeps missing.",
+"The strongest objection: you review other people’s failures more regularly than your own conduct.",
+"The case against your virtue: it has not been tested where it costs you comfort.",
+"The counterweight: a principle you practise only when convenient is still only a preference.",
+"The strongest argument against your wisdom: it talks more than it audits.",
+"The case for restraint: not every true sentence should be released immediately.",
+"The opposing case is sharper: silence is not restraint when it hides the necessary sentence.",
+"The strongest objection: you are calling it courage because you enjoy the confrontation.",
+"The case for courage: fear has been treated as a veto for too long.",
+"The countercase: bravery without judgement is only speed with applause.",
+"The strongest argument against your moderation: it may be timidity with an ancient name.",
+"The case for moderation: intensity has repeatedly made you call excess “truth.”",
+"The opposing case is ethical: justice includes people you do not find persuasive.",
+"The strongest objection: your fairness expires when the person annoys you.",
+"The case against your mercy: it appears after accountability starts to hurt.",
+"The counterweight: mercy that erases the harmed is not mercy to everyone.",
+"The strongest argument against your strictness: it is clearer than it is wise.",
+"The case for strictness: flexibility has become a loophole for the powerful.",
+"The opposing case is honest: your standard bends most easily toward people you want to keep.",
+"The strongest objection: you are treating exception as nuance when it belongs to you.",
+"The case against their exception: convenience has learned to speak like context.",
+"The countercase: not every exception is corruption; some are where the rule becomes human.",
+"The strongest argument against your certainty: you haven’t split what you know from what you can’t bear not knowing.",
+"The case for humility: the unknown is still part of the case.",
+"The opposing case is strong: your missing evidence is not decorative.",
+"The strongest objection: you are proceeding as if the gap has already ruled in your favour.",
+"The case against your assumption: it is doing work that evidence has not agreed to do.",
+"The counterweight: ignorance does not make your preferred story more likely.",
+"The strongest argument against their claim: sincerity cannot carry a missing mechanism.",
+"The case for their claim: your demand for mechanism may be a way to dismiss lived evidence.",
+"The opposing case is delicate: experience is evidence, but not automatically explanation.",
+"The strongest objection: you are using abstraction to avoid being corrected by a person.",
+"The case for abstraction: one person’s story cannot govern the whole map.",
+"The countercase: the map is not innocent if it keeps deleting people.",
+"The strongest argument against your theory: it survives only by ignoring the awkward example.",
+"The case for the theory: the awkward example does not abolish the pattern.",
+"The opposing case is fair: you are treating the outlier as irrelevant because it inconveniences you.",
+"The strongest objection: you are treating the outlier as decisive because it flatters you.",
+"The case against your generalisation: it moves from pain to law too quickly.",
+"The counterweight: one wound can testify; it cannot legislate alone.",
+"The strongest argument against your optimism: it has not priced the people who will absorb the risk.",
+"The case for optimism: despair is currently exaggerating its access to the future.",
+"The opposing case is severe: pessimism often calls itself realism because realism sounds earned.",
+"The strongest objection: hope without method is only a prettier forecast.",
+"The case for method: good faith requires more than good mood.",
+"The countercase: method without humility becomes machinery for old conclusions.",
+"The strongest argument against your plan: it has no review process for being wrong.",
+"The case for review: a decision that cannot be revised is asking to become dogma.",
+"The opposing case is practical: you need a smaller claim and a better test.",
+"The strongest objection: you are making the thesis broad because the evidence is thin.",
+"The case for narrowing: precision is not weakness; it is where truth can stand trial.",
+"The counterweight: if your claim shrinks under scrutiny, that may be its correct size.",
+"The strongest argument against your self-image: it has become the defendant and the judge.",
+"The case for self-examination: you cannot correct what you only perform.",
+"The opposing case is old and still good: review the day before the day becomes a personality.",
+"The strongest objection: you are asking for wisdom while refusing the audit.",
+"The case for their challenge: they are not attacking your character; they are requesting accounts.",
+"The countercase: feeling attacked is not proof that an attack occurred.",
+"The strongest argument against their challenge: scrutiny aimed one way is just domination.",
+"The case for mutual scrutiny: good faith should be symmetrical or admitted as strategy.",
+"The opposing case is final: if you would not accept your own argument from them, it is not ready.",
+"The counterweight: humility isn’t surrender; it’s letting reality size your position honestly.",
+"The strongest argument against you: your plan assumes a self you have not yet built.",
+"The case against your certainty: it presupposes the very clarity your behaviour keeps avoiding.",
+"The opposing case is structural: the thing you call optional is what makes the rest possible.",
+"The strongest objection: your freedom depends on work you are refusing to count.",
+"The case for discipline: the life you want cannot be improvised from the habits you protect.",
+"The countercase is plain: you want autonomy without accepting authorship.",
+"The strongest argument against your complaint: it depends on a world where choices have no residue.",
+"The case for responsibility: the alternative is letting circumstance write your signature.",
+"The opposing case is hard: nobody is coming may be cruel, but it is also clarifying.",
+"The strongest objection: you keep treating rescue as a plan with missing logistics.",
+"The case against your hope: it asks the future to perform labour you will not begin.",
+"The case against your despair: it assumes the future has already submitted evidence.",
+"The counterweight: death makes the delay more expensive than the risk.",
+"The strongest argument against waiting: mortality does not pause for emotional consensus.",
+"The case for waiting: urgency can turn fear of death into bad administration.",
+"The opposing case is exact: not everything finite is therefore urgent.",
+"The strongest objection: you are using life’s shortness to excuse poor aim.",
+"The case for acting now: you have confused preparation with a rehearsal that never ends.",
+"The strongest argument against your meaning: it is borrowed from applause and collapses in solitude.",
+"The case for your meaning: invented purpose is not false because it was made.",
+"The opposing case is severe: no one can live your life for you, not even the people who love you.",
+"The strongest objection: your need to be understood is becoming a substitute for choosing.",
+"The case for choosing alone: loneliness is not always abandonment; sometimes it is authorship.",
+"The case against isolation: self-reliance becomes vanity when it refuses witness.",
+"The countercase is human: nobody can fully enter your experience — and people still reach you anyway.",
+"The strongest argument against your independence: it treats being unreachable as proof of strength.",
+"The case for independence: some forms of closeness only work by confiscating your judgement.",
+"The opposing case is mature: intimacy is not merger, and distance is not betrayal.",
+"The strongest objection: you call it meaninglessness when the old meaning stops obeying you.",
+"The case for meaninglessness: the universe has not promised to validate your preferred story.",
+"The counterweight: if meaning must be made, then not making it is also a choice.",
+"The strongest argument against your passivity: it is freedom trying to look like fate.",
+"The case against your fatalism: it relieves you by demoting you.",
+"The opposing case is uncomfortable: calling it destiny lets you avoid the bill for wanting it.",
+"The strongest objection: you are treating a hard choice as if it were an external law.",
+"The case for the hard choice: difficulty is not evidence of impossibility.",
+"The countercase is practical: the antithesis of fear is not courage, but contact.",
+"The strongest argument against your bravery: it is loudest where no real risk appears.",
+"The case for caution: courage without judgement is just appetite with a flag.",
+"The opposing case is clean: you do not need more force; you need a better distinction.",
+"The strongest objection: your argument works by contrast, but not by evidence.",
+"The case against your opposition: saying “not that” is not the same as proving “this.”",
+"The counterweight: the opposite of a bad idea can still be another bad idea.",
+"The strongest argument against your reversal: you changed sides without changing method.",
+"The case for reversal: sometimes the antithesis is the first honest sentence in the room.",
+"The opposing case is useful: the thing you reject may contain the condition your plan requires.",
+"The strongest objection: your solution destroys the structure that makes the solution usable.",
+"The case against your reform: you have not shown what will hold after removal.",
+"The countercase: demolition is persuasive only when replacement has been thought through.",
+"The strongest argument for removal: a rotten support is still dangerous because it holds weight.",
+"The case against your patience: delay is one of the oldest opposition tactics.",
+"The case for patience: speed is one of the oldest ways to bypass scrutiny.",
+"The opposing case is tactical: they are not answering because delay is working.",
+"The strongest objection: you are mistaking their calm for good faith.",
+"The case for their calm: not every refusal to escalate is evasion.",
+"The counterweight: civility can be sincere, strategic, or both.",
+"The strongest argument against trusting them: the pattern is deflection with better manners.",
+"The case against your suspicion: you are reading every pause as conspiracy.",
+"The opposing case is legalistic but fair: motive must be proved, not guessed from inconvenience.",
+"The strongest objection: you have confused obstruction with disagreement.",
+"The case for calling it obstruction: disagreement does not require hiding the ball.",
+"The countercase: a person can oppose you honestly and still slow you down.",
+"The strongest argument against your campaign: you have underestimated the opposition’s best reason.",
+"The case for the opposition: they may be defending a loss your proposal treats as collateral.",
+"The opposing case is respectable: your victory creates someone else’s administrative nightmare.",
+"The strongest objection: your argument counts benefits in paragraphs and harms in footnotes.",
+"The case against your advocacy: it speaks most fluently for people who already agree.",
+"The counterweight: persuasion is not complete until it reaches the person with something to lose.",
+"The strongest argument against your message: it answers the attack, not the anxiety underneath it.",
+"The case for answering attacks: unanswered attacks become architecture.",
+"The opposing case is strategic: silence is not neutral when the record is being built.",
+"The strongest objection: your response gives the attack more oxygen than it deserves.",
+"The case for restraint: not every opposition tactic needs the dignity of rebuttal.",
+"The countercase: ignoring a tactic is itself a tactic, and not always a good one.",
+"The strongest argument against your defence: it proves you can fight, not that you are right.",
+"The case for defence: if you do not answer, someone else will define the charge.",
+"The opposing case is advocacy 101: the audience remembers the cleanest frame, not the longest file.",
+"The strongest objection: your frame is clean because it excludes the hardest facts.",
+"The case for a clean frame: complexity without hierarchy is not honesty; it is fog.",
+"The counterweight: the strongest case isn’t the longest one; it’s the one still standing after the cuts.",
+"The strongest argument against your eloquence: it makes weak evidence sound inevitable.",
+"The case for eloquence: truth still needs a vehicle.",
+"The opposing case is sharp: your antithesis is memorable because it over-simplifies.",
+"The strongest objection: the balanced sentence is doing the work of proof.",
+"The case for balance: contrast can reveal what description kept blurred.",
+"The countercase: style clarifies only when substance is already standing.",
+"The strongest argument against your cleverness: it keeps winning the exchange and losing the matter.",
+"The case for cleverness: dull truth often dies before reaching the room.",
+"The opposing case is old but solid: wit is not wisdom until it survives consequence.",
+"The strongest objection: your intelligence has become advocacy for your avoidance.",
+"The case for your intelligence: blunt force would have broken what nuance could repair.",
+"The counterweight: nuance earns respect only when it stops protecting the evasive centre.",
+"The strongest argument against your certainty: it assumes a tidier world than this one.",
+"The case against your confusion: reality being mixed does not excuse refusing to sort.",
+"The opposing case is existential: no final authority will arrive to spare you authorship.",
+"The strongest objection: you are waiting for meaning to appear before doing the work that creates it.",
+"The case for humility: the fact that life has no script does not make your draft sacred.",
+"The countercase: if no script exists, revision is not betrayal; it is the assignment.",
+"The strongest argument against you: the counterargument isn’t an attack; it’s the weight test.",
+"The counterweight: if your position can’t carry its opposite for a minute, it can’t carry you for a year.",
+"The strongest argument against you: you call it modern life because naming your choices costs more.",
+"The case for the other side: the world is absurd, but your habits are still yours.",
+"The opposing case is existential: no structure is coming to make your refusal look innocent.",
+"The strongest objection: you are treating meaninglessness as permission to avoid meaning-making.",
+"The case against your despair: the universe’s silence does not automatically endorse your silence.",
+"The countercase: if life has no script, your improvisation is still accountable.",
+"The strongest argument against your freedom: you keep using it to choose the old cage.",
+"The case for responsibility: circumstance explains the room, not every step you take inside it.",
+"The opposing case is hard: authenticity is not whatever feels most intense.",
+"The strongest objection: you are calling it your true self because it resists discipline.",
+"The case against your performance: applause has become your proof of existence.",
+"The counterweight: being seen is not the same as being real.",
+"The strongest argument against your crisis: it gives you drama where decision would do.",
+"The case for your crisis: dread may be the first honest witness in the room.",
+"The opposing case is severe: you are not lost; you are free and dislike the paperwork.",
+"The strongest objection: you want life to have a purpose without accepting the labour of assigning one.",
+"The case against your meaning: it collapses whenever the audience leaves.",
+"The countercase: privately made meaning is not smaller; it is just less advertised.",
+"The strongest argument against your boredom: it may be withdrawal from constant persuasion.",
+"The case for boredom: it tells the truth after stimulation leaves the room.",
+"The opposing case is modern: convenience has made the cage feel frictionless.",
+"The strongest objection: you are calling it preference because the menu was personalised.",
+"The case against your choice: the options were designed before your desire arrived.",
+"The counterweight: wanting something after being trained to want it still deserves suspicion.",
+"The strongest argument against your consumption: it keeps mistaking access for agency.",
+"The case for consuming less: not every available thing is an invitation.",
+"The opposing case is brutal: you are not overwhelmed by abundance; you are under-defended against it.",
+"The strongest objection: “everyone does it” is social proof, not evidence.",
+"The case against popularity: crowds can normalise nonsense without making it true.",
+"The countercase: consensus deserves attention, but not obedience.",
+"The strongest argument against your confidence: it’s a good performance, not a good map.",
+"The case for their doubt: they are resisting your tone, not necessarily your point.",
+"The opposing case is persuasive: your argument works better as performance than as proof.",
+"The strongest objection: you keep increasing volume where evidence should increase.",
+"The case against your charisma: it lets the weak premise enter without inspection.",
+"The counterweight: being compelling is not the same as being correct.",
+"The strongest argument against your message: it relies on liking the messenger.",
+"The case for suspicion: trust earned by warmth can still smuggle bad reasoning.",
+"The opposing case is clean: authority is useful only when it can still be questioned.",
+"The strongest objection: you cited expertise as a shield against the specific objection.",
+"The case against their authority: credentials do not exempt a claim from evidence.",
+"The countercase: expertise is not tyranny just because it outranks your hunch.",
+"The strongest argument against your scepticism: it may be status anxiety dressed as independence.",
+"The case for scepticism: persuasion is everywhere, and not all of it asks permission.",
+"The opposing case is practical: scarcity is making the object look more valuable than it is.",
+"The strongest objection: urgency has been engineered, not discovered.",
+"The case against your desire: limited availability has done more work than quality.",
+"The countercase: rare does not mean valuable; it only means rare.",
+"The strongest argument against your generosity: reciprocity is being used to purchase your compliance.",
+"The case for refusing: a gift can become a handle.",
+"The opposing case is fair: the first small yes was designed to make the second yes feel inevitable.",
+"The strongest objection: consistency is being used against your better judgement.",
+"The case against staying consistent: a past version of you should not govern better evidence.",
+"The counterweight: changing your mind is not betrayal when the facts changed.",
+"The strongest argument against your identity: it has become a contract you never renegotiated.",
+"The case for inconsistency: it may be the first sign that you are updating.",
+"The opposing case is exact: your public stance is making private correction impossible.",
+"The strongest objection: you cannot learn while defending a brand.",
+"The case against your certainty: it has become part of your social membership.",
+"The counterweight: belonging is a bad laboratory for truth.",
+"The strongest argument against your indignation: it travels faster than verification.",
+"The case for slowing down: outrage is persuasive before it is accurate.",
+"The opposing case is humane: not every bad claim needs a public execution.",
+"The strongest objection: humiliation changes the audience before it changes the mind.",
+"The case against your persuasion: you are trying to win before you have understood the resistance.",
+"The countercase: people rarely abandon a belief until you show them where it was useful.",
+"The strongest argument against your debate style: it corners people, then calls the panic irrational.",
+"The case for better persuasion: dignity is not decoration; it is load-bearing.",
+"The opposing case is strategic: the fastest way to lose them is to make being persuaded humiliating.",
+"The strongest objection: you are answering the claim while ignoring the identity attached to it.",
+"The case against your correction: the facts arrived without a bridge for the person.",
+"The counterweight: a true argument can still fail because it made no room for the listener.",
+"The strongest argument against their view: it survives by confusing comfort with evidence.",
+"The case for their hesitation: changing beliefs costs more than admitting one sentence was wrong.",
+"The opposing case is fair: persuasion without empathy becomes conquest.",
+"The strongest objection: empathy without evidence becomes surrender.",
+"The case against your modern myth: it feels true because it has been repeated in convenient places.",
+"The countercase: repetition is not corroboration.",
+"The strongest argument against common knowledge: it often arrives without a return address.",
+"The case for checking: the belief may be familiar because it is old, not because it is true.",
+"The opposing case is empirical: your “everyone knows” has not been introduced to measurement.",
+"The strongest objection: your anecdote is vivid because it was selected, not because it represents.",
+"The case against your myth: it explains too much with too little evidence.",
+"The counterweight: the satisfying explanation is often the one that needs the most suspicion.",
+"The strongest argument against your shortcut: it makes life easier by making reality smaller.",
+"The case for complexity: the myth dies when the mechanism arrives.",
+"The opposing case is inconvenient: your simple story is useful because it lets someone off the hook.",
+"The strongest objection: you are debunking the myth only when it belongs to them.",
+"The case against your correction: factually right, practically unheard.",
+"The countercase: if truth cannot travel, packaging becomes part of responsibility.",
+"The strongest argument against your persuasion: you are using facts as weapons instead of invitations.",
+"The case for invitation: people examine better when they are not being forced to kneel.",
+"The opposing case is precise: you don’t lack evidence; you lack any idea of who is listening.",
+"The strongest objection: you are treating disagreement as a data error, not a human event.",
+"The case for patience: beliefs often move through trust before they move through logic.",
+"The counterweight: trust without logic is how bad ideas get soft furniture.",
+"The strongest argument against your complaint about modern life: the absurdity runs on your attendance.",
+"The case against resignation: every system feels inevitable from inside until someone stops cooperating.",
+"The opposing case is existential: there is no final excuse coming.",
+"The counterweight: the case against you isn’t that life is easy; it’s that it is still yours to run.",
+"The strongest argument against you: the thing you call vision may only be refusal with better lighting.",
+"The case for their doubt: your idea sounds strongest before it meets the person it affects.",
+"The opposing case is clean: you have built a beautiful argument on an uninspected appetite.",
+"The strongest objection: your position requires everyone else to treat your urgency as evidence.",
+"The case against your certainty: it keeps asking for loyalty where proof would normally go.",
+"The counterweight: your confidence may be a performance your fear learned to admire.",
+"The strongest argument against your plan: it turns other people’s patience into your resource.",
+"The case for stopping: the thing has begun to eat the reason it was made.",
+"The opposing case is hard: the work may be unfinished because it is finished enough to judge.",
+"The strongest objection: you are polishing the exit so you do not have to walk through it.",
+"The case for shipping: only the public version can teach you what the private one hides.",
+"The case against shipping: the launch may be a way to avoid making the thing actually good.",
+"The opposing case is exact: you are mistaking exposure for completion.",
+"The strongest argument against your edit: it removes the wound and leaves the posture.",
+"The case for the ugly part: it is the only piece still telling the truth under pressure.",
+"The counterweight: your best sentence may be guilty of weakening the paragraph.",
+"The strongest objection: the cleverness arrives whenever the evidence gets thin.",
+"The case against your style: it keeps making evasion look authored.",
+"The opposing case is useful: your plainest sentence is doing the dangerous work.",
+"The strongest argument against your taste: it rejects everything that might let people read you.",
+"The case for their objection: they are not failing to understand; they are refusing to be charmed.",
+"The strongest objection: the audience you fear is less cruel than the one you invented.",
+"The case against your audience: it has been promoted from possibility to government.",
+"The counterweight: if nobody were watching, your standard might become more honest.",
+"The strongest argument against your resentment: it remembers the injury better than the request.",
+"The case for resentment: it may be the only witness that kept accurate minutes.",
+"The opposing case is severe: a real hurt became a permanent ruling.",
+"The strongest objection: your anger has started sentencing people who were not at the scene.",
+"The case for anger: politeness has had years to solve this and failed.",
+"The counterweight: fury can open the file, but it cannot write the remedy alone.",
+"The strongest argument against your forgiveness: it has become a way to avoid the invoice.",
+"The case for forgiveness: punishment has become a habit after justice left the room.",
+"The opposing case is humane: repair needs a schedule, not another beautiful explanation.",
+"The strongest objection: their apology is fluent, but the structure is unchanged.",
+"The case for their apology: clumsy repair is not automatically fake.",
+"The counterweight: remorse is evidence only after behaviour corroborates it.",
+"The strongest argument against leaving: exit has drama; repair only has work.",
+"The case for leaving: the arrangement requires your disappearance and calls it peace.",
+"The opposing case is uncomfortable: staying might be courage, or fear of the first quiet morning.",
+"The strongest objection: you are calling it loyalty because the word “dependence” offends you.",
+"The case for loyalty: not every difficult person is a failed case.",
+"The counterweight: devotion that cannot update becomes superstition.",
+"The strongest argument against your independence: it turns every offer into a threat before inspection.",
+"The case for independence: some help arrives carrying furniture for a cage.",
+"The opposing case is fair: needing no one can become a very elegant form of control.",
+"The strongest objection: your self-sufficiency still needs witnesses to admire it.",
+"The case for receiving: refusal is not dignity when fear signs the letter.",
+"The counterweight: accepting help is not surrender unless the terms say so.",
+"The strongest argument against your politics: it explains your enemy better than your neighbour.",
+"The case for their side: they may be defending a loss your slogans treat as collateral.",
+"The opposing case is serious: your justice is loudest where it costs you least.",
+"The strongest objection: your moral clarity was achieved by excluding the inconvenient victim.",
+"The case against neutrality: the fence is already standing on someone’s land.",
+"The case for neutrality: not every fire requires borrowed certainty.",
+"The counterweight: balance is not fairness when the weights are unequal.",
+"The strongest argument against your compassion: it asks nothing from you except vocabulary.",
+"The case for compassion: punishment is not proof that you understood the harm.",
+"The opposing case is disciplined: mercy that erases the injured is only mercy to the offender.",
+"The strongest objection: your principle works until affection enters the evidence.",
+"The case for your exception: rules become cruel when they cannot recognise the human edge.",
+"The counterweight: every exception should be forced to confess whether it is wisdom or convenience.",
+"The strongest argument against your explanation: it lights up the cause and blacks out the damage.",
+"The case for context: judgement without conditions is just speed in a robe.",
+"The opposing case is precise: explanation is not acquittal.",
+"The strongest objection: you are using complexity to hide the actor.",
+"The case against simplicity: it became clean only after throwing away the body.",
+"The counterweight: the truth may be simple, but your use of simplicity may not be innocent.",
+"The strongest argument against your certainty: it cannot travel outside the room that rewards it.",
+"The case for their doubt: they should not have to share your biography to inspect your claim.",
+"The opposing case is public: a belief only you hold can’t set the price everyone pays.",
+"The strongest objection: your reason collapses when told to someone who doesn’t already love it.",
+"The case for translation: a good argument should survive outside its native tribe.",
+"The counterweight: what is deepest in you may still be unusable as public proof.",
+"The strongest argument against your intelligence: it has become advocacy for your preferred blindness.",
+"The case for humility: your missing evidence is still part of the room.",
+"The opposing case is sharp: you are not open-minded; you are keeping the case permanently untried.",
+"The strongest objection: doubt has become your way of avoiding the verdict.",
+"The case for doubt: conviction has repeatedly tried to take custody before earning it.",
+"The counterweight: humility does not mean lowering the truth; it means lowering yourself before it.",
+"The strongest argument against your memory: it has been revised by every retelling in your favour.",
+"The case for the pattern: repetition has already testified more clearly than your denial.",
+"The opposing case is careful: one vivid example may be a lantern, not a map.",
+"The strongest objection: your anecdote is doing the work of a sample size.",
+"The case for the anecdote: data often arrives first as a person nobody believes.",
+"The counterweight: the story matters, but it still has to survive being joined by other stories.",
+"The strongest argument against your fear: it is old enough to remember a world that no longer exists.",
+"The case for fear: it may be wrong about scale and right about direction.",
+"The opposing case is practical: courage without accounting is just mood with boots.",
+"The strongest objection: caution has become your permanent address.",
+"The case for caution: not every leap is freedom; some are gravity with a slogan.",
+"The counterweight: risk is not noble until someone has priced the fall.",
+"The strongest argument against your hope: it keeps spending money the future has not earned.",
+"The case for hope: despair has been forging signatures from evidence it does not possess.",
+"The opposing case is existential: nobody is coming to certify the meaning before you make it.",
+"The strongest objection: you’re waiting for purpose to arrive before doing the work that makes it.",
+"The case against your despair: the absence of a script is not the absence of authorship.",
+"The counterweight: freedom is not a mood; it is the invoice for choosing.",
+"The strongest argument against modern life: it has made surrender feel like participation.",
+"The case against blaming modern life: the machine is real, but so is your hand on the lever.",
+"The counterweight: the useful objection is the one that leaves you fewer excuses and more morning.",
+"The strongest argument against you: the fraud worked because people wanted the stamp, not the truth.",
+"The case for their doubt: your credentials look official, but the work has not cleared customs.",
+"The opposing case is sharp: a desk and a title can fake authority faster than your evidence can earn it.",
+"The strongest objection: you are mistaking institutional costume for legitimacy.",
+"The case against your confidence: the fraud lasted because nobody checked the door closely enough.",
+"The counterweight: if the appearance is doing the persuading, the substance may be unemployed.",
+"The strongest argument against your plan: it needs applause for the curtain before anyone checks the stage.",
+"The case for suspicion: the paperwork is beautiful in the exact place where proof is missing.",
+"The opposing case is inconvenient: the idea may be an embassy for a country that doesn’t exist.",
+"The strongest objection: your system issues visas to hopes it cannot house.",
+"The case against your valuation: you’re trading diamonds for exposure.",
+"The countercase: what looks irrational from outside may reveal what the person actually needed.",
+"The strongest argument against your bargain: you counted the market value and ignored the hunger.",
+"The case for their choice: absurd trades often expose the real currency.",
+"The opposing case is brutal: you are appraising the object correctly and the situation badly.",
+"The strongest objection: you keep defending the price while missing the exchange.",
+"The case against your certainty: the number is enormous, but the account may still be an error.",
+"The counterweight: a balance can be spectacular and false at the same time.",
+"The strongest argument against your success: it may be a technical glitch wearing a crown.",
+"The case for humility: even quadrillions vanish when the audit catches up.",
+"The opposing case is clean: the briefness of the victory is part of the evidence.",
+"The strongest objection: you are calling it wealth because the screen briefly agreed.",
+"The case against your urgency: not every emergency word names an emergency.",
+"The countercase: overreaction can become more damaging than the original joke.",
+"The strongest argument against your alarm: the system heard “bomb” and stopped hearing context.",
+"The case for their alarm: some words are built to trigger before interpretation arrives.",
+"The opposing case is fair: the intent can be harmless while the signal does the damage.",
+"The strongest objection: you are asking the whole system to trust your private innocence.",
+"The case against bureaucracy: it often mistakes literal detection for judgement.",
+"The counterweight: judgement without detection is also how danger walks through.",
+"The strongest argument against your complaint: the stupid rule has a scar behind it.",
+"The case for your complaint: a rule that can’t tell a joke from a threat has become one.",
+"The opposing case is precise: the procedure worked, but the intelligence failed.",
+"The strongest objection: you are defending the process because the outcome embarrasses the principle.",
+"The case against your sabotage theory: most collapses are incompetence, no villain required.",
+"The countercase: incompetence can still function as sabotage when nobody is allowed to name it.",
+"The strongest argument against the meeting: the pointless question is the sharpest tool in the room.",
+"The case for their impatience: confusion has been introduced too regularly to look innocent.",
+"The opposing case is tactical: delay does not need to win; it only needs to outlast attention.",
+"The strongest objection: you call it personality because calling it strategy sounds accusatory.",
+"The case against your diagnosis: sometimes survival means shrinking the problem, not growing the theory.",
+"The counterweight: adaptation can look like loss when the environment has become winter.",
+"The strongest argument against your ambition: the laziness might be your system saving your life.",
+"The case for lowering demands: not every reduction is defeat; some are winter intelligence.",
+"The opposing case is humane: the smaller version may be the version that survives.",
+"The strongest objection: you keep measuring flourishing with summer instruments.",
+"The case against your performance: deep-sea light is impressive, but it may only be hunting.",
+"The countercase: illumination is not innocence; sometimes light is a lure.",
+"The strongest argument against your charm: it makes people visible while keeping you hidden.",
+"The case for their mistrust: your brightness appears exactly where advantage begins.",
+"The opposing case is uncomfortable: you may be using insight like a predator uses light.",
+"The strongest objection: your clarity helps you see them before they see you.",
+"The case against your help: it may be intervention with an invoice.",
+"The counterweight: not every cure is care; some cures are revenue streams.",
+"The strongest argument against your trust: the costume doesn’t prove the treatment is needed.",
+"The case for doubt: expertise without accountability can become extremely persuasive harm.",
+"The opposing case is severe: when the healer profits from sickness, proof needs a second witness.",
+"The strongest objection: you are asking people to trust the hand that benefits from the wound.",
+"The case against your scepticism: some interventions look violent because repair is not always gentle.",
+"The countercase: harshness is not proof of necessity.",
+"The strongest argument against your optimism: changing the scenery is easier than changing the habit.",
+"The case for scale: sometimes the absurdly large proposal reveals the poverty of the small one.",
+"The opposing case is exact: your solution is huge because the premise has not been challenged.",
+"The strongest objection: you’re rebuilding the whole world to avoid asking why you need it different.",
+"The case against your future plan: it depends on a technology of escape, not a discipline of living.",
+"The counterweight: the fantasy of leaving often protects the arrangement that made leaving attractive.",
+"The strongest argument against the backup plan: it preserves the file and loses the person.",
+"The case for preservation: the wish to continue is not ridiculous just because the method is strange.",
+"The opposing case is existential: extending the record is not the same as answering mortality.",
+"The strongest objection: you are trying to upload what you have not yet lived.",
+"The case against your legacy: it may be storage anxiety disguised as meaning.",
+"The countercase: remembrance matters, but it cannot do the work of presence.",
+"The strongest argument against your certainty: recognising the pattern doesn’t make you the judge of it.",
+"The case for their criticism: pattern recognition is not shallow just because it is not verbal.",
+"The opposing case is useful: you overrate explaining and underrate simply seeing.",
+"The strongest objection: you want the thing named before you will admit it has been seen.",
+"The case against your sophistication: sometimes the amateur sees the painting before the essay arrives.",
+"The counterweight: interpretation is not superior merely because it has more syllables.",
+"The strongest argument against your innovation: the boring fix works because the problem is boring.",
+"The case against your feature: it moves impressively without reducing any distance that matters.",
+"The opposing case is practical: invention begins where friction has a location.",
+"The strongest objection: you added mobility to something that needed direction.",
+"The case for simplicity: the best improvement may be embarrassingly mechanical.",
+"The counterweight: cleverness is not design until it touches a repeated inconvenience.",
+"The strongest argument against your certainty: the precious thing was scrapped by someone sure it was furniture.",
+"The case for caution: ignorance with machinery can erase six thousand years in an afternoon.",
+"The opposing case is painful: not recognising value does not make the damage smaller.",
+"The strongest objection: you are calling it clutter because you have not learned its language.",
+"The case against your cleanup: you may be destroying evidence to improve the room.",
+"The counterweight: efficiency is dangerous when it cannot tell waste from inheritance.",
+"The strongest argument against your disgust: the waste may still grow the tomato.",
+"The case for discomfort: useful things do not always arrive through respectable channels.",
+"The opposing case is earthy: the origin is embarrassing, but the fruit is real.",
+"The strongest objection: you are rejecting the result because the source humiliates your taste.",
+"The case against purity: it often makes you throw away nutrition with the dirt.",
+"The countercase: a strange origin is not an argument against value.",
+"The strongest argument against your story: absurd systems still open on time.",
+"The case for taking the absurd seriously: ridiculous systems still move money, bodies, fear, and belief.",
+"The opposing case is final: if nonsense produces consequences, it has entered reality.",
+"The counterweight: the world is stranger than your explanation, and not impressed by it.",
+"The strongest argument against you: your cleanest reason is the best-trained liar in the room.",
+"The case for their doubt: the weak joint in your argument is exactly where your confidence stops looking.",
+"The opposing case is precise: your plan is persuasive because it has not yet had to pay rent.",
+"The strongest objection: you are mistaking the absence of resistance for the presence of consent.",
+"The case against your framing: it turns the other person into evidence before letting them speak.",
+"The counterweight: your best story may still be a story, not a standard of proof.",
+"The strongest argument against your certainty: it has been rehearsed more often than tested.",
+"The case for caution: a familiar conclusion can still be a counterfeit.",
+"The opposing case is disciplined: your objection to their objection is mostly disgust wearing logic.",
+"The strongest objection: you are calling it unfair because the rule has finally reached you.",
+"The case against your rule: it looks universal only because the casualties have been edited out.",
+"The countercase: not every casualty disproves a rule, but every casualty gets to testify.",
+"The strongest argument against your mercy: it arrives after power has done its damage.",
+"The case for mercy: justice without a way back becomes punishment with a better vocabulary.",
+"The opposing case is hard: the person you dislike may still be the person most affected.",
+"The strongest objection: you are using dislike as a discount on their evidence.",
+"The case for their account: it remains relevant even when it is inconveniently delivered.",
+"The counterweight: bad delivery is not an acquittal for your deafness.",
+"The strongest argument against your patience: it has become unpaid labour for someone else’s comfort.",
+"The case for patience: speed may satisfy your anger before it serves the truth.",
+"The opposing case is sober: you have built a moral emergency around a practical inconvenience.",
+"The strongest objection: your scale changes when the problem becomes yours.",
+"The case against your generosity: it creates dependence and then calls itself noble.",
+"The case for generosity: not every imbalance is exploitation; some are care with history.",
+"The counterweight: the gift becomes suspicious when refusal makes you angry.",
+"The strongest argument against your apology: it polishes your character instead of repairing the event.",
+"The case for their refusal: they are not required to accept your improved self-description.",
+"The opposing case is painful: being sorry does not give you custody of the ending.",
+"The strongest objection: you are asking forgiveness to do work that restitution still owes.",
+"The case for release: punishment has become a place where nothing new can enter.",
+"The counterweight: closure is not proof that justice has happened.",
+"The strongest argument against your independence: it locks help out and locks you in.",
+"The case for solitude: the room has been too loud to hear your actual consent.",
+"The opposing case is exact: needing distance is not proof the relationship is false.",
+"The strongest objection: needing closeness is not proof the relationship is true.",
+"The case against your exit: leaving may protect the wound while abandoning the lesson.",
+"The case for your exit: staying may protect the lesson while sacrificing the person.",
+"The counterweight: endurance is not automatically depth; sometimes it is poor governance.",
+"The strongest argument against your ambition: the destination is clear because the cost is blurred.",
+"The case for ambition: fear of vanity is a bad reason to refuse a real appetite.",
+"The opposing case is practical: your big idea still depends on small behaviours you keep neglecting.",
+"The strongest objection: the plan flatters your future and insults your present evidence.",
+"The case for beginning smaller: usefulness does not need to wait for grandeur.",
+"The countercase: smallness can also be a hiding place when scale is required.",
+"The strongest argument against your refinement: the work is not becoming better, only harder to accuse.",
+"The case for refinement: release is not courage if the object is still structurally careless.",
+"The opposing case is sharp: your standards rise exactly where exposure begins.",
+"The strongest objection: you have confused being unready with being unprotected.",
+"The case for shipping: the thing cannot become accountable while it remains imaginary.",
+"The counterweight: public exposure is not a substitute for private rigour.",
+"The strongest argument against your cleverness: the audience is impressed; the problem isn’t.",
+"The case for cleverness: blunt truth often dies before anyone agrees to hear it.",
+"The opposing case is clear: your wit is acting as legal counsel for avoidance.",
+"The strongest objection: the memorable line is hiding the missing mechanism.",
+"The case for plainness: if the sentence cannot carry the proof, the flourish is contraband.",
+"The counterweight: style earns its place only when it makes the burden easier to inspect.",
+"The strongest argument against your politics: it has excellent enemies and poor neighbours.",
+"The case for their resistance: they live with consequences your principle visits only rhetorically.",
+"The opposing case is public: your private truth becomes dangerous when it starts issuing orders.",
+"The strongest objection: you are asking strangers to obey what you have not made shareable.",
+"The case for translation: a reason that cannot travel should not govern.",
+"The countercase: what travels easily is not always what matters most.",
+"The strongest argument against neutrality: the current arrangement is already making decisions.",
+"The case for restraint: certainty borrowed from a crowd is still debt.",
+"The opposing case is careful: refusing a side can be cowardice; grabbing one fast can be theft.",
+"The strongest objection: you are using balance to give shelter to unequal evidence.",
+"The case against your clarity: it may be produced by excluding everything that hurts the thesis.",
+"The counterweight: complexity is not automatically honesty; sometimes it is camouflage with citations.",
+"The strongest argument against your optimism: it treats friction as a decorative detail.",
+"The case for hope: despair is also a forecast, and often a lazy one.",
+"The opposing case is hard: the future is not guilty merely because the past has priors.",
+"The strongest objection: you are sentencing tomorrow on evidence from another room.",
+"The case for pessimism: somebody has to count the load before the bridge becomes poetry.",
+"The counterweight: a bridge can be unsafe and still crossable with the right limits.",
+"The strongest argument against your modern-life complaint: the absurd system still gets your daily shift.",
+"The case against resignation: inevitability is often a habit with institutional backing.",
+"The opposing case is strange but solid: nonsense that moves people has stopped being merely nonsense.",
+"The strongest objection: you mock the absurdity because admitting its power would implicate your routine.",
+"The case for taking the ridiculous seriously: comedy is often where a system drops its mask.",
+"The counterweight: the joke may be funny because the structure is real.",
+"The strongest argument against your self-image: it is too well defended to be accurately known.",
+"The case for self-examination: the day keeps receipts your biography keeps losing.",
+"The opposing case is Stoic: your opinion of the event is doing more damage than the event.",
+"The strongest objection: you are reviewing the world to avoid reviewing your conduct.",
+"The case for humility: your missing knowledge is not a technicality.",
+"The countercase: humility is not a licence to remain undecided forever.",
+"The strongest argument against your doubt: it has become an expensive form of obedience to fear.",
+"The case for doubt: conviction has not yet answered its hardest witness.",
+"The opposing case is exact: your mind is not lying, but it is pleading.",
+"The strongest objection: the defence is beautiful because the defendant wrote it.",
+"The case for external judgement: reality is a better editor than self-protection.",
+"The counterweight: not every outside judgement is reality; some of it is weather.",
+"The strongest argument against your grievance: it wants the authority of law without the discipline of evidence.",
+"The case for your grievance: some truths first arrive as unorganised pain.",
+"The opposing case is mature: pain earns attention, not authority.",
+"The strongest objection: you want the exception without admitting the rule is broken.",
+"The case for the exception: hard cases exist because rules are made of language, not life.",
+"The counterweight: the objection isn’t betrayal; it’s the friction that keeps the grip.",
+"The final counterweight: what survives the strongest case against it may finally be worth carrying."];
+
+var state={current:null,recent:[],casting:false};
+
+function escapeHtml(s){return String(s).replace(/[&<>]/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[m]})}
+function choose(){
+ var n=CARDS.length,i,t=0;
+ do{ i=Math.floor(Math.random()*n); t++; }while(state.recent.indexOf(i)>=0 && t<60);
+ state.recent.unshift(i); state.recent=state.recent.slice(0,Math.min(20,n-1));
+ return i;
+}
+function lineHtml(s){ return '<span class="line">'+escapeHtml(s)+'<span class="caret" aria-hidden="true"></span></span>'; }
+function dump(){
+ if(state.casting) return;
+ state.casting=true;
+ var btn=$('ask'); btn.classList.add('busy');
+ var t=$('text'); t.classList.add('out-fade');
+ setTimeout(function(){
+   var i=choose();
+   state.current=CARDS[i];
+   t.innerHTML=lineHtml(CARDS[i]);
+   var out=t.closest('.output-shell') || t.closest('.output');
+   if(out){ out.classList.remove('quote-hit'); void out.offsetWidth; out.classList.add('quote-hit'); setTimeout(function(){out.classList.remove('quote-hit')},460); }
+   t.classList.remove('out-fade');
+   btn.classList.remove('busy');
+   state.casting=false;
+ },150);
+}
+function copyText(txt){
+ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(copied).catch(function(){fallback(txt)}); }
+ else fallback(txt);
+}
+function copied(){ var c=$('copy'); c.classList.add('ok'); c.textContent='COPIED'; setTimeout(function(){c.classList.remove('ok');c.textContent='COPY'},900); toast('copied'); }
+function fallback(txt){ var ta=document.createElement('textarea'); ta.value=txt; ta.style.position='fixed'; ta.style.left='-9999px'; ta.style.fontSize='16px'; document.body.appendChild(ta); ta.focus(); ta.select(); try{document.execCommand('copy');copied();}catch(e){toast('copy failed');} document.body.removeChild(ta); }
+function show(v){ ['vMain','vAbout'].forEach(function(x){$(x).classList.toggle('on',x===v)}); }
+function toast(s){ var t=$('toast'); t.textContent=s; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(function(){t.classList.remove('on')},1400); }
+
+function bind(){
+ $('ask').addEventListener('click',dump);
+ $('copy').addEventListener('click',function(){ if(state.current) copyText(PREFIX+state.current+'\n\n'+TAG); else toast('press the button first'); });
+ $('clear').addEventListener('click',function(){ state.current=null; var t=$('text'); t.classList.add('out-fade'); setTimeout(function(){ t.innerHTML=lineHtml('the fair objection has not spoken yet.'); t.classList.remove('out-fade'); },150); var c=$('copy'); c.classList.remove('ok'); c.textContent='COPY'; });
+ $('aboutLink').addEventListener('click',function(){ $('deckCount').textContent=CARDS.length; show('vAbout'); });
+ $('back').addEventListener('click',function(){show('vMain')});
+ $('brand').addEventListener('click',function(){show('vMain')});
+ document.addEventListener('keydown',function(e){
+   if((e.key==='Enter'||e.key===' ')&&$('vMain').classList.contains('on')&&document.activeElement.tagName!=='BUTTON'){ e.preventDefault(); dump(); }
+   if(e.key==='Escape'){ if(!$('vMain').classList.contains('on')) show('vMain'); }
+ });
+ setTimeout(function(){$('screen').classList.remove('power')},700);
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind); else bind();
+})();
+</script>
+</body>
+</html>

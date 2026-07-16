@@ -1,0 +1,1273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>THE MINUTES</title>
+<meta name="description" content="THE MINUTES — the meeting after the meeting. A corrective log exposing what the official record left out.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23131614'/%3E%3Cpath d='M8 4h15l3 3v21H8z' fill='%23fff8ea'/%3E%3Cpath d='M23 4v4h3' fill='none' stroke='%23d9cfbd'/%3E%3Cpath d='M11 10h12M11 15h12M11 20h10' stroke='%23d9cfbd' stroke-width='1.2'/%3E%3Cpath d='M11 6v20' stroke='%235f7565' stroke-dasharray='1 2'/%3E%3Cpath d='M9 25L24 10' stroke='%23b33a32' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Stencil+One&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#111412;
+  --shell:#1c211d;
+  --shell2:#121512;
+  --ledger:#6f816f;
+  --ledger-bright:#91a691;
+  --paper:#fff8ea;
+  --paper2:#f5ecd9;
+  --ink:#20231f;
+  --ink-soft:#4b504a;
+  --red:#b33a32;
+  --red-dark:#7b221e;
+  --rule:#ded3bf;
+  --muted:#788577;
+  --dim:#505a51;
+}
+*{box-sizing:border-box}
+html{min-height:100%;background:var(--bg)}
+body{
+  margin:0;min-height:100svh;color:var(--paper);
+  font-family:'IBM Plex Mono','Courier New',monospace;
+  padding:clamp(8px,1.8vw,18px);display:flex;align-items:stretch;justify-content:center;
+  background:
+    radial-gradient(820px 420px at 50% -150px,rgba(145,166,145,.16),transparent 68%),
+    radial-gradient(520px 320px at 15% 100%,rgba(179,58,50,.09),transparent 72%),
+    linear-gradient(180deg,#202620,#151915 62%,#0d100e);
+}
+body:before{
+  content:"";position:fixed;inset:0;z-index:9;pointer-events:none;opacity:.34;
+  background:repeating-linear-gradient(to bottom,rgba(255,248,234,.018) 0,rgba(255,248,234,.018) 1px,transparent 1px,transparent 6px);
+}
+.app{
+  align-self:center;width:100%;max-width:830px;
+  background:linear-gradient(145deg,#252b26 0%,#171c18 58%,#0e110f);
+  border:1px solid rgba(145,166,145,.23);border-radius:15px;
+  box-shadow:0 0 0 1px #000,0 20px 60px rgba(0,0,0,.9),0 0 50px rgba(111,129,111,.10);
+  padding:clamp(7px,1.4vw,12px);
+}
+.screen{
+  position:relative;overflow:hidden;min-height:calc(100svh - clamp(32px,5vw,54px));
+  padding:clamp(12px,2vw,20px);display:flex;flex-direction:column;gap:clamp(11px,1.7vw,15px);
+  border:1px solid rgba(145,166,145,.20);border-radius:12px;
+  background:radial-gradient(620px 220px at 50% 0%,rgba(255,248,234,.045),transparent 58%),linear-gradient(180deg,#1e241f 0%,#161a17 62%,#0c0f0d);
+  box-shadow:inset 0 0 0 1px rgba(255,248,234,.025),inset 0 0 42px rgba(0,0,0,.82);
+}
+.screen:after{
+  content:"";position:absolute;left:0;right:0;top:-46%;height:36%;z-index:3;pointer-events:none;opacity:.22;
+  background:linear-gradient(180deg,transparent,rgba(255,248,234,.025),rgba(145,166,145,.05),transparent);
+  animation:scan 12s linear infinite;
+}
+.header,.view,.footer{position:relative;z-index:1}
+.header{text-align:center;padding:clamp(5px,1.1vw,10px) 0 clamp(8px,1.3vw,13px);border-bottom:1px solid rgba(145,166,145,.18)}
+.brand{width:min(100%,700px);margin:0 auto;cursor:pointer}
+h1{
+  margin:0;font-family:'Saira Stencil One','IBM Plex Mono',monospace;font-weight:400;text-transform:uppercase;
+  font-size:clamp(2.1rem,10.3vw,4.65rem);line-height:.86;letter-spacing:.055em;color:var(--paper);
+  text-shadow:0 0 9px rgba(255,248,234,.22),0 0 30px rgba(111,129,111,.16);
+}
+h1 span:first-child{font-size:.62em;letter-spacing:.09em;color:#e7decb;opacity:.78;vertical-align:baseline}
+h1 .it{color:var(--ledger-bright);text-shadow:0 0 12px rgba(145,166,145,.46),0 0 30px rgba(179,58,50,.11);animation:itFlick 6.2s steps(1,end) infinite}
+.subtitle-bar{
+  width:min(100%,560px);margin:10px auto 0;display:flex;align-items:center;justify-content:center;gap:8px;
+  color:#d3dbd1;font-size:clamp(.63rem,2.15vw,.74rem);text-transform:uppercase;letter-spacing:.11em;
+}
+.subtitle-bar:before,.subtitle-bar:after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,rgba(145,166,145,.32))}
+.subtitle-bar:after{background:linear-gradient(90deg,rgba(145,166,145,.32),transparent)}
+.subtitle-bar span{padding:4px 10px;border:1px solid rgba(145,166,145,.26);border-radius:999px;background:rgba(145,166,145,.055);color:#eef2ec}
+.status{margin-top:9px;display:flex;justify-content:center;gap:7px;flex-wrap:wrap;color:var(--dim);font-size:.65rem;text-transform:uppercase;letter-spacing:.05em}
+.status span{padding:4px 7px;border:1px solid rgba(145,166,145,.15);border-radius:3px;background:rgba(0,0,0,.24)}
+.status b{font-weight:normal}.status .green{color:var(--ledger-bright)}.status .red{color:var(--red)}.status .cream{color:var(--paper)}
+.view{flex:1;display:none;flex-direction:column;gap:clamp(11px,1.7vw,15px)}.view.on{display:flex}
+.primary{position:relative}
+#ask{
+  position:relative;width:100%;min-height:clamp(70px,12svh,86px);border:1px solid rgba(145,166,145,.58);border-radius:8px;
+  background:radial-gradient(240px 90px at 50% 0%,rgba(255,248,234,.13),transparent 72%),linear-gradient(90deg,rgba(179,58,50,.08),transparent 23%,transparent 78%,rgba(111,129,111,.14)),linear-gradient(180deg,#243128 0%,#172118 48%,#0e130f 100%);
+  color:var(--paper);font-family:'Saira Stencil One',Impact,sans-serif;font-size:clamp(1.16rem,5.1vw,1.78rem);letter-spacing:.065em;text-transform:uppercase;text-shadow:0 0 10px rgba(145,166,145,.30),0 1px 0 #000;
+  cursor:pointer;box-shadow:0 0 0 2px #000,0 7px 0 rgba(0,0,0,.74),0 0 28px rgba(111,129,111,.12),inset 0 1px 0 rgba(255,248,234,.14),inset 0 -16px 22px rgba(0,0,0,.40);
+  transition:transform .06s ease,filter .14s ease,border-color .14s ease;
+}
+#ask:hover{filter:brightness(1.06);border-color:rgba(145,166,145,.78)}
+#ask:after{content:"AMEND";position:absolute;right:12px;bottom:7px;font-size:.50rem;letter-spacing:.18em;color:rgba(179,58,50,.42);text-shadow:none}
+#ask:active{transform:translateY(3px) scale(.995)}#ask.busy{animation:btnGlitch .09s steps(2,end) 5!important}
+.output-shell{position:relative;flex:1;display:flex;flex-direction:column;padding-top:18px}
+.minute-icon{
+  position:absolute;z-index:5;left:50%;top:-8px;width:64px;height:64px;transform:translateX(-50%);
+  filter:drop-shadow(0 6px 6px rgba(0,0,0,.45));pointer-events:none;
+}
+.minute-icon svg{display:block;width:100%;height:100%}
+.minute-icon .sheet{fill:var(--paper);stroke:#d6c8b3;stroke-width:1.2}
+.minute-icon .fold{fill:#eadfc9;stroke:#d6c8b3;stroke-width:1}
+.minute-icon .rule{stroke:#d8cdb9;stroke-width:1.2}
+.minute-icon .margin{stroke:var(--ledger);stroke-width:1.3;stroke-dasharray:1 2}
+.minute-icon .slash{stroke:var(--red);stroke-width:4.8;stroke-linecap:round}
+.minute-icon:after{
+  content:"";position:absolute;left:50%;top:50%;width:78px;height:18px;border-radius:50%;border:1px solid rgba(179,58,50,.0);
+  transform:translate(-50%,-20%) scale(.4);opacity:0;box-shadow:0 0 0 rgba(179,58,50,0);pointer-events:none;
+}
+.output{
+  position:relative;overflow:hidden;flex:1;min-height:clamp(245px,43svh,376px);display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;
+  padding:clamp(32px,4.4vw,42px) clamp(20px,4vw,34px) clamp(22px,3.5vw,30px);
+  border:1px solid rgba(42,37,30,.30);border-radius:10px;background:linear-gradient(180deg,#fffaf0 0%,var(--paper) 48%,var(--paper2) 100%);
+  box-shadow:0 18px 38px rgba(0,0,0,.50),0 2px 8px rgba(0,0,0,.46),inset 0 0 30px rgba(76,54,34,.11),inset 0 1px 0 rgba(255,255,255,.62);
+  transform-origin:50% 14%;transition:background-color .2s ease;
+}
+.output:before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:1;opacity:.45;
+  background:radial-gradient(420px 160px at 50% -20%,rgba(255,255,255,.55),transparent 62%),linear-gradient(90deg,rgba(111,129,111,.16) 0 2px,transparent 2px 100%);
+}
+.output:after{
+  content:"";position:absolute;left:-18%;top:52%;width:136%;height:3px;z-index:4;background:rgba(179,58,50,.0);transform:rotate(-7deg);pointer-events:none;
+}
+.output .ruled-backdrop{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(to bottom,transparent 0,transparent 28px,var(--rule) 28px,var(--rule) 29px);opacity:.72}
+#text{position:relative;z-index:3;width:100%;text-align:left;font-family:'IBM Plex Mono',monospace;transition:opacity .16s ease;word-wrap:break-word;overflow-wrap:break-word}
+#text.out-fade{opacity:0}
+.line.idle{color:var(--ink-soft);font-size:clamp(1.12rem,4.2vw,1.46rem);line-height:1.5;margin-top:clamp(42px,8vw,62px);padding-left:7px}
+.caret{display:inline-block;width:.6ch;height:1.02em;margin-left:.22ch;vertical-align:-.16em;background:var(--red);box-shadow:0 0 4px rgba(179,58,50,.3);animation:caret 1.06s steps(1,end) infinite}
+.entryno{display:none}
+.record-block{
+  color:var(--ink);font-size:clamp(.98rem,3.5vw,1.28rem);line-height:1.46;font-weight:500;margin:2px 0 12px;padding-left:6px;opacity:0;transform:translateY(-5px);
+  animation:recordAppear .25s cubic-bezier(0,0,.2,1) forwards;
+}
+.rec-label{color:var(--ledger-bright);font-weight:700;letter-spacing:.065em;font-size:.88em}
+.ledger-divider{width:100%;height:1px;background:linear-gradient(90deg,rgba(111,129,111,.12),rgba(111,129,111,.55),rgba(111,129,111,.12));opacity:0;margin:10px 0 16px;animation:lineDraw .2s ease-in forwards .16s}
+.minutes-block{
+  position:relative;color:var(--ink);font-size:clamp(1.14rem,4.1vw,1.54rem);line-height:1.43;font-weight:700;padding-left:12px;border-left:3px solid rgba(179,58,50,.70);opacity:0;transform:scale(1.04) translateY(5px);
+  animation:minutesStamp .28s cubic-bezier(.175,.885,.32,1.275) forwards .28s;text-shadow:0 0 0 rgba(179,58,50,0);
+}
+.minutes-block:before{
+  content:"AMENDED";position:absolute;z-index:-1;left:clamp(12px,7vw,54px);top:50%;transform:translateY(-50%) rotate(-8deg) scale(1.18);opacity:0;
+  font-family:'Saira Stencil One','IBM Plex Mono',monospace;font-size:clamp(2.2rem,8vw,4.6rem);letter-spacing:.06em;color:rgba(179,58,50,.10);white-space:nowrap;
+  animation:stampGhost .32s ease-out forwards .31s;
+}
+.min-label{color:var(--red);font-weight:700;letter-spacing:.065em;font-size:.90em}
+.output-shell.filed .output{background:linear-gradient(180deg,#fffdf7 0%,#fff8ea 48%,#f3ead8 100%)}
+.output-shell.quote-hit .minute-icon{animation:fileDrop .46s cubic-bezier(.18,.9,.14,1.2) both}
+.output-shell.quote-hit .minute-icon:after{animation:impactRing .46s ease-out .22s both}
+.output-shell.quote-hit .output{animation:paperHit .36s cubic-bezier(.2,.9,.25,1.15) both}
+.output-shell.quote-hit .output:after{animation:redStrike .38s ease-out .18s both}
+.controls{display:flex;gap:8px}
+#copy,#clear,.controls .flink{min-height:44px;padding:12px 8px;border-radius:5px;font-family:inherit;cursor:pointer;text-transform:uppercase;font-weight:bold;letter-spacing:.1em;font-size:.8rem}
+#copy{flex:1;color:var(--paper);background:linear-gradient(180deg,#1e241f,#111411);border:1px solid rgba(145,166,145,.34)}
+#copy.ok{color:var(--paper);border-color:var(--red);background:#2a1817}
+#clear{flex:1;color:var(--muted);background:linear-gradient(180deg,#171b18,#0f120f);border:1px solid rgba(145,166,145,.19)}
+.about{
+  flex:1;overflow:auto;min-height:clamp(260px,52svh,420px);border:1px solid rgba(145,166,145,.22);border-radius:12px;
+  background:radial-gradient(440px 180px at 50% 0%,rgba(145,166,145,.06),transparent 66%),linear-gradient(180deg,rgba(255,248,234,.015),rgba(0,0,0,.25)),#0e110f;
+  padding:20px;color:var(--muted);white-space:pre-line;font-size:clamp(.9rem,3vw,1rem);line-height:1.6;
+}
+.footer{margin-top:auto;padding-top:10px;border-top:1px dashed rgba(145,166,145,.18);color:var(--dim);font-size:.66rem;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.footer .flink{background:none;border:1px solid transparent;border-radius:7px;color:var(--muted);padding:4px 6px;font-size:.66rem;letter-spacing:.1em;cursor:pointer}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#171b18;color:var(--paper);border:1px solid rgba(145,166,145,.5);padding:9px 14px;z-index:50;font-size:.86rem;display:none;box-shadow:0 12px 30px rgba(0,0,0,.55)}
+.toast.on{display:block}
+#ask:focus-visible,#copy:focus-visible,#clear:focus-visible,.footer .flink:focus-visible,.controls .flink:focus-visible{outline:2px solid rgba(179,58,50,.78);outline-offset:3px}
+@keyframes scan{to{top:120%}}
+@keyframes caret{50%{opacity:0}}
+@keyframes itFlick{0%,89%,100%{opacity:1}90%{opacity:.78}91%{opacity:1}92%{opacity:.62}93%{opacity:1}}
+@keyframes btnGlitch{0%{transform:translateX(0)}50%{transform:translateX(2px)}100%{transform:translateX(-1px)}}
+@keyframes recordAppear{to{opacity:1;transform:translateY(0)}}
+@keyframes lineDraw{from{opacity:0;transform:scaleX(.4)}to{opacity:.48;transform:scaleX(1)}}
+@keyframes minutesStamp{62%{opacity:1;transform:scale(.985) translateY(0)}100%{opacity:1;transform:scale(1) translateY(0);text-shadow:0 1px 0 rgba(255,255,255,.28)}}
+@keyframes stampGhost{0%{opacity:0;transform:translateY(-50%) rotate(-8deg) scale(1.38)}45%{opacity:.18}100%{opacity:.085;transform:translateY(-50%) rotate(-8deg) scale(1)}}
+@keyframes fileDrop{0%{transform:translate(-50%,-26px) rotate(-3deg);opacity:.62}54%{transform:translate(-50%,7px) rotate(1deg);opacity:1}70%{transform:translate(-50%,-2px) rotate(-.5deg)}100%{transform:translate(-50%,0) rotate(0)}}
+@keyframes impactRing{0%{opacity:.65;transform:translate(-50%,-12%) scale(.35);border-color:rgba(179,58,50,.55);box-shadow:0 0 18px rgba(179,58,50,.22)}100%{opacity:0;transform:translate(-50%,-12%) scale(1.22);border-color:rgba(179,58,50,0);box-shadow:0 0 0 rgba(179,58,50,0)}}
+@keyframes paperHit{0%{transform:translateY(0) rotate(0)}45%{transform:translateY(3px) rotate(-.25deg)}70%{transform:translateY(-1px) rotate(.12deg)}100%{transform:translateY(0) rotate(0)}}
+@keyframes redStrike{0%{background:rgba(179,58,50,0);opacity:0;transform:rotate(-7deg) scaleX(.12)}35%{background:rgba(179,58,50,.35);opacity:.9}100%{background:rgba(179,58,50,0);opacity:0;transform:rotate(-7deg) scaleX(1)}}
+@media(max-width:560px){
+  body{padding:7px;align-items:stretch}.app{align-self:stretch;border-radius:12px;padding:6px}.screen{min-height:calc(100svh - 14px);padding:11px;border-radius:10px;gap:11px}
+  h1{font-size:clamp(1.92rem,12.4vw,3.25rem);letter-spacing:.03em;line-height:.82}
+  .subtitle-bar{margin-top:8px;font-size:.57rem}.status{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;font-size:.52rem}.status span{padding:4px;text-align:center;white-space:nowrap}
+  #ask{min-height:70px;font-size:clamp(1.02rem,5.4vw,1.38rem)}.output-shell{padding-top:14px}.minute-icon{width:50px;height:50px;top:-5px}
+  .output{min-height:274px;padding:32px 14px 20px}.line.idle{margin-top:34px;padding-left:4px}
+  .record-block{font-size:clamp(.94rem,4.25vw,1.12rem);margin-bottom:10px}.minutes-block{font-size:clamp(1.02rem,4.8vw,1.24rem)}.minutes-block:before{font-size:2.18rem;left:10px}
+  .footer{font-size:.58rem}
+}
+@media(max-width:360px){.status{grid-template-columns:1fr;display:flex}.status span{font-size:.50rem}h1{font-size:1.82rem}.line.idle{margin-top:24px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.record-block,.minutes-block,.ledger-divider{opacity:1!important;transform:none!important}}
+</style>
+</head>
+<body>
+<main class="app">
+  <section class="screen" id="screen" aria-label="THE MINUTES log reader">
+    <header class="header">
+      <div class="brand" id="brand" title="Return">
+        <h1><span>THE</span> <span class="it">MINUTES</span></h1>
+        <div class="subtitle-bar"><span>the meeting after the meeting</span></div>
+      </div>
+      <div class="status"><span>RECORD: <b class="green">OFFICIAL</b></span><span>MINUTES: <b class="red">AMENDED</b></span><span>APPROVED: <b class="cream">NEVER</b></span></div>
+    </header>
+    <div class="view on" id="vMain">
+      <div class="primary"><button id="ask" type="button">READ ENTRY</button></div>
+      <div class="output-shell" id="cardShell">
+        <div class="minute-icon" aria-hidden="true">
+          <svg viewBox="0 0 64 64" role="img">
+            <path class="sheet" d="M18 6h23l9 9v43H18z"/>
+            <path class="fold" d="M41 6v10h9z"/>
+            <path class="margin" d="M23 12v40"/>
+            <path class="rule" d="M28 20h16M28 27h16M28 34h16M28 41h13"/>
+            <path class="slash" d="M17 53L50 20"/>
+          </svg>
+        </div>
+        <div class="output">
+          <div class="ruled-backdrop" aria-hidden="true"></div>
+          <span class="entryno" id="entryno" aria-hidden="true"></span>
+          <div id="text" aria-live="polite"><span class="line idle">the record is open.<span class="caret" aria-hidden="true"></span></span></div>
+        </div>
+      </div>
+      <div class="controls"><button id="copy" type="button">COPY</button><button id="clear" type="button">CLEAR</button></div>
+    </div>
+    <div class="view" id="vAbout">
+      <div class="about">&gt; THE MINUTES  &middot;  the meeting after the meeting
+&gt; ON FILE: <b id="deckCount">999</b> unmapped human logs, zero face-saving prose included
+
+THE MINUTES keeps the record the room refuses to file.
+
+Every human assembly produces two documents: the official version designed for public stability, and the backstage transaction of what actually occurred. Family tables, text loops, roommates, couples, neighbourhood councils — the gap is always there. This machine reads it back.
+
+One button. One entry: the line that went on record, followed by the corrective friction underneath it.
+
+It tracks the performance, not the claim. For empirical logic disputes, see BAD EVIDENCE.
+
+No accounts. No logs saved. Never approved. The record stands corrected.
+
+&copy; HRF 2026. All rights reserved.
+
+[ &larr; RETURN ]  or press ESC</div>
+      <div class="controls"><button id="back" class="flink" type="button" style="flex:1;padding:14px;border:1px solid var(--ledger);border-radius:8px;color:var(--muted)">&larr; RETURN</button></div>
+    </div>
+    <div class="footer"><span>&copy; HRF 2026. All rights reserved.</span><button class="flink" id="aboutLink" type="button">[ ABOUT ]</button></div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+(function(){'use strict';
+var $=function(id){return document.getElementById(id)};
+var TAG='THE MINUTES';
+var CARDS=[
+"On record: the exchange stayed friendly. Minutes: one person edited the truth to keep the peace.",
+"On record: the routine held the group together. Minutes: everyone knew which discomfort lived in which drawer.",
+"On record: the comment was harmless. Minutes: harm became debatable because the wound had manners.",
+"On record: the room avoided awkwardness. Minutes: awkwardness was transferred to the first person who named it.",
+"On record: the greeting was warm. Minutes: warmth was issued by rank, usefulness, and recent behaviour.",
+"On record: the joke landed well. Minutes: the target laughed before checking whether refusal was safe.",
+"On record: everyone knew the rules. Minutes: the rules were never taught, only enforced after someone failed them.",
+"On record: the small talk was pleasant. Minutes: small talk kept the serious sentence outside.",
+"On record: the compliment was kind. Minutes: it repaired the speaker faster than the person addressed.",
+"On record: the interruption was accidental. Minutes: the accident had a reliable direction.",
+"On record: the meeting began with check-ins. Minutes: emotion was registered, contained, and ignored.",
+"On record: the room showed solidarity. Minutes: the ritual was repeated; the person it exhausted was avoided.",
+"On record: the phrase was only banter. Minutes: banter made contempt easier to deny.",
+"On record: the seating was informal. Minutes: informality arranged itself around power before anyone put down a bag.",
+"On record: the apology saved face. Minutes: face was saved by leaving the harm exactly where it had fallen.",
+"On record: the atmosphere stayed light. Minutes: lightness depended on one person carrying the weight quietly.",
+"On record: the correction was unnecessary. Minutes: unnecessary meant accurate, inconvenient, and badly timed.",
+"On record: everyone was just being nice. Minutes: nice kept the truth waiting for permission.",
+"On record: the routine created comfort. Minutes: comfort was maintained by work nobody recorded.",
+"On record: the comment was not meant that way. Minutes: intention was called in once impact became too articulate.",
+"On record: the group respected boundaries. Minutes: boundaries counted only when they cost nobody anything.",
+"On record: the exchange was civil. Minutes: civility became compulsory when honesty arrived.",
+"On record: the smile was mutual. Minutes: one smile welcomed, the other survived.",
+"On record: the conversation stayed neutral. Minutes: neutrality meant the status quo did not have to introduce itself.",
+"On record: the routine was ordinary. Minutes: ordinary was where the room stored its most durable instructions.",
+"On record: the concern was well meant. Minutes: concern inspected a choice it had no right to own.",
+"On record: the group valued sensitivity. Minutes: sensitivity was praised until it objected.",
+"On record: the comment was tiny. Minutes: tiny became heavy through repetition.",
+"On record: the refusal was tactful. Minutes: tact made the no harder to locate.",
+"On record: the room moved on quickly. Minutes: moving on meant the fastest people got to define what had happened.",
+"On record: the ritual kept everyone connected. Minutes: connection meant the same performance with the same face.",
+"On record: the compliment broke the ice. Minutes: the cold was already being held by someone else.",
+"On record: the issue was too small to discuss. Minutes: smallness was the preferred unit for unrepaired harm.",
+"On record: the host made everyone comfortable. Minutes: comfort was produced by invisible rehearsal.",
+"On record: the wording was careful. Minutes: careful meant deniable after impact.",
+"On record: the gathering felt natural. Minutes: natural meant rehearsed until nobody noticed the cost.",
+"On record: the reaction was disproportionate. Minutes: proportion was set by people who missed the first thousand cuts.",
+"On record: the request was polite. Minutes: politeness made the imposition harder to refuse and easier to deny.",
+"On record: everyone took turns. Minutes: equal turns produced unequal consequences.",
+"On record: the comment came from curiosity. Minutes: curiosity entered where trust had not been built.",
+"On record: the room stayed professional. Minutes: personal consequences could be raised once they became measurable.",
+"On record: the old routine was reassuring. Minutes: reassuring meant nobody had to face the person silently absorbing the strain.",
+"On record: the question was innocent. Minutes: innocence made the answerer responsible for comfort.",
+"On record: the disagreement was handled gracefully. Minutes: grace meant less truth from the weaker seat.",
+"On record: the greeting followed custom. Minutes: custom issued warmth, assessment, or surprise by rank.",
+"On record: the clarification helped everyone. Minutes: the speaker recovered status after being understood.",
+"On record: the mood improved. Minutes: the mood improved when the inconvenient person stopped making the room account for itself.",
+"On record: the routine built trust. Minutes: trust meant knowing exactly which truths would not be spoken before lunch.",
+"On record: the remark was affectionate. Minutes: affection made correction look disloyal.",
+"On record: the room avoided conflict. Minutes: conflict was avoided by renewing the conditions that produced it.",
+"On record: the expectation was reasonable. Minutes: reasonable meant already adjusted to someone else’s convenience.",
+"On record: everyone laughed. Minutes: one person calculated the price of not laughing.",
+"On record: the daily habit showed care. Minutes: care became compulsory once the room stopped noticing who performed it.",
+"On record: the criticism was constructive. Minutes: construction began after status was protected.",
+"On record: the pause was thoughtful. Minutes: the pause selected the recordable version.",
+"On record: the label was just descriptive. Minutes: description became discipline once attached to the same people.",
+"On record: the group protected harmony. Minutes: harmony named the arrangement where only one note could change.",
+"On record: the question was asked gently. Minutes: gentleness made refusal look harsh.",
+"On record: the routine made life easier. Minutes: easier meant easier for inheritors, not maintainers.",
+"On record: the feedback was received well. Minutes: received well meant buried without a scene.",
+"On record: the comment was not a big deal. Minutes: the deal became big only when someone refused to keep storing it small.",
+"On record: everyone made small adjustments. Minutes: adjustments took permanent address in one nervous system.",
+"On record: the request was phrased as optional. Minutes: optional meant remembered if refused.",
+"On record: the room felt inclusive. Minutes: inclusion meant joining the script, not editing it.",
+"On record: the nickname was affectionate. Minutes: affection made correction socially expensive.",
+"On record: the group shared responsibility. Minutes: responsibility was shared ceremonially and executed privately.",
+"On record: the silence was comfortable. Minutes: comfort belonged to the person least likely to break it.",
+"On record: the routine expressed solidarity. Minutes: solidarity stopped asking who was tired of performing it.",
+"On record: the answer preserved dignity. Minutes: dignity was preserved by hiding the decision.",
+"On record: the comment was merely observational. Minutes: observation was judgement without liability.",
+"On record: the room recognised the concern. Minutes: recognition closed the file without repair.",
+"On record: the group maintained decorum. Minutes: decorum protected order from information.",
+"On record: the small favour was no trouble. Minutes: trouble had no authorised vocabulary.",
+"On record: the joke relieved tension. Minutes: the tension changed hands.",
+"On record: the routine gave everyone a place. Minutes: some places came with work attached.",
+"On record: the answer was diplomatic. Minutes: diplomacy made the no take longer to reach the body.",
+"On record: the criticism was too sensitive. Minutes: sensitive meant accurate enough to inconvenience power.",
+"On record: the room was being considerate. Minutes: consideration was distributed to feelings already recognised as legitimate.",
+"On record: the repeated comment meant nothing. Minutes: repetition is how nothing becomes a rule.",
+"On record: the invitation was generous. Minutes: generosity arrived with instructions.",
+"On record: the routine helped people belong. Minutes: belonging required leaving certain parts outside.",
+"On record: the wording avoided blame. Minutes: blame avoided wording and remained perfectly operational.",
+"On record: the room gave space. Minutes: space was offered after the route through it had already been decided.",
+"On record: the remark was clumsy but harmless. Minutes: the same people kept being asked to step around it.",
+"On record: the meeting had a positive tone. Minutes: positivity locked the awkward facts away.",
+"On record: the daily ritual was simple. Minutes: simple meant nobody counted the hands that reset the scene each time.",
+"On record: the speaker was only trying to help. Minutes: help arrived before listening.",
+"On record: the correction disrupted the flow. Minutes: the flow had been carrying everyone away from the problem.",
+"On record: the group was patient. Minutes: patience was requested from those waiting longest.",
+"On record: the compliment sounded harmless. Minutes: it carried old instructions about who gets to be ordinary.",
+"On record: the room wanted closure. Minutes: closure meant private storage for the remaining discomfort.",
+"On record: the routine was a sign of care. Minutes: care had become so routine that refusing it looked like cruelty.",
+"On record: the comment was taken the wrong way. Minutes: the wrong way was the route with memory, pattern, and receipts.",
+"On record: the interaction was smooth. Minutes: smoothness required sanding down the objection.",
+"On record: the group avoided making demands. Minutes: demands were avoided by converting them into hints with invoices attached.",
+"On record: the exchange showed mutual respect. Minutes: one side could be vague; the other had to be gracious.",
+"On record: the routine made people feel safe. Minutes: safety meant the room could predict who would absorb the unpredictable.",
+"On record: the clarification was appreciated. Minutes: appreciation was the face-saving tax paid before disagreement could enter.",
+"On record: the comment was only about preference. Minutes: preference appeared where hierarchy needed a soft costume.",
+"On record: the room kept things light. Minutes: lightness made heaviness socially improper.",
+"On record: the favour strengthened the relationship. Minutes: the favour created a small debt with excellent manners.",
+"On record: the joke was self-deprecating. Minutes: self-deprecation made the speaker easier to praise and harder to challenge.",
+"On record: the household routine was shared. Minutes: shared meant one person heard it first.",
+"On record: the apology sounded sincere. Minutes: sincerity did not contain a plan, a deadline, or the return of the thing taken.",
+"On record: the room welcomed difference. Minutes: difference was welcome as colour, not correction.",
+"On record: the phrase was socially acceptable. Minutes: acceptability is often the last hiding place of a small cruelty.",
+"On record: the interaction required compromise. Minutes: one person moved an inch until the floor plan changed.",
+"On record: the concern was raised delicately. Minutes: delicacy protected the speaker, not the subject.",
+"On record: the routine carried people through. Minutes: nobody asked who was carrying the routine.",
+"On record: the group protected everyone’s face. Minutes: the visible faces received the protection.",
+"On record: the slight was probably accidental. Minutes: accidents develop patterns when the room refuses to keep records.",
+"On record: the conversation ended politely. Minutes: politely meant the actual objection left by the service entrance.",
+"On record: the small adjustment was automatic. Minutes: automatic meant repeated until the doer stopped being consulted.",
+"On record: the room agreed not to overthink it. Minutes: overthinking was the label placed on noticing the machinery.",
+"On record: the gesture was courteous. Minutes: courtesy opened the door and quietly decided who belonged inside.",
+"On record: the issue was handled with care. Minutes: care protected everything except the person it named.",
+"On record: the routine proved solidarity. Minutes: solidarity was strongest when it required no redistribution of comfort.",
+"On record: the disagreement was softened. Minutes: softness made the blow quieter, not smaller.",
+"On record: the atmosphere was welcoming. Minutes: welcome came with posture, timing, and tests.",
+"On record: the record was accurate. Minutes: accurate meant every sentence was true and the order of truths was false.",
+"On record: the instruction was followed precisely. Minutes: precision exposed its dependence on quiet judgement.",
+"On record: everyone remained polite. Minutes: politeness kept contact with reality brief.",
+"On record: the procedure was applied equally. Minutes: equality began after the powerful people had already chosen the procedure.",
+"On record: the family stayed calm. Minutes: the loudest truth moved into the youngest stomach.",
+"On record: the team respected the chain of command. Minutes: the chain mostly pulled blame downward.",
+"On record: the request was phrased gently. Minutes: the gentleness was there to make refusal look cruel.",
+"On record: the room was open to feedback. Minutes: feedback was welcome until it developed names, dates, and witnesses.",
+"On record: the order was carried out exactly. Minutes: exactness exposed how much quiet improving it had relied on.",
+"On record: the household was functioning normally. Minutes: normal meant one person kept translating distress into admin.",
+"On record: the meeting preserved everyone’s dignity. Minutes: dignity was preserved by removing the verbs.",
+"On record: the public space was open to all. Minutes: openness ended where design began enforcing preference.",
+"On record: the apology avoided unnecessary conflict. Minutes: it saved face without returning anything stolen.",
+"On record: the task was completed according to guidance. Minutes: guidance became sacred only after common sense objected.",
+"On record: the couple avoided blaming each other. Minutes: blame moved into objects, dates, and tone.",
+"On record: the committee used inclusive language. Minutes: inclusion stopped where changing the vote began.",
+"On record: everyone understood the tone of the message. Minutes: the tone did what the words were too deniable to do.",
+"On record: the junior complied without complaint. Minutes: the complaint became exact obedience.",
+"On record: the family was simply concerned. Minutes: concern worked as surveillance with softer lighting.",
+"On record: the consultation gave residents a voice. Minutes: the microphone belonged to the record keepers.",
+"On record: the correction was minor. Minutes: the minor correction removed the sentence that made the whole record honest.",
+"On record: the rule was there for consistency. Minutes: consistency meant everyone suffered the same bad design differently.",
+"On record: the conversation stayed civil. Minutes: civility policed the person with the clearest point.",
+"On record: the instruction left no room for interpretation. Minutes: the person obeying it found the room anyway.",
+"On record: the parent was worried about behaviour. Minutes: the behaviour was the family newsletter everyone received.",
+"On record: the group agreed to move forward. Minutes: forward meant stepping over the unresolved part.",
+"On record: the request respected everyone’s time. Minutes: respect arrived as a twenty-minute preface to a five-minute imposition.",
+"On record: the form was completed correctly. Minutes: the form became correct only after reality was edited to fit the boxes.",
+"On record: the room valued honesty. Minutes: honesty was praised as virtue and punished as behaviour.",
+"On record: the family did not want drama. Minutes: drama meant accurate description.",
+"On record: the square was neutral ground. Minutes: neutrality had opening hours and preferred bodies.",
+"On record: the message was carefully worded. Minutes: careful wording pushed without leaving prints.",
+"On record: the employee followed the checklist. Minutes: the checklist had been surviving for years on unpaid judgement.",
+"On record: the household divided labour naturally. Minutes: naturally meant the same person noticed first.",
+"On record: the committee invited disagreement. Minutes: disagreement was invited as decoration.",
+"On record: the wording protected relationships. Minutes: wording protected the speaker from being understood.",
+"On record: the policy was followed to the letter. Minutes: the letter immediately testified against the spirit.",
+"On record: the family avoided taking sides. Minutes: not taking sides reinforced the side already holding the furniture.",
+"On record: the workshop empowered participants. Minutes: empowerment arrived without budget, schedule control, or veto power.",
+"On record: the answer was noncommittal to avoid pressure. Minutes: pressure was redistributed, not removed.",
+"On record: the supervisor requested a simple update. Minutes: simple meant short enough to ignore and detailed enough to blame.",
+"On record: the child needed clearer boundaries. Minutes: the adults did, and chose a smaller person to demonstrate.",
+"On record: the neighbourhood meeting heard all concerns. Minutes: concerns were heard in the order of property value.",
+"On record: the compliment was generous. Minutes: generosity came with a handle.",
+"On record: the order improved accountability. Minutes: the least discretion produced the cleanest paper trail.",
+"On record: the family agreed to start fresh. Minutes: fresh meant the old script with new napkins.",
+"On record: the process was accessible. Minutes: access required free evenings and fluency in forms.",
+"On record: the refusal was softened to spare feelings. Minutes: the softness kept the rejected person busy interpreting weather.",
+"On record: the instruction was unrealistic but clear. Minutes: clear nonsense is still nonsense.",
+"On record: the room maintained a positive atmosphere. Minutes: positivity sedated the objection before the verb.",
+"On record: the family role was informal. Minutes: informal meant impossible to resign from.",
+"On record: the plaza welcomed community use. Minutes: welcome ended when use became too visible.",
+"On record: the polite reply kept options open. Minutes: every open option became someone else’s unfinished task.",
+"On record: the task was done by regulation. Minutes: regulation revealed the hidden labour usually donated by competence.",
+"On record: the household avoided confrontation. Minutes: the mess migrated to increasingly symbolic locations.",
+"On record: the meeting produced a shared position. Minutes: the owner of the final document wrote the position.",
+"On record: the request was only a suggestion. Minutes: the suggestion wore the shoes of an order.",
+"On record: the order was complied with immediately. Minutes: compliance prevented rescue by practical intelligence.",
+"On record: the family wanted what was best. Minutes: best meant stable enough that nobody had to change roles.",
+"On record: the park rules ensured comfort for everyone. Minutes: everyone had a very selective meaning.",
+"On record: the statement avoided offence. Minutes: offence was avoided by moving the offence into the arrangement itself.",
+"On record: the team followed the approved process. Minutes: the approved process turned one bad decision into six traceable steps.",
+"On record: the argument ended peacefully. Minutes: peacefully meant the losing side accepted a version too vague to appeal.",
+"On record: the family kept private matters private. Minutes: private meant unreviewable by trained witnesses.",
+"On record: the meeting was chaired efficiently. Minutes: efficiency treated awkward facts as agenda creep.",
+"On record: the phrase was chosen to be respectful. Minutes: respect was doing the work of delay.",
+"On record: the written order was clear. Minutes: the clarity made it impossible to pretend the outcome was accidental.",
+"On record: the siblings shared responsibility. Minutes: responsibility was shared emotionally and executed by the one with keys.",
+"On record: the street belonged to the public. Minutes: belonging depended on posture, timing, and who called it suspicious.",
+"On record: the reply was diplomatic. Minutes: tone escorted truth to the exit.",
+"On record: the staff member complied with the new rule. Minutes: the new rule immediately consumed the time it claimed to save.",
+"On record: the family stayed united. Minutes: unity routed disagreement through the weakest carrier.",
+"On record: the forum encouraged co-production. Minutes: citizens supplied legitimacy; officials kept the edit button.",
+"On record: the message was sent with warm regards. Minutes: warmth was added so the demand could pass through security.",
+"On record: the chain of approval prevented errors. Minutes: the chain turned one error into a departmental heirloom.",
+"On record: the family had no secrets. Minutes: the secrets had become furniture and therefore did not count.",
+"On record: the debate welcomed all perspectives. Minutes: perspective meant anything that left the room unchanged.",
+"On record: the phrase was technically accurate. Minutes: technical accuracy was used to avoid moral readability.",
+"On record: the order was fulfilled as written. Minutes: as written was the only available protest.",
+"On record: the relationship had healthy boundaries. Minutes: boundary meant the difficult feeling was reassigned.",
+"On record: the redevelopment served the public. Minutes: public meant available for private interpretation.",
+"On record: the email was considerate. Minutes: every sentence kept the request deniable.",
+"On record: the form protected the organisation. Minutes: protection meant not learning what the form excluded.",
+"On record: the family joke lightened the mood. Minutes: the joke released pressure without changing the room.",
+"On record: the panel made space for lived experience. Minutes: lived experience was heard after the decision was safe.",
+"On record: the apology was carefully balanced. Minutes: balance gave the harmed person grammar instead of repair.",
+"On record: the policy was implemented without exception. Minutes: exception had already been built into access.",
+"On record: the household rule applied to everyone. Minutes: everyone meant whoever could not challenge it.",
+"On record: the public meeting ran smoothly. Minutes: dissent never reached a working microphone.",
+"On record: the reply preserved face. Minutes: face survived; the decision disappeared.",
+"On record: the order was followed exactly. Minutes: exactness exposed the rule’s dependence on judgement.",
+"On record: the family member overreacted again. Minutes: overreaction meant reacting to what others kept undernaming.",
+"On record: the city bench was for everyone. Minutes: everyone meant brief, correct, and easy to move on.",
+"On record: the manager appreciated initiative. Minutes: initiative was welcome once it protected the manager.",
+"On record: the group was asked for honest views. Minutes: honesty was requested after the safe answer was modelled.",
+"On record: the wording was tactful. Minutes: tact removed the handle from the truth.",
+"On record: the process guaranteed fairness. Minutes: fairness made the least powerful provide the proof.",
+"On record: the family respected privacy. Minutes: privacy meant everyone knew and nobody could cite the source.",
+"On record: the project included community feedback. Minutes: feedback was welcomed as texture, not steering.",
+"On record: the request was optional. Minutes: optional meant refusal would be remembered.",
+"On record: the order was inefficient but mandatory. Minutes: mandatory is how inefficiency avoids persuasion.",
+"On record: the family was worried about tone. Minutes: tone was safer to discuss than what it carried.",
+"On record: the public hearing was orderly. Minutes: anger became inadmissible once it sounded like anger.",
+"On record: the message was softened with thanks. Minutes: gratitude made refusal look rude.",
+"On record: the instruction removed ambiguity. Minutes: ambiguity had been the only place judgement could enter.",
+"On record: the room reached closure. Minutes: closure meant no acceptable way to reopen the issue.",
+"On record: the family pattern was nobody’s fault. Minutes: fault stopped mattering once the pattern reproduced itself.",
+"On record: the space was designed for civic life. Minutes: civic life was welcome while temporary and polite.",
+"On record: the answer saved everyone embarrassment. Minutes: embarrassment survived; the problem did too.",
+"On record: the dress code was applied to all. Minutes: enforcement kept finding the same people.",
+"On record: the new form streamlined requests. Minutes: each request now required an email explaining the form.",
+"On record: the slides were reviewed in advance. Minutes: the review happened while walking to the room.",
+"On record: the thread ended with an enthusiastic sticker. Minutes: the sticker locked the door from the inside.",
+"On record: the photo wall was an archive of joy. Minutes: joy had been cropped around old conflict.",
+"On record: the passwords were shared in good faith. Minutes: good faith created three untraceable profiles.",
+"On record: the invitation was accepted gracefully. Minutes: grace included a planned exit call.",
+"On record: the campsite was chosen by consensus. Minutes: consensus arrived after the booking.",
+"On record: the gathering stayed calm. Minutes: calm was managed by the person least free to leave.",
+"On record: the toddler disrupted the ceremony. Minutes: the ceremony had ignored the toddler’s clock.",
+"On record: the watch group was highly informative. Minutes: everyone muted it and stayed subscribed.",
+"On record: the allotment boundary was fixed. Minutes: the path moved where the agreement could not.",
+"On record: the deep clean was mutually certified. Minutes: one visible surface did the work of proof.",
+"On record: the group was described as close. Minutes: closeness meant arriving together and speaking separately.",
+"On record: moving day was executed beautifully. Minutes: two carried the weight; four managed the tape.",
+"On record: the tickets were allocated. Minutes: the card-holder charged authority in seat position.",
+"On record: the surprise was perfectly concealed. Minutes: secrecy failed in the open group chat.",
+"On record: the streaming rules were finalised. Minutes: finalised meant everyone kept the borrowed login.",
+"On record: the beach packing was balanced. Minutes: the biggest car carried the lightest responsibility.",
+"On record: the dress code was casual comfort. Minutes: comfort ended at the waistband.",
+"On record: the weekend outfit was functional. Minutes: ruggedness arrived holding a clean paintbrush.",
+"On record: the jacket was chosen for insulation. Minutes: warmth lost to the mirror.",
+"On record: the shoes were chosen on performance data. Minutes: the colour made the decision.",
+"On record: the suitcase system was optimised. Minutes: optimisation meant forcing the zip to lie.",
+"On record: the spice rack was updated. Minutes: order replaced cooking.",
+"On record: the coffee ritual was meditative. Minutes: meditation hid from the household at the grinder.",
+"On record: the reading log was checked weekly. Minutes: the signatures arrived all at once.",
+"On record: the lab roles rotated fairly. Minutes: fairness paused near the risky equipment.",
+"On record: the seminar achieved full participation. Minutes: participation learnt to repeat the first answer.",
+"On record: the thesis review was completed. Minutes: the formatting received the courage the data did not.",
+"On record: the homework was set fairly. Minutes: fairness arrived late on Friday.",
+"On record: sports day was finalised. Minutes: the rankings disappeared before the parents could keep them.",
+"On record: the election was verified. Minutes: alphabetical order did more work than admitted.",
+"On record: the study group synchronised. Minutes: online meant the difficult parts could be muted.",
+"On record: the playground review concluded. Minutes: risk was replaced by grass.",
+"On record: the lounge cleanup rule returned. Minutes: the mugs listened silently from the sink.",
+"On record: the chess tournament ran smoothly. Minutes: the openings travelled under the tables.",
+"On record: the craft circle was productive. Minutes: two squares were made; one kitchen extension was decided.",
+"On record: the pairing was fair. Minutes: fairness kept the strongest apart for drama.",
+"On record: the charity funds were allocated. Minutes: the printed forms won.",
+"On record: the storage clean concluded. Minutes: the clutter changed shelves.",
+"On record: the flat was chosen together. Minutes: the tube line ended the conversation.",
+"On record: the wedding menu was finalised. Minutes: chicken was diplomacy.",
+"On record: the dog walk was happily shared. Minutes: the dog provided cover for the phone.",
+"On record: the renovation choice was completed. Minutes: quartz ended the third week of argument.",
+"On record: the watchlist was mutually agreed. Minutes: last autumn’s film defeated forty minutes of choice.",
+"On record: the reply was sent with regrets. Minutes: the prior commitment was a train.",
+"On record: the grocery list was integrated. Minutes: frozen meals entered under vegetables.",
+"On record: the clean-up log was transparent. Minutes: the kettle shone; the bills stayed dark.",
+"On record: the holiday budget was agreed. Minutes: both prepared private exceptions.",
+"On record: the rota was maintained perfectly. Minutes: the visible brass won; the bin room waited.",
+"On record: the uniform donation ended. Minutes: the new blazers found a smaller circle.",
+"On record: choir attendance was certified. Minutes: presence happened silently in the back row.",
+"On record: the carpool chart was settled. Minutes: Thursday followed the early office.",
+"On record: the fishing competition was smooth. Minutes: the scales were trusted at a useful distance.",
+"On record: the book swap rules were updated. Minutes: three novels made room for one textbook pile.",
+"On record: the funeral arrangements went smoothly. Minutes: two rows heard “devoted” differently.",
+"On record: the theatre rehearsal was successful. Minutes: success came from the prompter box.",
+"On record: the village quiz was fair. Minutes: the question-setter’s table enjoyed the margin.",
+"On record: the history walk was informative. Minutes: rain moved the past into the pub.",
+"On record: the baking contest was validated. Minutes: the crust decided the verdict.",
+"On record: the group thread closed cleanly. Minutes: a thumbs-up replaced a decision.",
+"On record: the reunion seating was set. Minutes: silence was seated beside silence for convenience.",
+"On record: the hall report was verified. Minutes: the printer decided the layout.",
+"On record: the roommate cleanup concluded. Minutes: plates counted more than bills.",
+"On record: the memory book was certified. Minutes: absence was edited out by photo choice.",
+"On record: the irrigation rule was resolved. Minutes: the water moved before the rule began.",
+"On record: the garage boundary was mapped. Minutes: boxes became border guards.",
+"On record: the rental terms were verified. Minutes: one tick box replaced four pages of risk.",
+"On record: the café table was chosen for focus. Minutes: focus meant a guarded back.",
+"On record: the recipes were digitised. Minutes: memory was updated to match the packet.",
+"On record: the gym cancellation concluded. Minutes: the hidden exit sold an upgrade.",
+"On record: the festival line-up was completed. Minutes: ownership chose the headline.",
+"On record: the flea market deal was transparent. Minutes: ten pounds beat carrying it home.",
+"On record: the tree dispute was cleared. Minutes: the branch was solved while the owner was out.",
+"On record: the pet group rules were established. Minutes: five owners nodded; no leash changed.",
+"On record: the volunteer team was cheerful. Minutes: cheerfulness was the unpaid uniform.",
+"On record: the family wanted the troubled one helped. Minutes: treatment took the symptom; the room stayed.",
+"On record: the staff maintained a positive tone. Minutes: positivity was dress code for exhaustion.",
+"On record: the committee thanked people for service. Minutes: thanks cost less than support.",
+"On record: the difficult sibling created tension. Minutes: tension existed before it found a name.",
+"On record: the front desk remained welcoming. Minutes: welcome came from a face already off duty.",
+"On record: the fundraiser ran on community spirit. Minutes: spirit arrived with a clipboard and a debt.",
+"On record: the family focused on the person who needed fixing. Minutes: fixing one person protected the room.",
+"On record: the reply was warm and professional. Minutes: warmth was manually produced from an empty tank.",
+"On record: the coordinator kept morale high. Minutes: morale was lifted by lowering one person into the work.",
+"On record: the child caused household stress. Minutes: the child was the only stress small enough to name.",
+"On record: the service came with a smile. Minutes: the smile was not consent.",
+"On record: the charity relied on generous hearts. Minutes: hearts were cheaper than rota cover.",
+"On record: the family worried about her instability. Minutes: she reacted to what everyone else normalised.",
+"On record: the reception felt effortless. Minutes: effort ran hot backstage.",
+"On record: the volunteer role was rewarding. Minutes: rewarding omitted hours, petrol, and resentment.",
+"On record: the meeting centred on the struggler. Minutes: the pattern stayed in the margins.",
+"On record: the call was handled with care. Minutes: care was visible; the handler was not.",
+"On record: the organisation valued resilience. Minutes: resilience meant absorbing poor design quietly.",
+"On record: the problem child disrupted dinner. Minutes: dinner had been arranged around a silence.",
+"On record: the visitor experience was excellent. Minutes: excellence was invisible mood repair.",
+"On record: the volunteer stayed for the mission. Minutes: belief was treated as renewable energy.",
+"On record: the family called the daughter dramatic. Minutes: she reported a temperature others denied.",
+"On record: the team showed grace under pressure. Minutes: grace made under-resourcing look elegant.",
+"On record: the community event felt effortless. Minutes: effort had been assigned to helpers.",
+"On record: the relative had always been sensitive. Minutes: the smoke alarm was blamed for the fire.",
+"On record: the employee stayed calm. Minutes: calm was paid by the nervous system.",
+"On record: the helpers were happy to contribute. Minutes: happiness was easier to record than obligation.",
+"On record: the family wanted everyone to heal. Minutes: healing meant the patient should stop revealing the pattern.",
+"On record: the nurse reassured the room. Minutes: reassurance was labour with no chart line.",
+"On record: the volunteers formed a close community. Minutes: closeness made extraction harder to admit.",
+"On record: the troubled one was being addressed. Minutes: addressed meant isolated from everyone’s letters.",
+"On record: the receptionist was naturally friendly. Minutes: natural meant trained, measured, and penalised when absent.",
+"On record: the family asked for peace. Minutes: peace meant returning the symptom to its carrier.",
+"On record: the campaign depended on passion. Minutes: passion was the budget when money ran out.",
+"On record: the server handled the complaint beautifully. Minutes: beautifully meant swallowing the insult.",
+"On record: the family did not understand her anger. Minutes: her anger was the archive speaking aloud.",
+"On record: the volunteer looked tired but fulfilled. Minutes: fulfilled was the polite word for depleted.",
+"On record: the household wanted the anxious one calm. Minutes: calm meant stop reporting the pressure.",
+"On record: the manager praised the team’s attitude. Minutes: attitude was cheaper to discuss than staffing.",
+"On record: the helper never complained. Minutes: complaint became headaches and perfect handwriting.",
+"On record: the therapist saw the patient. Minutes: the patient carried a group problem alone.",
+"On record: the greeter made the event warm. Minutes: warmth was produced by someone freezing behind the table.",
+"On record: the board celebrated dedication. Minutes: dedication meant exhaustion before it became inconvenient.",
+"On record: the cousin was unstable. Minutes: unstable meant bad at preserving the family lie.",
+"On record: the complaint was handled politely. Minutes: politeness protected the brand and delayed anger.",
+"On record: the volunteers loved being useful. Minutes: usefulness became a leash in community colours.",
+"On record: the difficult daughter ruined the mood. Minutes: the mood had borrowed her face for years.",
+"On record: the team adapted professionally. Minutes: professionally meant doing three missing jobs without screaming.",
+"On record: the son was asked to take responsibility. Minutes: responsibility meant accepting the verdict unseen.",
+"On record: the charity dinner ran smoothly. Minutes: smoothness came from people absent from the donor table.",
+"On record: the worker kept smiling. Minutes: the smile had private maintenance costs.",
+"On record: the family said therapy changed him. Minutes: he had stopped playing the comfortable role.",
+"On record: the volunteer was thanked sincerely. Minutes: sincerity arrived without rest or cover.",
+"On record: the client felt seen. Minutes: being seen required the worker to disappear briefly.",
+"On record: the family problem had a name. Minutes: the name was one person; the pattern was too large.",
+"On record: her emotional intelligence was praised. Minutes: she handled feelings others refused to own.",
+"On record: the unpaid organiser was indispensable. Minutes: indispensable meant designed around her staying.",
+"On record: the identified patient resisted treatment. Minutes: treatment asked one person to adjust to the room.",
+"On record: the staff created a welcoming atmosphere. Minutes: atmosphere was scripted warmth over hidden strain.",
+"On record: the volunteer left for personal reasons. Minutes: the institution ate the person and disliked the indigestion.",
+"On record: the family called the boundary selfish. Minutes: selfish meant the old supply line got a valve.",
+"On record: the care worker was wonderfully patient. Minutes: patience was necessary emotional strain.",
+"On record: the team went the extra mile. Minutes: the extra mile had become the official route.",
+"On record: the family worried therapy made her distant. Minutes: distant meant unavailable for unmanaged weather.",
+"On record: the volunteer role built character. Minutes: character was built from preventable overwork.",
+"On record: the customer left satisfied. Minutes: satisfaction relocated humiliation behind the eyes.",
+"On record: the family said he always overreacted. Minutes: overreaction was the only reaction large enough to be seen.",
+"On record: the organisation praised kindness. Minutes: kindness was cheaper than another paid position.",
+"On record: the member was asked to be more positive. Minutes: positive meant hiding the load.",
+"On record: the family wanted the addict to recover. Minutes: recovery threatened the family’s explanation.",
+"On record: the front-of-house team created magic. Minutes: magic meant labour vanished once it worked.",
+"On record: the volunteer had a heart for service. Minutes: the heart was being used as a staffing model.",
+"On record: the family named her the problem. Minutes: the name protected the contract underneath.",
+"On record: the worker showed empathy. Minutes: empathy was mandatory towards the paying side.",
+"On record: the team pulled together. Minutes: together meant the same three stayed late.",
+"On record: the son’s symptoms concerned everyone. Minutes: the symptoms were the family’s only readable minutes.",
+"On record: the event depended on goodwill. Minutes: goodwill had begun to smell like unpaid management.",
+"On record: the patient was noncompliant. Minutes: noncompliance meant refusing a story that shrank them.",
+"On record: the staff member handled it gracefully. Minutes: grace was the approved choreography for disrespect.",
+"On record: the volunteer said yes again. Minutes: yes was easier than surviving disappointed faces.",
+"On record: the family hoped he would get back to normal. Minutes: normal meant quiet enough for them.",
+"On record: the workplace valued compassion. Minutes: compassion was demanded from those with least power.",
+"On record: the committee relied on dependable volunteers. Minutes: dependable meant safe to overuse.",
+"On record: the family asked why she could not let things go. Minutes: things kept being handed to her.",
+"On record: the smile made the customer comfortable. Minutes: comfort moved from one body to another by policy.",
+"On record: the volunteers stayed late to finish. Minutes: late became commitment when nobody asked why.",
+"On record: the family wanted stability. Minutes: stability meant assigning instability to one person.",
+"On record: the worker was praised for being unflappable. Minutes: distress had become professionally invisible.",
+"On record: the support group ran on mutual care. Minutes: mutual care became one person’s calendar.",
+"On record: the family said the problem was attitude. Minutes: attitude meant the patient stopped smiling at the diagnosis.",
+"On record: the office stayed calm during the crisis. Minutes: panic was exported into one assistant.",
+"On record: the volunteer enjoyed giving back. Minutes: giving back became a recurring withdrawal.",
+"On record: the family wanted accountability. Minutes: accountability travelled toward the least powerful person.",
+"On record: the patient was the focus of concern. Minutes: focus made one person a screen.",
+"On record: the team spirit was strong. Minutes: spirit had replaced staffing, planning, pay, and refusal.",
+"On record: the deputy took over smoothly. Minutes: smoothly meant no one named the inherited damage.",
+"On record: the triage desk was calm. Minutes: pain behaved until called.",
+"On record: the ward round was efficient. Minutes: fear learnt to speak in bullet points.",
+"On record: the nurse smiled. Minutes: the smile came after the insult and before the next bed.",
+"On record: the scan was delayed. Minutes: waiting did the worrying for free.",
+"On record: the doctor explained clearly. Minutes: clarity ended where power left the room.",
+"On record: the form was complete. Minutes: the body still refused the boxes.",
+"On record: the waiting room was quiet. Minutes: need lowered its voice to be processed.",
+"On record: the family was updated. Minutes: the patient became a notice.",
+"On record: the discharge was smooth. Minutes: smooth meant nobody had time to be afraid.",
+"On record: the bed was needed. Minutes: recovery lost to throughput.",
+"On record: the chart was accurate. Minutes: accuracy compressed pain into shorthand.",
+"On record: the consultant was brief. Minutes: brief meant nobody could interrupt authority.",
+"On record: the visitor was cheerful. Minutes: cheer guarded the terror underneath.",
+"On record: the alarm was checked. Minutes: the louder alarm was ignored.",
+"On record: the procedure was minor. Minutes: minor belonged to the person standing up.",
+"On record: the clinic ran late. Minutes: delay became the patient’s burden to manage.",
+"On record: the receptionist was firm. Minutes: firmness protected a system already behind.",
+"On record: the ward stayed clean. Minutes: dignity still needed a door.",
+"On record: the bloods were taken. Minutes: consent arrived already seated.",
+"On record: the pain score was seven. Minutes: the number made the pain admissible.",
+"On record: the hearing was fair. Minutes: fairness entered with different shoes.",
+"On record: the witness was nervous. Minutes: nerves were treated as unreliable memory.",
+"On record: the judge was patient. Minutes: patience worked best from the bench.",
+"On record: the oath was taken. Minutes: truth became formal before it became heard.",
+"On record: the file was complete. Minutes: the life inside it was reduced to sequence.",
+"On record: the objection was noted. Minutes: noted meant filed away from consequence.",
+"On record: the verdict was clear. Minutes: clarity did not make the damage legible.",
+"On record: the barrister was precise. Minutes: precision knew where not to touch.",
+"On record: the plea was accepted. Minutes: exhaustion helped the law sound voluntary.",
+"On record: the clerk called the case. Minutes: a surname carried the whole story.",
+"On record: the exhibit was admitted. Minutes: memory had no exhibit label.",
+"On record: the sentence was measured. Minutes: measurement missed the afterlife.",
+"On record: the gallery was silent. Minutes: silence belonged to people with surnames.",
+"On record: the court rose. Minutes: the grief did not.",
+"On record: the settlement was reached. Minutes: arithmetic stood in for repair.",
+"On record: the transcript was clean. Minutes: trembling left no transcript.",
+"On record: the appeal was filed. Minutes: hope learnt the price of paper.",
+"On record: the robe looked solemn. Minutes: costume made judgement sound natural.",
+"On record: the defendant understood. Minutes: understanding was assumed for the record.",
+"On record: the recess was short. Minutes: fear kept going.",
+"On record: the gym opened early. Minutes: discipline arrived before appetite.",
+"On record: the class was motivating. Minutes: motivation borrowed shame’s voice.",
+"On record: the trainer corrected form. Minutes: correction found an old apology in the spine.",
+"On record: the mirrors helped technique. Minutes: technique had to pass appearance first.",
+"On record: the locker was secure. Minutes: insecurity changed beside it.",
+"On record: the scales were optional. Minutes: optional still had a queue.",
+"On record: the playlist was upbeat. Minutes: the beat kept dread from speaking.",
+"On record: the membership renewed. Minutes: guilt signed before health arrived.",
+"On record: the treadmill tracked progress. Minutes: progress moved without leaving.",
+"On record: the sauna was relaxing. Minutes: silence did the cooling down.",
+"On record: the weights were shared. Minutes: status changed hands by the plate.",
+"On record: the pool was calm. Minutes: the mirror began in the changing room.",
+"On record: the instructor corrected posture. Minutes: the correction entered history.",
+"On record: the yoga class was gentle. Minutes: gentleness still asked to be seen.",
+"On record: the punch bag helped. Minutes: anger finally met a surface.",
+"On record: the changing room was busy. Minutes: comparison arrived undressed.",
+"On record: the run felt good. Minutes: good meant not being caught by thought.",
+"On record: the goal was health. Minutes: health arrived carrying old shame.",
+"On record: the towel policy was clear. Minutes: clarity still left the floor wet.",
+"On record: the exit scan worked. Minutes: belonging needed a beep.",
+"On record: the flight was boarding. Minutes: patience began defending its place.",
+"On record: the gate changed. Minutes: certainty packed the wrong shoes.",
+"On record: the delay was announced. Minutes: strangers aged in public.",
+"On record: the passport was checked. Minutes: identity slid under glass.",
+"On record: the queue moved quickly. Minutes: speed prevented questions.",
+"On record: the bag was overweight. Minutes: sentiment failed at the counter.",
+"On record: the lounge was quiet. Minutes: privilege lowered its volume.",
+"On record: the seat was assigned. Minutes: chance arrived with a barcode.",
+"On record: the baby cried. Minutes: the crowd judged distress as behaviour.",
+"On record: the crew apologised. Minutes: apology had no gate authority.",
+"On record: the plane landed early. Minutes: relief still queued at the belt.",
+"On record: the tray was checked. Minutes: obedience folded itself flat.",
+"On record: the terminal was modern. Minutes: tired bodies remained analogue.",
+"On record: the duty-free was open. Minutes: boredom found a till.",
+"On record: the escalator stopped. Minutes: luggage exposed everyone’s plan.",
+"On record: the announcement was clear. Minutes: panic misheard it anyway.",
+"On record: the border officer was neutral. Minutes: neutrality checked accents first.",
+"On record: the taxi rank was orderly. Minutes: everyone performed being fine.",
+"On record: the boarding group was called. Minutes: hierarchy needed only a speaker.",
+"On record: the delay was weather. Minutes: weather accepted the blame.",
+"On record: the lesson began on time. Minutes: timekeeping ignored who arrived hungry.",
+"On record: the class was engaged. Minutes: engagement meant faces stayed visible.",
+"On record: the test was fair. Minutes: fairness had not checked the morning.",
+"On record: the teacher was strict. Minutes: strictness protected a tired adult.",
+"On record: the homework was checked. Minutes: shame used red ink.",
+"On record: the assembly inspired pupils. Minutes: inspiration fought the microphone.",
+"On record: the library was silent. Minutes: silence judged the wrong cough.",
+"On record: the group work was balanced. Minutes: balance appointed one secretary.",
+"On record: the bell rang. Minutes: thought left mid-sentence.",
+"On record: the uniform was tidy. Minutes: poverty learnt to press itself.",
+"On record: the café was cosy. Minutes: rent sat inside the cappuccino.",
+"On record: the table was reserved. Minutes: belonging used a handwritten sign.",
+"On record: the order was simple. Minutes: simple required three apologies.",
+"On record: the tip was generous. Minutes: guilt left change.",
+"On record: the queue was patient. Minutes: patience ended near the pastry.",
+"On record: the chef sent compliments. Minutes: praise left the kitchen underpaid.",
+"On record: the table turned quickly. Minutes: welcome had a timer.",
+"On record: the music was soft. Minutes: softness made listening public.",
+"On record: the bill was split. Minutes: arithmetic remembered old rank.",
+"On record: the regular was greeted. Minutes: loyalty bought tone.",
+"On record: the train was delayed. Minutes: strangers formed a mood.",
+"On record: the platform was crowded. Minutes: space became negotiation.",
+"On record: the ticket was valid. Minutes: validity still had to perform innocence.",
+"On record: the carriage was quiet. Minutes: conflict chose headphones.",
+"On record: the seat was free. Minutes: the bag was already claiming it.",
+"On record: the bus was full. Minutes: elbows drafted policy.",
+"On record: the driver waited. Minutes: mercy ran to timetable.",
+"On record: the announcement failed. Minutes: rumour became the service.",
+"On record: the stairs were closed. Minutes: access became optional again.",
+"On record: the commute was normal. Minutes: normal stole the hour cleanly.",
+"On record: the hotel upgraded the room. Minutes: apology came with pillows.",
+"On record: the lobby was elegant. Minutes: elegance hid the late shift.",
+"On record: the key card failed. Minutes: privacy waited in public.",
+"On record: the breakfast was included. Minutes: inclusion stopped before decent coffee.",
+"On record: the concierge was helpful. Minutes: warmth had been rehearsed.",
+"On record: the room was spotless. Minutes: someone’s back paid the difference.",
+"On record: the checkout was smooth. Minutes: smooth meant no one found the charge.",
+"On record: the lift was mirrored. Minutes: travel met itself tired.",
+"On record: the minibar was stocked. Minutes: temptation had small bottles.",
+"On record: the robe was soft. Minutes: softness briefly defeated transit.",
+"On record: the supermarket was bright. Minutes: hunger became measurable.",
+"On record: the offer was limited. Minutes: scarcity pushed the trolley.",
+"On record: the self-checkout was easy. Minutes: labour became a beep.",
+"On record: the receipt was long. Minutes: paper outlived appetite.",
+"On record: the aisle was blocked. Minutes: impatience made a nation.",
+"On record: the fruit looked fresh. Minutes: freshness had travelled too far.",
+"On record: the loyalty card helped. Minutes: help collected habits.",
+"On record: the queue opened. Minutes: civilisation lost formation.",
+"On record: the bag split. Minutes: abundance met pavement.",
+"On record: the music was festive. Minutes: commerce learnt bells.",
+"On record: the bank was secure. Minutes: trust spoke through glass.",
+"On record: the adviser was helpful. Minutes: help arrived attached to products.",
+"On record: the loan was approved. Minutes: the future gained an owner.",
+"On record: the signature matched. Minutes: identity became a squiggle.",
+"On record: the queue was private. Minutes: privacy used numbered tickets.",
+"On record: the fee was explained. Minutes: explanation did not reduce it.",
+"On record: the card was declined. Minutes: shame flashed in plastic.",
+"On record: the branch was quiet. Minutes: money lowered its voice.",
+"On record: the PIN was wrong. Minutes: panic forgot four digits.",
+"On record: the account was active. Minutes: activity belonged to the bank.",
+"On record: the museum was free. Minutes: freedom exited through the shop.",
+"On record: the guide was lively. Minutes: history performed for tired feet.",
+"On record: the exhibit was interactive. Minutes: touching was allowed where meaning was safe.",
+"On record: the painting was famous. Minutes: fame told the crowd where to stand.",
+"On record: the label was concise. Minutes: concision hid the theft well.",
+"On record: the gallery was quiet. Minutes: quiet made class sound natural.",
+"On record: the gift shop was charming. Minutes: memory needed a barcode.",
+"On record: the queue respected the art. Minutes: respect moved at selfie speed.",
+"On record: the sculpture was challenging. Minutes: challenge stood beside donations.",
+"On record: the archive was open. Minutes: openness required gloves and permission.",
+"On record: the surgery ran late. Minutes: the clock did not numb the tooth.",
+"On record: the patient was brave. Minutes: brave meant still while afraid.",
+"On record: the dentist was gentle. Minutes: gentle still had a drill.",
+"On record: the form asked allergies. Minutes: fear had no tick box.",
+"On record: the injection was quick. Minutes: quick did not make it small.",
+"On record: the mirror was offered. Minutes: knowledge arrived with swelling.",
+"On record: the rinse was ready. Minutes: dignity used a paper cup.",
+"On record: the appointment ended well. Minutes: relief tasted of metal.",
+"On record: the reminder was automatic. Minutes: dread acquired software.",
+"On record: the chair reclined. Minutes: surrender had upholstery.",
+"On record: the office was open-plan. Minutes: privacy became a booking.",
+"On record: the stand-up was brief. Minutes: brief hid the actual delay.",
+"On record: the slide deck was clean. Minutes: cleanliness buried the question.",
+"On record: the deadline was realistic. Minutes: realism excluded the people doing it.",
+"On record: the meeting was hybrid. Minutes: absence gained a mute button.",
+"On record: the update was positive. Minutes: positive meant damage was not yet named.",
+"On record: the desk was hot. Minutes: belonging needed a booking.",
+"On record: the away day bonded the team. Minutes: bonding used compulsory fun.",
+"On record: the email was concise. Minutes: concision carried the knife cleanly.",
+"On record: the policy was refreshed. Minutes: the old problem got new fonts.",
+"On record: the church was welcoming. Minutes: welcome knew who to ask twice.",
+"On record: the hymn was familiar. Minutes: familiarity carried the doubtful.",
+"On record: the collection was voluntary. Minutes: voluntary travelled down the pew.",
+"On record: the sermon was kind. Minutes: kindness avoided the named harm.",
+"On record: the hall was booked. Minutes: belonging had a keyholder.",
+"On record: the choir was united. Minutes: unity was rehearsed in separate rows.",
+"On record: the tea rota worked. Minutes: devotion washed the mugs.",
+"On record: the prayer was shared. Minutes: silence carried the refusal.",
+"On record: the noticeboard was updated. Minutes: power used drawing pins.",
+"On record: the blessing was brief. Minutes: brevity prevented objection.",
+"On record: the flat viewing was quick. Minutes: mould hid behind enthusiasm.",
+"On record: the rent was competitive. Minutes: competition meant everybody lost.",
+"On record: the agent was clear. Minutes: clarity skipped the neighbours.",
+"On record: the deposit was standard. Minutes: standard made anxiety official.",
+"On record: the room was bright. Minutes: bright meant no curtains.",
+"On record: the commute was acceptable. Minutes: acceptable ate the evening.",
+"On record: the kitchen was compact. Minutes: compact meant cooking sideways.",
+"On record: the paperwork was simple. Minutes: simple required a printer.",
+"On record: the offer was strong. Minutes: strength came from panic.",
+"On record: the keys were ready. Minutes: readiness smelled of fresh paint.",
+"On record: the cinema was packed. Minutes: private feeling became public routine.",
+"On record: the trailer was exciting. Minutes: appetite was sold before dinner.",
+"On record: the phone was dimmed. Minutes: attention still leaked blue.",
+"On record: the seat reclined. Minutes: comfort invaded the knees behind.",
+"On record: the credits rolled. Minutes: feeling looked for an exit time.",
+"On record: the concert started late. Minutes: waiting became part of the ticket.",
+"On record: the encore was spontaneous. Minutes: spontaneity knew the set list.",
+"On record: the theatre was intimate. Minutes: intimacy borrowed knees and breath.",
+"On record: the applause was warm. Minutes: warmth measured relief as much as praise.",
+"On record: the usher was discreet. Minutes: discretion did the cleaning no programme credited.",
+"On record: the job ad sought a self-starter. Minutes: the last one started questions.",
+"On record: the job ad promised flexibility. Minutes: flexibility meant bending towards the employer.",
+"On record: the salary was competitive. Minutes: it competed mainly with rent and lost.",
+"On record: the role was fast-paced. Minutes: fast meant no one could stop to object.",
+"On record: the ideal candidate was resilient. Minutes: resilient meant difficult to visibly exhaust.",
+"On record: the CV showed passion. Minutes: passion filled the space where pay should be.",
+"On record: the CV was concise. Minutes: a collapse became one tidy bullet.",
+"On record: the CV had a gap. Minutes: living outside work needed an explanation.",
+"On record: the cover letter was enthusiastic. Minutes: enthusiasm was requested before any real test.",
+"On record: the reference was glowing. Minutes: glowing meant safe to pass along.",
+"On record: the LinkedIn post was humble. Minutes: the humility came with lighting.",
+"On record: the update was exciting. Minutes: excitement had been cleared by comms.",
+"On record: the post announced growth. Minutes: growth meant a new title on the same chair.",
+"On record: the profile said open to work. Minutes: hope wore a banner.",
+"On record: the bio was authentic. Minutes: authenticity had been optimised for search.",
+"On record: the wedding speech praised destiny. Minutes: seating had done most of the work.",
+"On record: the best man told stories. Minutes: only the survivable stories reached the microphone.",
+"On record: the vows promised forever. Minutes: forever had not met the spreadsheet.",
+"On record: the invitation was elegant. Minutes: elegance concealed three ceasefires.",
+"On record: the thank-you card was warm. Minutes: warmth was written in batches.",
+"On record: the postcard said paradise. Minutes: paradise had queues, sunburn, and editing.",
+"On record: the postcard wished you were here. Minutes: here had been selected carefully.",
+"On record: the itinerary was relaxed. Minutes: relaxation had seventeen booked entries.",
+"On record: the travel guide was honest. Minutes: honesty ended before the commission link.",
+"On record: the annual report showed resilience. Minutes: resilience replaced repair.",
+"On record: the market was challenging. Minutes: challenge made mistakes sound external.",
+"On record: the mission centred people. Minutes: people entered as brand material.",
+"On record: the values page said courage. Minutes: courage was assigned downward.",
+"On record: the press release was proud. Minutes: pride arrived before the substance.",
+"On record: the apology statement was measured. Minutes: measurement avoided return.",
+"On record: the obituary said peaceful. Minutes: the machines were edited out.",
+"On record: the eulogy called him generous. Minutes: generosity had favourites.",
+"On record: the order of service was simple. Minutes: grief still needed stage directions.",
+"On record: the memorial note was tasteful. Minutes: taste kept the argument buried.",
+"On record: the agenda included AOB. Minutes: real life waited under another business.",
+"On record: the meeting agenda was clear. Minutes: clarity avoided the real verb.",
+"On record: the minutes were approved. Minutes: approval meant nobody reopened the wound.",
+"On record: the action log was updated. Minutes: pending became a storage solution.",
+"On record: the group poll chose Friday. Minutes: Friday belonged to the loudest thumbs.",
+"On record: the poll was democratic. Minutes: democracy ended at the missing option.",
+"On record: the pinned message clarified things. Minutes: everyone ignored it correctly.",
+"On record: the receipt said thank you. Minutes: gratitude printed automatically.",
+"On record: the receipt was itemised. Minutes: regret found unit prices.",
+"On record: the return policy was clear. Minutes: clarity expired before doubt.",
+"On record: the terms were accepted. Minutes: acceptance arrived unread.",
+"On record: the privacy policy improved service. Minutes: improvement watched quietly.",
+"On record: the cookie banner asked consent. Minutes: consent arrived tired.",
+"On record: the rental listing said cosy. Minutes: cosy meant knees near the oven.",
+"On record: the flat had character. Minutes: character lived in the damp corner.",
+"On record: the agent called it charming. Minutes: charm was the crack with lighting.",
+"On record: the tenancy allowed wear. Minutes: wear became an invoice with opinions.",
+"On record: the invoice was due. Minutes: urgency travelled faster than service.",
+"On record: the quote was approximate. Minutes: approximate had expensive habits.",
+"On record: the warranty excluded misuse. Minutes: use itself became suspect.",
+"On record: the manual said easy assembly. Minutes: easy required a second adult and faith.",
+"On record: the safety notice was visible. Minutes: visibility replaced repair.",
+"On record: the parking sign was clear. Minutes: clear enough after the fine.",
+"On record: the boarding pass confirmed departure. Minutes: departure still needed courage.",
+"On record: the gate notice was updated. Minutes: certainty moved screens again.",
+"On record: the baggage tag was printed. Minutes: identity travelled better than the bag.",
+"On record: the gym waiver was standard. Minutes: standard moved risk into small print.",
+"On record: the certificate marked progress. Minutes: progress wanted a shower.",
+"On record: the class timetable was full. Minutes: discipline had booked every escape.",
+"On record: the discharge leaflet was helpful. Minutes: help stopped at the car park.",
+"On record: the consent form was signed. Minutes: fear signed beside it.",
+"On record: the label said take with food. Minutes: appetite had not been consulted.",
+"On record: the court summons was served. Minutes: dread learnt an address.",
+"On record: the witness statement was factual. Minutes: facts arrived shaking.",
+"On record: the fine was correctly issued. Minutes: correctness still felt predatory.",
+"On record: the police report was neutral. Minutes: neutrality had selected its nouns.",
+"On record: the insurance claim was open. Minutes: loss entered a queue.",
+"On record: the school report showed promise. Minutes: promise was told to behave.",
+"On record: the detention slip was fair. Minutes: fairness missed the morning before it.",
+"On record: the parent email was concerned. Minutes: concern used reply-all.",
+"On record: the syllabus was ambitious. Minutes: ambition had no lunch break.",
+"On record: the feedback was detailed. Minutes: detail avoided the main wound.",
+"On record: the timetable was final. Minutes: final lasted until Monday.",
+"On record: the recipe was simple. Minutes: simple used three bowls and a lie.",
+"On record: the menu was seasonal. Minutes: seasonal meant ready for photographs.",
+"On record: the allergy notice was prominent. Minutes: care was printed, not staffed.",
+"On record: the loyalty card rewarded visits. Minutes: loyalty became data with points.",
+"On record: the takeaway receipt was correct. Minutes: comfort arrived in a paper bag.",
+"On record: the dating profile said easy-going. Minutes: easy meant no needs showing.",
+"On record: the profile wanted honesty. Minutes: honesty was welcome after flattery.",
+"On record: the message ended kindly. Minutes: kindness softened a locked door.",
+"On record: the out-of-office reply was cheerful. Minutes: absence had brand voice.",
+"On record: the resignation letter was grateful. Minutes: gratitude guarded the bridge.",
+"On record: the promotion email celebrated merit. Minutes: merit knew the corridor.",
+"On record: the handbook valued wellbeing. Minutes: wellbeing lived in appendix four.",
+"On record: the review praised attitude. Minutes: attitude meant digesting shortage.",
+"On record: the survey was anonymous. Minutes: anonymity ended at handwriting.",
+"On record: the values poster said integrity. Minutes: integrity peeled near the lift.",
+"On record: the strategy deck was bold. Minutes: boldness arrived without budget.",
+"On record: the slide said transformation. Minutes: transformation meant a new login.",
+"On record: the survey showed satisfaction. Minutes: satisfaction chose from sad buttons.",
+"On record: the grant application promised impact. Minutes: impact needed adjectives first.",
+"On record: the funding report proved reach. Minutes: reach counted the same people twice.",
+"On record: the charity appeal was urgent. Minutes: urgency photographed well.",
+"On record: the volunteer rota was fair. Minutes: fair meant nobody counted petrol.",
+"On record: the church bulletin was welcoming. Minutes: welcome had small print.",
+"On record: the neighbourhood flyer said community. Minutes: community had a postcode.",
+"On record: the lost-cat poster was hopeful. Minutes: hope used every lamp-post.",
+"On record: the programme was inclusive. Minutes: inclusion arrived after the sponsors.",
+"On record: the wristband granted access. Minutes: access came in colours.",
+"On record: the ticket stub confirmed entry. Minutes: memory kept the queue instead.",
+"On record: the museum label was brief. Minutes: brevity hid the taking.",
+"On record: the catalogue framed the work. Minutes: the frame outweighed the art.",
+"On record: the artist statement was raw. Minutes: raw had been revised eight times.",
+"On record: the auction listing said rare. Minutes: rarity learnt salesmanship.",
+"On record: the review was verified. Minutes: verification did not create taste.",
+"On record: the online bio was playful. Minutes: playfulness had targets.",
+"On record: the caption said self-care. Minutes: care waited beyond the photograph.",
+"On record: the email signature was warm. Minutes: warmth became a footer.",
+"On record: the newsletter shared updates. Minutes: updates replaced news.",
+"On record: the unsubscribe page was simple. Minutes: escape asked one more question.",
+"On record: the push alert was useful. Minutes: usefulness knocked without invitation.",
+"On record: the update note fixed bugs. Minutes: the main bug was patience.",
+"On record: the loading screen was playful. Minutes: play disguised delay.",
+"On record: the error message apologised. Minutes: apology had no human nearby.",
+"On record: the FAQ answered everything. Minutes: everything excluded the real question.",
+"On record: the help article was clear. Minutes: help ended before the problem began.",
+"On record: the bot reply was friendly. Minutes: friendliness had no pulse.",
+"On record: the search result was relevant. Minutes: relevance meant paid enough.",
+"On record: the bookmark title was saved. Minutes: saving became forgetting politely.",
+"On record: the library notice was formal. Minutes: formality charged a small fine.",
+"On record: the overdue email was polite. Minutes: politeness knew where guilt lived.",
+"On record: the medical bill was itemised. Minutes: fear found a price list.",
+"On record: the bank statement was orderly. Minutes: order exposed the leak.",
+"On record: the loan agreement was clear. Minutes: clarity signed the future away.",
+"On record: the budget sheet was balanced. Minutes: balance ignored the tired body.",
+"On record: the savings goal was realistic. Minutes: reality had not seen rent.",
+"On record: the payslip was correct. Minutes: correctness still looked small.",
+"On record: the tax return was filed. Minutes: citizenship became arithmetic.",
+"On record: the registry was tasteful. Minutes: taste listed appliances.",
+"On record: the baby announcement was joyful. Minutes: joy had not slept.",
+"On record: the birthday card was funny. Minutes: humour covered the forgotten call.",
+"On record: the toast was heartfelt. Minutes: the heart avoided two names.",
+"On record: the plaque honoured service. Minutes: service ended in brass, not rest.",
+"On record: the memorial bench was public. Minutes: grief got a postcode.",
+"On record: the award citation was generous. Minutes: generosity cost nothing here.",
+"On record: the certificate confirmed excellence. Minutes: excellence needed paper.",
+"On record: the staff badge opened doors. Minutes: identity hung from a clip.",
+"On record: the name tag was friendly. Minutes: friendliness arrived in uppercase.",
+"On record: the table plan was final. Minutes: final meant the feud was hidden better.",
+"On record: the seating chart was thoughtful. Minutes: thoughtfulness mapped the landmines.",
+"On record: the shopping list was practical. Minutes: desire hid under essentials.",
+"On record: the meal plan saved time. Minutes: time still needed cooking.",
+"On record: the cleaning rota was fair. Minutes: fair meant noticing was unpaid.",
+"On record: the house rules were simple. Minutes: simple meant one person drafted them.",
+"On record: the inspection report was clean. Minutes: clean meant nobody opened the cupboard.",
+"On record: the repair ticket was logged. Minutes: logged meant not yet fixed.",
+"On record: the delivery note was signed. Minutes: trust became a scribble.",
+"On record: the courier update said attempted. Minutes: attempted meant knocked in theory.",
+"On record: the tracking page showed progress. Minutes: progress was a dot not moving.",
+"On record: the complaint form was received. Minutes: received meant safely postponed.",
+"On record: the satisfaction survey was short. Minutes: short made feelings choose numbers.",
+"On record: the five-star review was glowing. Minutes: glow had been requested twice.",
+"On record: the one-star review was harsh. Minutes: harsh meant the spell failed.",
+"On record: the booking confirmation was clear. Minutes: certainty had cancellation fees.",
+"On record: the cancellation notice was brief. Minutes: brief left no room for regret.",
+"On record: the itinerary was complete. Minutes: completeness left no space to arrive.",
+"On record: the hotel review was balanced. Minutes: balance feared libel.",
+"On record: the passport stamp was official. Minutes: arrival became ink.",
+"On record: the visa form was thorough. Minutes: thorough meant suspect by default.",
+"On record: the customs form was honest. Minutes: honesty weighed souvenirs.",
+"On record: the landing card was neat. Minutes: borders prefer tidy stories.",
+"On record: the boarding group was announced. Minutes: hierarchy found its alphabet.",
+"On record: the baggage screen updated. Minutes: hope circled the belt.",
+"On record: the departure board was calm. Minutes: calm flickered every minute.",
+"On record: the road sign warned clearly. Minutes: clarity arrived after the bend.",
+"On record: the satnav was confident. Minutes: confidence missed the closure.",
+"On record: the weather warning was amber. Minutes: amber meant cancel without saying fear.",
+"On record: the emergency alert was loud. Minutes: loudness replaced trust.",
+"On record: the evacuation map was clear. Minutes: fear does not read diagrams.",
+"On record: the drill notice was routine. Minutes: routine borrowed panic’s costume.",
+"On record: the hazard report was filed. Minutes: filing did not move the hazard.",
+"On record: the risk assessment was robust. Minutes: robust meant unread after page two.",
+"On record: the policy protected children. Minutes: protection began after the form.",
+"On record: the school newsletter was cheerful. Minutes: cheer carried deadlines home.",
+"On record: the prospectus promised community. Minutes: community was photographed in sunlight.",
+"On record: the scholarship essay was moving. Minutes: poverty had learnt eloquence.",
+"On record: the graduation speech inspired. Minutes: debt clapped politely.",
+"On record: the alumni magazine celebrated success. Minutes: success had donors.",
+"On record: the dating prompt said adventure. Minutes: adventure meant emotional admin abroad.",
+"On record: the intake form asked history. Minutes: history did not fit the box.",
+"On record: the consent checkbox was ticked. Minutes: the alternative was disappearance.",
+"On record: the calendar invite was optional. Minutes: optional arrived with witnesses.",
+"On record: the meeting request was brief. Minutes: brief stole the afternoon.",
+"On record: the status was away. Minutes: away meant surviving nearby.",
+"On record: the group chat pin was helpful. Minutes: help became another thing to ignore.",
+"On record: the poll result was decisive. Minutes: decision belonged to whoever answered first.",
+"On record: the moderation notice was firm. Minutes: firmness protected preferred harm.",
+"On record: the guidelines kept things safe. Minutes: safe meant quiet for the moderators.",
+"On record: the forum rules were clear. Minutes: clarity arrived after exile.",
+"On record: the terms update was important. Minutes: importance hid behind a blue button.",
+"On record: the menu was updated. Minutes: the cheapest item left quietly.",
+"On record: the product label said natural. Minutes: nature had a trademark.",
+"On record: the nutrition label was honest. Minutes: honesty needed small print.",
+"On record: the disposal note was clear. Minutes: responsibility began after purchase.",
+"On record: the care label said gentle. Minutes: care meant cold water and patience.",
+"On record: the first anniversary was marked. Minutes: nobody named the first absence.",
+"On record: the tenth anniversary felt proud. Minutes: pride had edited out the casualties.",
+"On record: the reunion was joyful. Minutes: joy arrived with assigned blind spots.",
+"On record: the alumni dinner was warm. Minutes: success chose the seating plan.",
+"On record: the plaque was unveiled. Minutes: brass made the argument look settled.",
+"On record: the slideshow was moving. Minutes: motion came from omitted frames.",
+"On record: the old team reunited. Minutes: everyone missed the version they had survived.",
+"On record: the birthday speech was grateful. Minutes: gratitude skipped the unpaid years.",
+"On record: the memorial bench was installed. Minutes: grief gained municipal furniture.",
+"On record: the anniversary cake was cut. Minutes: sweetness hid who was not invited.",
+"On record: the family toast was tender. Minutes: tenderness avoided the missing name.",
+"On record: the class reunion sparkled. Minutes: sparkle gathered around the winners first.",
+"On record: the reunion photo was perfect. Minutes: perfection used elbows and cropping.",
+"On record: the old club met again. Minutes: nostalgia returned with the same exclusions.",
+"On record: the parish anniversary drew crowds. Minutes: memory sat in its usual pew.",
+"On record: the award night honoured service. Minutes: service had already paid in sleep.",
+"On record: the retirement party was lovely. Minutes: lovely meant nobody mentioned the exit.",
+"On record: the closing toast was funny. Minutes: humour covered the severance letter.",
+"On record: the retrospective was honest. Minutes: honesty arrived after the budget closed.",
+"On record: the lessons learned were circulated. Minutes: learning avoided the person responsible.",
+"On record: the debrief was constructive. Minutes: construction began after the house burnt.",
+"On record: the post-mortem was calm. Minutes: calm buried the warnings alive.",
+"On record: the inquiry was thorough. Minutes: thorough stopped where reputations began.",
+"On record: the archive was complete. Minutes: completeness depended on quiet omissions.",
+"On record: the official history was launched. Minutes: history chose flattering lighting.",
+"On record: the founder’s story inspired. Minutes: inspiration omitted the helpers’ names.",
+"On record: the institutional memory was rich. Minutes: richness belonged to the survivors.",
+"On record: the case study was positive. Minutes: positivity removed the bodies from the chart.",
+"On record: the annual review celebrated growth. Minutes: growth had a burn rate.",
+"On record: the farewell email was elegant. Minutes: elegance hid a small evacuation.",
+"On record: the archive note was neutral. Minutes: neutrality chose what not to catalogue.",
+"On record: the museum caption was revised. Minutes: revision kept the theft grammatical.",
+"On record: the old minutes were approved. Minutes: approval arrived after memory retired.",
+"On record: the legacy page went live. Minutes: legacy loaded faster than accountability.",
+"On record: the final report was balanced. Minutes: balance gave the harm equal weight with tone.",
+"On record: the report noted improvements. Minutes: improvements began after witnesses left.",
+"On record: the project was renamed. Minutes: the old failure kept the same office.",
+"On record: the scheme was refreshed. Minutes: refresh meant new colours on old gravity.",
+"On record: the initiative evolved. Minutes: evolved meant nobody wanted to say failed.",
+"On record: the rebrand landed well. Minutes: the bruise accepted a better font.",
+"On record: the merger created unity. Minutes: unity meant one logo survived.",
+"On record: the closure was strategic. Minutes: strategy made grief sound managerial.",
+"On record: the programme was retired. Minutes: retired meant abandoned without apology.",
+"On record: the department was integrated. Minutes: integrated meant swallowed with charts.",
+"On record: the pilot became permanent. Minutes: permanent meant nobody remembered consent.",
+"On record: the old name was respected. Minutes: respect lasted until signage costs arrived.",
+"On record: the relaunch was bold. Minutes: bold meant the same problem wore orange.",
+"On record: the transition was smooth. Minutes: smoothness came from people not counted.",
+"On record: the new chapter began. Minutes: chapters do not erase the handwriting underneath.",
+"On record: the second wedding was intimate. Minutes: intimacy knew which chairs stayed empty.",
+"On record: the new surname was chosen. Minutes: the old one kept knocking in documents.",
+"On record: the blended family smiled. Minutes: blending left some pieces sharp.",
+"On record: the new house felt fresh. Minutes: freshness had not met the boxes.",
+"On record: the first Christmas was peaceful. Minutes: peace had a seating strategy.",
+"On record: the custody schedule worked. Minutes: worked meant nobody asked the suitcase.",
+"On record: the anniversary after divorce was quiet. Minutes: quiet finally used its own key.",
+"On record: the new partner fitted in. Minutes: fitting in meant learning the old weather.",
+"On record: the family album was updated. Minutes: scissors did the healing poorly.",
+"On record: the old ring was sold. Minutes: metal left before the story did.",
+"On record: the new vows were simple. Minutes: simple carried a complicated witness list.",
+"On record: the housewarming was cheerful. Minutes: cheer stood where history had not unpacked.",
+"On record: the child adjusted well. Minutes: well meant the adults could stop looking.",
+"On record: the old surname was kept. Minutes: keeping it made departure legible.",
+"On record: the new address was shared. Minutes: address did not mean arrival.",
+"On record: the first trip back was cordial. Minutes: cordial meant nobody touched the old drawer.",
+"On record: the photo album was edited. Minutes: the cut people still held the light.",
+"On record: the caption said forever. Minutes: forever survived as a file name.",
+"On record: the holiday photos looked easy. Minutes: ease excluded the row in the car.",
+"On record: the frame stayed on the mantel. Minutes: the glass kept an extinct version alive.",
+"On record: the group photo was restored. Minutes: restoration removed the person who remembered.",
+"On record: the wedding video was shared. Minutes: the camera missed the kitchen treaty.",
+"On record: the album had no gaps. Minutes: the gaps had better manners than the pictures.",
+"On record: the caption was corrected. Minutes: correction did not return the day.",
+"On record: the old video was funny. Minutes: laughter arrived where apology never did.",
+"On record: the scrapbook was treasured. Minutes: treasure depended on locked pages.",
+"On record: the portrait stayed centred. Minutes: the family orbit had not changed.",
+"On record: the photo wall felt honest. Minutes: honesty had been curated by frame size.",
+"On record: the memory box was opened. Minutes: memory had kept the receipt.",
+"On record: the digital album synced. Minutes: absence uploaded cleanly.",
+"On record: the reunion clip went viral. Minutes: viral meant strangers approved the edit.",
+"On record: the funeral was dignified. Minutes: dignity kept the complicated stories outside.",
+"On record: the eulogy was generous. Minutes: generosity arrived after contradiction stopped speaking.",
+"On record: the obituary was concise. Minutes: a whole life became one acceptable paragraph.",
+"On record: the minute’s silence was observed. Minutes: silence had more versions than the speech.",
+"On record: the flowers were tasteful. Minutes: taste did what words could not risk.",
+"On record: the wake was warm. Minutes: warmth loosened the banned stories.",
+"On record: the institution was mourned. Minutes: mourners forgot who had been kept outside.",
+"On record: the closing ceremony honoured legacy. Minutes: legacy had unpaid cleaners.",
+"On record: the founder was remembered kindly. Minutes: kindness edited management history.",
+"On record: the condolence book was full. Minutes: fullness arrived after years of silence.",
+"On record: the speech celebrated service. Minutes: service was easier to praise when finished.",
+"On record: the old office was missed. Minutes: nobody missed the fluorescent dread.",
+"On record: the final bell was moving. Minutes: movement came from what would not return.",
+"On record: the school closure was respectful. Minutes: respect could not heat the corridors.",
+"On record: the last shift ended quietly. Minutes: quiet did the work of shock.",
+"On record: the last Mass was beautiful. Minutes: beauty could not pay the roof.",
+"On record: the anniversary post thanked everyone. Minutes: everyone meant the visible helpers.",
+"On record: the reunion thread revived memories. Minutes: memory still chose favourites.",
+"On record: the old group chat reopened. Minutes: the first joke restored the hierarchy.",
+"On record: the catch-up call was easy. Minutes: ease lasted until the old nickname returned.",
+"On record: the alumni newsletter arrived. Minutes: success travelled; debt stayed home.",
+"On record: the invitation said all welcome. Minutes: welcome had learnt an old password.",
+"On record: the roll call was nostalgic. Minutes: the absent names did the hardest work.",
+"On record: the reunion dinner had laughter. Minutes: laughter chose safer decades.",
+"On record: the school song returned. Minutes: the song remembered what people denied.",
+"On record: the old table was reserved. Minutes: the table recognised the old ranking.",
+"On record: the reunion ended late. Minutes: lateness meant nobody wanted first silence.",
+"On record: the group promised next year. Minutes: next year had heard that before.",
+"On record: the memory lane walk was sweet. Minutes: sweetness avoided the locked gate.",
+"On record: the old teacher was honoured. Minutes: honour skipped the children who feared him.",
+"On record: the class photo was recreated. Minutes: the missing faces held the shape.",
+"On record: the old nickname returned. Minutes: return felt like theft in a familiar voice.",
+"On record: the tenth-year toast landed. Minutes: time softened the blow without repairing it.",
+"On record: the lesson looked obvious later. Minutes: later always has better lighting.",
+"On record: the warning signs were reviewed. Minutes: warnings had asked less politely before.",
+"On record: the failure became wisdom. Minutes: wisdom arrived after someone paid tuition.",
+"On record: the mistake was reframed. Minutes: the frame cost less than repair.",
+"On record: the old decision made sense then. Minutes: then had been overpromoted.",
+"On record: the apology came eventually. Minutes: eventually arrived without the missing years.",
+"On record: the pattern was recognised. Minutes: recognition came after it had trained everyone.",
+"On record: the damage was contained. Minutes: containment named the walls, not the smoke.",
+"On record: the debt was settled. Minutes: settlement did not restore the language.",
+"On record: the last argument was forgotten. Minutes: forgetting left the furniture arranged by it.",
+"On record: the old file was closed. Minutes: closure still had keys.",
+"On record: the risk was retired. Minutes: risk retired with a better pension than the worker.",
+"On record: the truth came out later. Minutes: later made everyone brave cheaply.",
+"On record: the apology was accepted. Minutes: acceptance meant no public route remained.",
+"On record: the lesson was clear. Minutes: clarity waited until no one could be promoted by it.",
+"On record: the survivor moved on. Minutes: moved on meant stopped updating the audience.",
+"On record: the official story settled. Minutes: settlement covered the uneven floor.",
+"On record: the company history began in a garage. Minutes: the rent was paid by someone else.",
+"On record: the charity began with kindness. Minutes: kindness became a staffing plan.",
+"On record: the family story was simple. Minutes: simplicity buried witnesses.",
+"On record: the city remembered the victory. Minutes: defeat kept paying for the statue.",
+"On record: the school remembered tradition. Minutes: tradition forgot who polished it.",
+"On record: the team remembered the comeback. Minutes: nobody quoted the person benched.",
+"On record: the neighbourhood remembered safety. Minutes: safety had a preferred resident.",
+"On record: the founder’s myth stayed intact. Minutes: myth had a legal department.",
+"On record: the old scandal faded. Minutes: fading was managed by new carpets.",
+"On record: the town remembered resilience. Minutes: resilience was what underfunding called survival.",
+"On record: the archive opened to the public. Minutes: the index still chose the public.",
+"On record: the plaque named the donor. Minutes: the workers remained plural and invisible.",
+"On record: the official version was tidy. Minutes: tidiness had removed the broken chair.",
+"On record: the story became heritage. Minutes: heritage meant nobody was available to object.",
+"On record: the textbook was updated. Minutes: update meant replacing shame with chronology.",
+"On record: the memorial route was approved. Minutes: the route avoided the hardest address.",
+"On record: the closing chapter was tender. Minutes: tenderness arrived after the audit.",
+"On record: the old promise was honoured. Minutes: honour changed shape when convenient.",
+"On record: the tradition continued. Minutes: continuation was easier than admission.",
+"On record: the name was preserved. Minutes: preservation did not preserve the people.",
+"On record: the celebration felt earned. Minutes: earned by whom remained politely plural.",
+"On record: the return felt healing. Minutes: healing kept one eye on the exit.",
+"On record: the record aged well. Minutes: age gave it manners, not accuracy.",
+"On record: the anniversary mass was full. Minutes: fullness could not answer the empty chair.",
+"On record: the legacy fund was launched. Minutes: legacy became easier after wages ended.",
+"On record: the archive saved everything. Minutes: everything excluded the bodies that left early.",
+"On record: the final newsletter was cheerful. Minutes: cheerfulness stood in for severance.",
+"On record: the retrospective drew applause. Minutes: applause hid the invoice.",
+"On record: the lesson was institutionalised. Minutes: the institution survived the lesson.",
+"On record: the old quarrel became a joke. Minutes: the joke still knew the wound.",
+"On record: the family myth endured. Minutes: endurance was helped by who stopped speaking.",
+"On record: the new version was cleaner. Minutes: clean meant fewer fingerprints.",
+"On record: the memorial lunch was simple. Minutes: simplicity avoided the inheritance.",
+"On record: the archive found new interest. Minutes: interest arrived after risk died.",
+"On record: the anniversary lecture was sober. Minutes: sobriety kept blame at a distance.",
+"On record: the closing photograph looked peaceful. Minutes: peace was chosen from twelve attempts.",
+"On record: the farewell gift was thoughtful. Minutes: thoughtfulness arrived instead of cover.",
+"On record: the old email was rediscovered. Minutes: rediscovery made cowardice searchable.",
+"On record: the bench plaque said beloved. Minutes: beloved left unfinished business in the shed.",
+"On record: the tribute page gathered memories. Minutes: memory sorted itself by permissions.",
+"On record: the merger anniversary was celebrated. Minutes: one culture wore the other as a tie.",
+"On record: the old website was archived. Minutes: the archive loaded faster than remorse.",
+"On record: the reunion badge showed first names. Minutes: first names did not flatten history.",
+"On record: the retirement speech praised calm. Minutes: calm had often meant swallowing orders.",
+"On record: the anniversary discount was generous. Minutes: generosity needed a purchase first.",
+"On record: the old rota was remembered fondly. Minutes: fondly meant by those not on Sundays.",
+"On record: the memorial tree was planted. Minutes: roots did what apologies had not.",
+"On record: the final audit found progress. Minutes: progress arrived after definitions changed.",
+"On record: the lesson plan was reused. Minutes: reuse taught the same omission again.",
+"On record: the farewell playlist was perfect. Minutes: perfection skipped the song everyone feared.",
+"On record: the archive label said miscellaneous. Minutes: miscellaneous held the dangerous truths.",
+"On record: the old badge still worked. Minutes: access outlived belonging.",
+"On record: the anniversary banner looked bright. Minutes: brightness covered the peeling wall.",
+"On record: the official memory was complete. Minutes: completeness had a closing time.",
+"On record: the return visit went smoothly. Minutes: smooth meant nobody opened the cupboard.",
+"On record: the last photograph was framed. Minutes: the frame made ending look deliberate.",
+"On record: the tribute sounded universal. Minutes: universal meant specific people stayed unnamed.",
+"On record: the history panel was diverse. Minutes: diversity ended before decision-making.",
+"On record: the follow-up was positive. Minutes: positive meant no one reopened the wound.",
+"On record: the anniversary gift was practical. Minutes: practicality avoided intimacy.",
+"On record: the goodbye was dignified. Minutes: dignity left through a side door crying.",
+"On record: the anniversary ribbon was cut. Minutes: the scissors avoided the knot.",
+"On record: the old slogan returned. Minutes: return was cheaper than reflection.",
+"On record: the commemorative mug sold well. Minutes: memory became dishwasher-safe.",
+"On record: the reunion map was updated. Minutes: the route still avoided one street.",
+"On record: the final toast was brief. Minutes: brevity protected the shaking voice.",
+"On record: the archive closed at five. Minutes: history kept office hours.",
+"On record: the memorial programme was folded. Minutes: grief learnt the running order."
+];
+var state={current:null,recent:[],casting:false};
+function escapeHtml(s){return String(s).replace(/[&<>]/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[m]})}
+function choose(){var n=CARDS.length,i,t=0;do{i=Math.floor(Math.random()*n);t++;}while(state.recent.indexOf(i)>=0&&t<15);state.recent.unshift(i);state.recent=state.recent.slice(0,Math.min(8,n-1));return i;}
+function formatCard(rawStr){var delim='Minutes:';var idx=rawStr.indexOf(delim);if(idx===-1){return '<div class="record-block">'+escapeHtml(rawStr)+'</div>';}var recPart=rawStr.substring(0,idx).replace(/^On\s+record:\s*/i,'').replace(/\.\s*$/,'').trim();var minPart=rawStr.substring(idx+delim.length).trim();return ['<div class="record-block"><span class="rec-label">ON RECORD:</span> '+escapeHtml(recPart)+'</div>','<div class="ledger-divider" aria-hidden="true"></div>','<div class="minutes-block"><span class="min-label">MINUTES:</span> '+escapeHtml(minPart)+'</div>'].join('');}
+function idleHtml(s){return '<span class="line idle">'+escapeHtml(s)+'<span class="caret" aria-hidden="true"></span></span>';}
+function dump(){if(state.casting)return;state.casting=true;var btn=$('ask');btn.classList.add('busy');var sh=$('cardShell');if(sh){sh.classList.remove('quote-hit');}var t=$('text');t.classList.add('out-fade');setTimeout(function(){var i=choose();state.current=CARDS[i];t.innerHTML=formatCard(state.current);var en=$('entryno');if(en)en.textContent='';if(sh){sh.classList.add('filed');void sh.offsetWidth;sh.classList.add('quote-hit');}t.classList.remove('out-fade');btn.classList.remove('busy');state.casting=false;},150);}
+function copyText(txt){if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(copied).catch(function(){fallback(txt)});}else fallback(txt);}
+function copied(){var c=$('copy');c.classList.add('ok');c.textContent='COPIED';setTimeout(function(){c.classList.remove('ok');c.textContent='COPY'},900);toast('copied');}
+function fallback(txt){var ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.left='-9999px';ta.style.fontSize='16px';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');copied();}catch(e){toast('copy failed');}document.body.removeChild(ta);}
+function show(v){['vMain','vAbout'].forEach(function(x){$(x).classList.toggle('on',x===v)});}
+function toast(s){var t=$('toast');t.textContent=s;t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(function(){t.classList.remove('on')},1400);}
+function bind(){
+  $('ask').addEventListener('click',dump);
+  $('copy').addEventListener('click',function(){if(state.current)copyText(state.current+'\n\n'+TAG);else toast('read entry first');});
+  $('clear').addEventListener('click',function(){if(state.casting)return;state.current=null;var sh=$('cardShell');if(sh){sh.classList.remove('filed');sh.classList.remove('quote-hit');}var en=$('entryno');if(en)en.textContent='';var t=$('text');t.classList.add('out-fade');setTimeout(function(){t.innerHTML=idleHtml('the record is open.');t.classList.remove('out-fade');var c=$('copy');c.classList.remove('ok');c.textContent='COPY';},150);});
+  $('aboutLink').addEventListener('click',function(){$('deckCount').textContent=CARDS.length;show('vAbout');});
+  $('back').addEventListener('click',function(){show('vMain')});
+  $('brand').addEventListener('click',function(){show('vMain')});
+  document.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&$('vMain').classList.contains('on')&&document.activeElement.tagName!=='BUTTON'){e.preventDefault();dump();}if(e.key==='Escape'){if(!$('vMain').classList.contains('on'))show('vMain');}});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
+})();
+</script>
+</body>
+</html>

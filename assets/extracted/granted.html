@@ -1,0 +1,1418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GRANTED</title>
+<meta name="description" content="GRANTED — a compact text-card app that grants a premise and makes you reason forward from it.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2032%2032%27%3E%3Crect%20width%3D%2732%27%20height%3D%2732%27%20rx%3D%276%27%20fill%3D%27%2306120a%27/%3E%3Ccircle%20cx%3D%2716%27%20cy%3D%2716%27%20r%3D%2711%27%20fill%3D%27%230a160d%27%20stroke%3D%27%2346e06a%27%20stroke-width%3D%271.3%27/%3E%3Ctext%20x%3D%2716%27%20y%3D%2723%27%20font-family%3D%27monospace%27%20font-size%3D%2721%27%20font-weight%3D%27700%27%20text-anchor%3D%27middle%27%20fill%3D%27%23ecffe9%27%3EG%3C/text%3E%3Ccircle%20cx%3D%2725%27%20cy%3D%278%27%20r%3D%273%27%20fill%3D%27%23ffcf52%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Stencil+One&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#040703;
+  --panel:#0a110b;
+  --panel2:#0d150d;
+  --line:#1f3320;
+  --line2:#2f5430;
+  --glare:#ecffe9;
+  --soft:#def4d6;
+  --muted:#9fc098;
+  --dim:#74906b;
+  --tint:#46e06a;
+  --ink:#06120a;
+  --blood:#e0b23a;
+  --bloodhot:#ffcf52;
+}
+*{box-sizing:border-box}
+html{min-height:100%;background:#040703}
+body{
+  margin:0;
+  min-height:100svh;
+  color:var(--soft);
+  font-family:'IBM Plex Mono','Courier New',monospace;
+  padding:clamp(8px,1.8vw,18px);
+  display:flex;
+  align-items:stretch;
+  justify-content:center;
+  background:
+    radial-gradient(820px 460px at 50% -120px,rgba(70,224,106,.22),transparent 70%),
+    radial-gradient(560px 340px at 16% 100%,rgba(255,207,82,.10),transparent 72%),
+    linear-gradient(180deg,#0b160b,#061006 68%,#040904);
+}
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:9;
+  pointer-events:none;
+  opacity:.72;
+  background:
+    repeating-linear-gradient(to bottom,rgba(236,255,233,.018) 0,rgba(236,255,233,.018) 1px,transparent 1px,transparent 6px),
+    radial-gradient(circle at 50% 12%,rgba(70,224,106,.05),transparent 50%);
+}
+.app{
+  align-self:center;
+  width:100%;
+  max-width:820px;
+  background:linear-gradient(145deg,#142114 0%,#0b150b 56%,#071107 100%);
+  border:1px solid rgba(70,224,106,.46);
+  border-radius:12px;
+  box-shadow:
+    0 0 0 1px #000,
+    0 18px 50px rgba(0,0,0,.86),
+    0 0 60px rgba(70,224,106,.16);
+  padding:clamp(7px,1.4vw,12px);
+}
+.screen{
+  position:relative;
+  overflow:hidden;
+  min-height:calc(100svh - clamp(32px,5vw,54px));
+  padding:clamp(12px,2.2vw,22px);
+  display:flex;
+  flex-direction:column;
+  gap:clamp(12px,2vw,16px);
+  border:1px solid rgba(70,224,106,.40);
+  border-radius:10px;
+  background:
+    radial-gradient(660px 240px at 50% 0%,rgba(236,255,233,.10),transparent 60%),
+    linear-gradient(180deg,#101c10 0%,#0b140b 60%,#081108 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(236,255,233,.03),
+    inset 0 0 38px rgba(0,0,0,.64);
+}
+.screen.power{animation:powerOn .55s ease-out}
+.screen:before{
+  content:"";
+  position:absolute;
+  inset:8px;
+  z-index:0;
+  pointer-events:none;
+  border:1px solid rgba(70,224,106,.16);
+  border-radius:7px;
+}
+.screen:after{
+  content:"";
+  position:absolute;
+  left:0;right:0;top:-42%;
+  height:35%;
+  z-index:3;
+  pointer-events:none;
+  opacity:.55;
+  background:linear-gradient(180deg,transparent,rgba(236,255,233,.05),rgba(70,224,106,.10),transparent);
+  animation:scan 11s linear infinite;
+}
+.header,.view,.footer{position:relative;z-index:1}
+.header{
+  text-align:center;
+  padding:clamp(7px,1.4vw,12px) 0 clamp(10px,1.8vw,16px);
+  border-bottom:1px solid rgba(70,224,106,.20);
+  overflow:hidden;
+}
+.brand{width:min(100%,760px);margin:0 auto;cursor:pointer}
+.logo{display:inline-flex;flex-direction:column;align-items:center;gap:.1em;max-width:100%}
+h1{
+  margin:0;
+  font-family:'Saira Stencil One','IBM Plex Mono',monospace;
+  font-weight:400;
+  text-transform:uppercase;
+  color:var(--glare);
+  font-size:clamp(2.75rem,13.2vw,5.85rem);
+  line-height:.86;
+  letter-spacing:.065em;
+  text-shadow:0 0 12px rgba(236,255,233,.45),0 0 40px rgba(70,224,106,.30);
+}
+h1 .dot{color:var(--tint);text-shadow:0 0 16px rgba(70,224,106,.9);animation:dotPulse 2.6s ease-in-out infinite}
+.subtitle-bar{
+  width:min(100%,620px);
+  margin:12px auto 0;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  color:#a9efb6;
+  font-size:clamp(.66rem,2.55vw,.78rem);
+  text-transform:uppercase;letter-spacing:.105em;
+}
+.subtitle-bar:before,.subtitle-bar:after{content:"";height:1px;flex:1 1 auto;background:linear-gradient(90deg,transparent,rgba(70,224,106,.38))}
+.subtitle-bar:after{background:linear-gradient(90deg,rgba(70,224,106,.38),transparent)}
+.subtitle-bar span{padding:5px 11px;border:1px solid rgba(70,224,106,.5);border-radius:3px;background:rgba(70,224,106,.10);color:#c4f7cb;box-shadow:inset 0 0 18px rgba(0,0,0,.22)}
+.status{margin-top:10px;display:flex;justify-content:center;gap:7px;flex-wrap:wrap;color:var(--dim);font-size:.68rem;text-transform:uppercase;letter-spacing:.04em}
+.status span{padding:4px 7px;border:1px solid rgba(70,224,106,.30);border-radius:3px;background:rgba(70,224,106,.06)}
+.status b{font-weight:normal}
+.status .glare{color:var(--glare)}.status .tint{color:var(--tint)}.status .blood{color:var(--bloodhot)}
+.view{flex:1;display:none;flex-direction:column;gap:clamp(11px,1.8vw,15px)}
+.view.on{display:flex}
+.primary{display:flex;flex-direction:column}
+#ask{
+  position:relative;
+  width:100%;
+  min-height:clamp(78px,14svh,96px);
+  border:1px solid rgba(236,255,233,.78);
+  border-radius:8px;
+  background:
+    radial-gradient(240px 90px at 50% 0%,rgba(236,255,233,.16),transparent 72%),
+    linear-gradient(90deg,rgba(255,207,82,.12),transparent 22%,transparent 78%,rgba(70,224,106,.14)),
+    linear-gradient(180deg,#dff9d8 0%,#87d98d 46%,#2d8c46 100%);
+  color:#06120a;
+  font-family:'Saira Stencil One',Impact,sans-serif;
+  font-weight:400;
+  font-size:clamp(1.18rem,5.8vw,2.05rem);
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  text-shadow:0 1px 0 rgba(255,255,255,.56);
+  cursor:pointer;
+  box-shadow:
+    0 0 0 2px #000,
+    0 8px 0 rgba(0,0,0,.76),
+    0 0 26px rgba(70,224,106,.20),
+    inset 0 1px 0 rgba(255,255,255,.72),
+    inset 0 -16px 22px rgba(8,40,18,.22);
+}
+#ask:after{content:"PROCEED";position:absolute;right:12px;bottom:7px;font-size:.56rem;letter-spacing:.18em;color:rgba(6,18,10,.56);text-shadow:none}
+#ask:hover{filter:brightness(1.055) saturate(1.05);box-shadow:0 0 0 2px #000,0 8px 0 rgba(0,0,0,.76),0 0 40px rgba(70,224,106,.30),inset 0 1px 0 rgba(255,255,255,.78),inset 0 -14px 22px rgba(8,40,18,.18)}
+#ask:active{transform:translateY(3px) scale(.995);box-shadow:0 0 0 2px #000,0 4px 0 rgba(0,0,0,.82),0 0 22px rgba(70,224,106,.20),inset 0 0 16px rgba(8,40,18,.24)}
+#ask.busy{animation:btnGlitch .09s steps(2,end) 6!important}
+.output{
+  position:relative;
+  overflow:hidden;
+  flex:1;
+  min-height:clamp(240px,42svh,370px);
+  display:flex;align-items:center;justify-content:center;
+  padding:clamp(28px,6vw,46px) clamp(18px,4vw,34px) clamp(28px,5vw,42px);
+  border:1px solid rgba(70,224,106,.45);
+  border-radius:10px;
+  background:
+    radial-gradient(560px 230px at 50% 0%,rgba(236,255,233,.10),transparent 64%),
+    linear-gradient(180deg,rgba(236,255,233,.04),rgba(0,0,0,.16)),
+    #0b150c;
+  box-shadow:inset 0 0 0 1px rgba(236,255,233,.05),inset 0 0 42px rgba(0,0,0,.4),0 0 26px rgba(70,224,106,.10);animation:outGlow 5.5s ease-in-out infinite;
+}
+.output:after{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.16;
+  background:
+    linear-gradient(90deg,transparent 0,rgba(236,255,233,.06) 50%,transparent 100%),
+    repeating-linear-gradient(135deg,rgba(236,255,233,.022) 0,rgba(236,255,233,.022) 1px,transparent 1px,transparent 8px);
+}
+.slip{
+  position:relative;z-index:2;
+  width:min(100%,660px);
+  padding:clamp(28px,5vw,40px) clamp(18px,4vw,34px) clamp(28px,5vw,40px);
+  background:
+    radial-gradient(460px 190px at 50% 0%,rgba(70,224,106,.10),transparent 72%),
+    linear-gradient(180deg,rgba(236,255,233,.05),rgba(0,0,0,.14));
+  color:#e8fbe4;
+  border:1px solid rgba(70,224,106,.36);
+  border-radius:9px;
+  box-shadow:
+    inset 0 0 0 1px rgba(236,255,233,.05),
+    inset 0 0 30px rgba(0,0,0,.18),
+    0 0 20px rgba(70,224,106,.08);
+  transform:none;
+}
+.slip:before{display:none}
+.slip:after{display:none}
+.slipno{display:none}
+.sliptear{display:none}
+.output.cast{animation:none}
+.output.cast .slip{animation:slipDrop .42s cubic-bezier(.2,.9,.25,1) 1}
+@keyframes slipDrop{
+  0%{transform:translateY(-14px) rotate(1.4deg);opacity:0;box-shadow:0 0 0 1px rgba(0,0,0,.85),0 30px 50px rgba(0,0,0,.8),0 0 44px rgba(70,224,106,.3)}
+  70%{opacity:1}
+  100%{transform:rotate(-.6deg);opacity:1}
+}
+#text{
+  position:relative;z-index:2;width:100%;text-align:left;margin-top:clamp(38px,6vw,54px);
+  color:#e8fbe4;
+  font-size:clamp(1.1rem,4.6vw,1.56rem);line-height:1.5;
+  text-shadow:0 0 14px rgba(70,224,106,.30);
+  transition:opacity .16s ease;
+}
+#text.out-fade{opacity:0}
+.line{display:block}
+.line.idle{color:rgba(232,251,228,.62)}
+.stamp{display:none}
+.output.cast #text{animation:none}
+
+#text .hot{color:#8a5a00}
+
+.grant-seal{
+  position:absolute;
+  left:50%;
+  top:clamp(10px,2.4vw,16px);
+  width:clamp(38px,7.2vw,52px);
+  height:clamp(38px,7.2vw,52px);
+  transform:translateX(-50%) rotate(-2deg);
+  z-index:4;
+  pointer-events:none;
+  opacity:.72;
+  filter:drop-shadow(0 0 12px rgba(70,224,106,.24));
+  animation:grantSealIdle 5.2s ease-in-out infinite;
+}
+.grant-seal svg{width:100%;height:100%;display:block;overflow:visible}
+.grant-seal .seal-ring{fill:rgba(7,18,8,.10);stroke:rgba(70,224,106,.82);stroke-width:2.4}
+.grant-seal .seal-check{fill:none;stroke:rgba(236,255,233,.88);stroke-width:4.6;stroke-linecap:round;stroke-linejoin:round}
+.grant-seal .seal-spark{fill:none;stroke:var(--bloodhot);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;animation:grantSpark 2.7s steps(1,end) infinite}
+.output.cast .grant-seal{animation:grantSealHit .46s steps(2,end) 1!important}
+.output.cast .seal-check{animation:grantCheckHit .46s ease-out 1}
+.output.cast .seal-spark{animation:grantSparkHit .46s steps(1,end) 1!important}
+@keyframes grantSealIdle{0%,100%{transform:translateX(-50%) translateY(0) rotate(-2deg)}50%{transform:translateX(-50%) translateY(-2px) rotate(1deg)}}
+@keyframes grantSealHit{0%{transform:translateX(-50%) translate(0,0) rotate(-2deg) scale(1)}20%{transform:translateX(-50%) translate(-3px,2px) rotate(-10deg) scale(1.1)}42%{transform:translateX(-50%) translate(3px,-2px) rotate(7deg) scale(.96)}68%{transform:translateX(-50%) translate(-1px,1px) rotate(-5deg) scale(1.08)}100%{transform:translateX(-50%) translate(0,0) rotate(-2deg) scale(1)}}
+@keyframes grantCheckHit{0%{stroke-dasharray:0 80;opacity:.4}100%{stroke-dasharray:80 0;opacity:1}}
+@keyframes grantSpark{0%,82%,100%{opacity:.35}83%{opacity:1}86%{opacity:.2}88%{opacity:1}}
+@keyframes grantSparkHit{0%{opacity:1}25%{opacity:.18}45%{opacity:1}70%{opacity:.28}100%{opacity:1}}
+.controls{display:flex;gap:8px}
+#copy,#clear,.controls .flink{min-height:44px;padding:12px 8px;border-radius:6px;font-family:inherit;cursor:pointer;text-transform:uppercase;font-weight:bold;letter-spacing:.1em;font-size:.8rem;box-shadow:inset 0 0 0 1px rgba(236,255,233,.025)}
+#copy{flex:1;color:var(--glare);background:linear-gradient(180deg,#162417,#0e1a0f);border:1px solid rgba(70,224,106,.5)}
+#copy:hover{background:#152016;border-color:rgba(236,255,233,.52)}
+#copy.ok{color:var(--tint);border-color:var(--tint);background:#0f1a11}
+#clear{flex:1;color:#9cbb94;background:linear-gradient(180deg,#101a10,#0b130b);border:1px solid rgba(70,224,106,.32)}
+#clear:hover{color:var(--soft);border-color:rgba(70,224,106,.42);background:#111811}
+.about{
+  flex:1;overflow:auto;min-height:clamp(260px,52svh,420px);
+  border:1px solid rgba(70,224,106,.24);border-radius:10px;
+  background:
+    radial-gradient(440px 180px at 50% 0%,rgba(70,224,106,.05),transparent 66%),
+    linear-gradient(180deg,rgba(236,255,233,.02),rgba(0,0,0,.24)),
+    #070d08;
+  padding:20px;color:#cde6c7;white-space:pre-line;font-size:clamp(.9rem,3vw,1rem);line-height:1.6;
+}
+.about b{color:var(--glare);font-weight:normal}
+.footer{margin-top:auto;padding-top:10px;border-top:1px dashed rgba(70,224,106,.32);color:var(--dim);font-size:.66rem;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.footer .flink{background:none;border:1px solid transparent;border-radius:6px;color:#9be4a6;padding:4px 6px;font-size:.66rem;letter-spacing:.1em;cursor:pointer}
+.footer .flink:hover{color:var(--glare);border-color:rgba(70,224,106,.28);background:rgba(70,224,106,.04)}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#0d150d;color:var(--glare);border:1px solid rgba(70,224,106,.6);padding:9px 14px;z-index:50;font-size:.86rem;display:none;letter-spacing:.04em;box-shadow:0 10px 30px rgba(0,0,0,.55)}
+.toast.on{display:block}
+button:focus-visible,.footer .flink:focus-visible,#ask:focus-visible{outline:2px solid var(--tint);outline-offset:3px}
+@keyframes scan{to{transform:translateY(340%)}}
+@keyframes powerOn{0%{opacity:0;transform:scale(.985)}100%{opacity:1;transform:none}}
+@keyframes btnGlitch{0%{transform:translate(-3px,2px) skewX(-4deg)}50%{transform:translate(3px,-2px) skewX(4deg)}100%{transform:translate(0,0)}}
+@media(max-width:560px){
+  body{padding:7px;align-items:stretch}
+  .app{align-self:stretch;border-radius:11px;padding:6px}
+  .screen{min-height:calc(100svh - 14px);padding:11px;border-radius:9px;gap:11px}
+  .screen:before{inset:6px;border-radius:6px}
+  .header{padding-top:5px;padding-bottom:10px}
+  h1{font-size:clamp(2.8rem,18vw,4.6rem);letter-spacing:.06em}
+  .subtitle-bar span{padding:4px 8px}
+  .status{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;font-size:.55rem}
+  .status span{padding:4px 4px;text-align:center;white-space:nowrap}
+  #ask{min-height:76px;font-size:clamp(1.08rem,6vw,1.55rem)}
+  .output{min-height:250px;padding:26px 12px 26px}
+  .slip{padding:34px 16px 30px}
+  .grant-seal{top:10px;left:50%;width:38px;height:38px}
+  #text{font-size:clamp(1.05rem,5.2vw,1.32rem);line-height:1.46;margin-top:46px}
+  .controls{gap:7px}
+  #copy,#clear,.controls .flink{min-height:42px;font-size:.76rem}
+  .footer{font-size:.58rem;gap:6px}
+}
+@media(max-width:360px){
+  .status{grid-template-columns:1fr;display:flex}
+  .status span{font-size:.52rem}
+  h1{font-size:2.6rem}
+}
+@keyframes dotPulse{0%,100%{opacity:1}50%{opacity:.55}}
+@keyframes outGlow{0%,100%{box-shadow:inset 0 0 0 1px rgba(236,255,233,.05),inset 0 0 42px rgba(0,0,0,.4),0 0 22px rgba(70,224,106,.08)}50%{box-shadow:inset 0 0 0 1px rgba(236,255,233,.05),inset 0 0 42px rgba(0,0,0,.4),0 0 34px rgba(70,224,106,.16)}}
+@keyframes askGlow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.06)}}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<main class="app">
+<section class="screen power" id="screen" aria-label="GRANTED terminal">
+<header class="header">
+<div class="brand" id="brand" title="Return"><span class="logo"><h1>GRANTED<span class="dot">.</span></h1></span><div class="subtitle-bar"><span>truth on loan. no refunds.</span></div></div>
+<div class="status"><span>PREMISE: <b class="tint">GRANTED</b></span><span>DOUBT: <b class="blood">SUSPENDED</b></span><span>PROOF: <b class="glare">YOURS</b></span></div>
+</header>
+
+<div class="view on" id="vMain">
+  <div class="primary"><button id="ask" type="button">SO BE IT</button></div>
+  <div class="output"><div class="slip" id="slip"><span class="grant-seal" aria-hidden="true"><svg viewBox="0 0 64 64"><circle class="seal-ring" cx="32" cy="32" r="23"/><path class="seal-check" d="M18 33l9 9 19-22"/><path class="seal-spark" d="M47 10l-5 8h5l-4 8"/></svg></span><div id="text" aria-live="polite"><span class="line idle">press to grant a premise.</span></div><span class="sliptear" aria-hidden="true">&there4; proceed</span></div></div>
+  <div class="controls"><button id="copy" type="button">COPY</button><button id="clear" type="button">CLEAR</button></div>
+</div>
+
+<div class="view" id="vAbout">
+  <div class="about">&gt; GRANTED  &middot;  truth on loan. no refunds.
+&gt; ON FILE: <b id="deckCount">999</b> premises, no proofs included
+
+GRANTED doesn&rsquo;t ask. It grants.
+
+One button. One premise. You accept it temporarily and reason forward &mdash; not because it is proven, but because useful thought often begins when the argument is suspended for one minute.
+
+A frame does more work than an opinion. Grant the premise, suspend the doubt, and the next move usually stops hiding.
+
+Use it on a stuck plan, a decision you keep re-opening, a draft that refuses to move, or any thought that only changes when you stop hedging.
+
+The proof is yours. Nothing saved. No account. No advice.
+
+&copy; HRF 2026. All rights reserved.
+
+[ &larr; RETURN ]  or press ESC</div>
+  <div class="controls"><button id="back" class="flink" type="button" style="flex:1;padding:14px;border:1px solid var(--line);border-radius:8px;color:var(--muted)">&larr; RETURN</button></div>
+</div>
+
+<div class="footer"><span>&copy; HRF 2026. All rights reserved.</span><button class="flink" id="aboutLink" type="button">[ ABOUT ]</button></div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+var PREFIX='';
+var TAG='GRANTED';
+var CARDS=["The problem is the solution, working perfectly.",
+"You’ve already decided. What is it?",
+"Nobody is coming. Now plan.",
+"The boring answer is the true one.",
+"You have one year, fully funded, no audience. What do you build?",
+"The feedback was accurate. What changes today?",
+"Every excuse you have is valid, and you still have to move.",
+"The version of you they like is gone. Who answers now?",
+"The deadline is real and the rescue isn’t coming.",
+"Your harshest critic is right about one thing. Which one?",
+"You can’t explain yourself afterward. Choose anyway.",
+"The door was never locked. What do you do first?",
+"The thing you’re avoiding takes ten minutes. Start it.",
+"You’ll be remembered for exactly how you spent this week.",
+"The comfortable option is the dangerous one here.",
+"Your future self already paid for today’s delay.",
+"You get no second meeting. Say it now.",
+"The pattern repeats unless you break it this time.",
+"You’re the most reasonable person who will ever look at this. Decide.",
+"The simplest reading is correct and you’ve been padding it.",
+"The cost is fixed; only the timing is yours.",
+"You already know who to call. Call them.",
+"The worst outcome is survivable. Now what?",
+"Your reasons arrived after the choice. Name the real one.",
+"The resource you’re waiting for never arrives. Begin without it.",
+"The relationship survives accuracy. Say the true thing.",
+"The rule you’re obeying was never enforced. Test it.",
+"The small honest version is enough. Ship it.",
+"You are not the exception. Plan like everyone else.",
+"The fear is accurate but not in charge. Move.",
+"The help you want is one ask away. Ask.",
+"You keep it only if you’d choose it again today.",
+"The meeting is the decision. Don’t wait for another.",
+"The opportunity expires tonight. What do you take?",
+"Your attention is the whole budget. Where does it actually go?",
+"The story you tell about this is the obstacle. Retell it as a report.",
+"You will not get closure. Proceed without it.",
+"The obvious next step is beneath you and still correct. Take it anyway.",
+"The answer costs you status. Is it still the answer?",
+"The other person won’t change. Design for that.",
+"The quiet choice is the brave one here. Make it without an announcement.",
+"Your first instinct was right. Act on it.",
+"You owe nobody an explanation today. Choose loudly.",
+"The plan only works if you start before you feel ready. Readiness is cargo; leave it.",
+"The evidence already left. Update your conclusion.",
+"The right time is a story; now is the offer. Offers expire.",
+"Half of what you’re carrying isn’t yours. Set it down.",
+"This is the easy version. It gets harder from here.",
+"The audience you fear isn’t paying attention.",
+"The second-best option, chosen now, beats the best one later. Buy it today.",
+"The kind thing and the honest thing are the same here. Say it once, plainly.",
+"You’d advise a friend to quit this. Why not you?",
+"The obstacle is doing a job. Find out who hired it.",
+"The delay is the decision. Read it plainly.",
+"The system is not broken. Ask what it is built to produce.",
+"Your confusion is useful. Name its employer.",
+"The missing piece is not missing. Look at the arrangement.",
+"The old method worked too well. Retire it with honours.",
+"This is not a crisis. Then choose.",
+"You are not behind. Decide where you are.",
+"The pressure is borrowed. Return it.",
+"The mistake is a map. Follow the repeated turn.",
+"Your standards are grief in formal clothes. Lower nothing; inspect them.",
+"The loop is loyal to something. Find the oath.",
+"The shortcut is expensive. Ask who pays.",
+"The long way is honest. Start walking.",
+"Comfort is not evidence. Reopen the case.",
+"Intensity is not information. Wait for structure.",
+"The urgent thing is a decoy. Look beside it.",
+"The performance is optional. Stop mid-scene.",
+"Your reputation is not invited. Decide privately.",
+"The room agrees because the room is afraid. Speak once.",
+"The inherited rule expired. Check the date.",
+"You are allowed to want it. Now what?",
+"The elegant explanation is false. Try the ugly one.",
+"The ugly explanation is lazy. Find the precise one.",
+"The boundary is real. Enforce it once.",
+"Resentment is a calendar. What date is circled?",
+"Boredom is data. Stop sedating it.",
+"Your body is the honest witness. Let it testify first.",
+"Guilt is bad evidence. Ask for better proof.",
+"Shame is not a compass. Stop navigating by it.",
+"The compromise is the wound. Stop praising the bandage.",
+"The apology will not arrive. What changes?",
+"Repair is possible but not free. Price it.",
+"Loyalty requires revision. Update the contract.",
+"Love is not enough information. Ask the next question.",
+"Admiration is not consent. Stop performing.",
+"Productivity is hiding grief. Make room for it.",
+"The metric is corrupt. Measure what it excludes.",
+"The work wants less brilliance. Make it useful.",
+"The draft is supposed to be bad. Remove the scandal.",
+"The block is a judge. Remove its chair.",
+"The silly version is the doorway. Enter without dignity.",
+"The clever version is avoidance. Simplify until it hurts.",
+"Originality is not the goal. Make contact.",
+"Usefulness is not the enemy. Let it sharpen the work.",
+"Beauty has no argument. Keep it anyway.",
+"The feed is training your desire. Interrupt the lesson.",
+"Your opinion was delivered. Check the sender.",
+"Outrage is easier than grief. Choose the harder weather.",
+"The slogan is innocent until applied. Apply it.",
+"The principle has never met a real person. Introduce them.",
+"Being right is not enough. Add responsibility.",
+"Kindness without cost is branding. Find the cost.",
+"Your side is not pure. Now think.",
+"Fairness inconveniences you. Pay your share without a speech.",
+"The victim is inconvenient. Keep looking.",
+"Memory is a witness, not a judge. Cross-examine it.",
+"Certainty is a mood. Wait for evidence.",
+"Doubt is a tool, not a home. Put it down after use.",
+"The mystery is local. Stop making it cosmic.",
+"Meaning is smaller than advertised. Repeat it anyway.",
+"Purpose is a practice. Schedule it.",
+"Death is not theoretical. Cancel something.",
+"Time is not waiting for your better self. Begin as you are.",
+"Enough will not announce itself. Decide the threshold.",
+"Ownership is not use. Release the museum.",
+"Envy is instruction. Translate it.",
+"Taste is trained. Ask by whom.",
+"The object is not the desire. Name the desire.",
+"The past is evidence, not law. Sentence accordingly.",
+"The premise is wrong. Keep only what still stands.",
+"Your intelligence is defending the wrong model. Update the model.",
+"The thought is brilliant and useless. Demand contact.",
+"Overthinking is obedience. Ask who benefits.",
+"The analysis is hiding an appetite. Name it.",
+"The smartest part of you is not the wisest. Change chairs.",
+"Your mind can win arguments and still lose days. Count the days.",
+"The theory is a costume. Look for the wound.",
+"The conclusion was emotional first. Respect that order.",
+"Your facts are correct and your frame is wrong. Start there.",
+"The map is accurate for the wrong territory. Stop walking.",
+"Common sense is local folklore. Ask what it excludes.",
+"The misconception is useful. Find its customer.",
+"The habit is a belief with legs. Stop it walking.",
+"The error keeps recurring because it is fed. Find the feeder.",
+"The wrong move is diagnostic. Don’t waste it.",
+"The broken part is signalling honestly. Listen before fixing.",
+"The symptom is accurate. Distrust the explanation.",
+"The resistance knows something. Interrogate without flattering it.",
+"The stuckness is staged. Find the audience.",
+"The middle ground has an owner. Name them.",
+"Balance is not virtue. Ask what fell off the scale.",
+"The good reason is not the real reason. Keep digging.",
+"The bad reason is the honest one. Work from there.",
+"The official motive is decorative. Follow the money.",
+"The private motive is simpler. Remove the speech.",
+"The mess is managed. Stop calling it chaos.",
+"The chaos is information. Sort by consequence.",
+"The calendar is the confession. Read the week.",
+"The budget is the autobiography. Read the numbers.",
+"The tool is teaching you a habit. Refuse the lesson.",
+"The interface is not innocent. Notice the pressure.",
+"Convenience has a politics. Ask what it normalises.",
+"Distraction has a business model. Stop paying.",
+"The notification is not urgent. Let it fail.",
+"The screen is negotiating with your will. Decline politely.",
+"Your preference was manufactured. Test it in silence.",
+"The algorithm is a mirror with motives. Step aside.",
+"The popular answer is contaminated. Wash it.",
+"The crowd is not evidence. Reduce the volume.",
+"Applause is a bad compass. Choose by weather.",
+"Visibility is not value. Protect the invisible work.",
+"Obscurity is not failure. Continue with witnesses absent.",
+"Status is a tax on perception. Stop paying early.",
+"Prestige is noise in expensive clothes. Lower the volume.",
+"The prestigious answer is late. Ask what arrived first.",
+"Respectability is hiding fear. Remove the tie.",
+"Tradition is memory with authority. Ask what it forgot.",
+"Novelty is boredom with funding. Demand substance.",
+"The new way knows one thing. Steal only that.",
+"The contradiction is the engine. Stop trying to smooth it.",
+"The tension is productive. Give it a job.",
+"The conflict is not a failure. Use its heat.",
+"The paradox is the doorway. Enter slowly.",
+"The impossible demand reveals the actual problem. Write it down.",
+"The constraint is a gift with teeth. Use the teeth.",
+"Less is not smaller. Remove until it speaks.",
+"More is not stronger. Add only load-bearing weight.",
+"The excess is the confession. Cut around it.",
+"The weak part is telling the truth. Move it forward.",
+"The strong part is bullying the rest. Weaken it.",
+"The accident is not random. Ask what it solved.",
+"The final version is overcivilised. Dirty one corner.",
+"Clarity is not simplification. Make the hard thing visible.",
+"Complexity is not depth. Remove the fog.",
+"Difficulty is not proof. Ask what it earns.",
+"Elegance is hiding labour. Show the hinge.",
+"The hinge matters more than the door. Repair it.",
+"The transition is the problem. Build the bridge.",
+"The bridge wants burning. Cross first.",
+"Repetition is evidence. Count what repeats.",
+"Variation is avoidance. Repeat once with honesty.",
+"The last impulse is not wiser. Distrust fatigue.",
+"Speed is cowardice. Slow the thought.",
+"Slowness is fear. Move before explaining.",
+"The decision wants a smaller room. Remove witnesses.",
+"The choice is not between options. Reframe the axis.",
+"The axis is false. Draw another.",
+"The binary is a trap. Refuse both handles.",
+"The third option is worse. Find the fourth.",
+"The fourth option is vanity. Choose among the real ones.",
+"You are asking permission to disappoint someone. Disappoint cleanly.",
+"The anxiety is a smoke alarm in a kitchen. Open a window.",
+"The panic is loud, not wise. Lower the microphone.",
+"The sadness is not an argument. Sit beside it.",
+"The mood is weather. Stop making constitutions from rain.",
+"The wound is real and the conclusion is false. Separate them.",
+"Your history explains you but does not command you. Disobey gently.",
+"Survival taught poor manners. Thank it and revise.",
+"The defence has expired. Retire it.",
+"The armour has become architecture. Move out.",
+"The mask is tired. Let it resign.",
+"The persona is overemployed. Fire one role.",
+"Competence is hiding need. Ask directly.",
+"Availability is not kindness. Put a door on it.",
+"Refusal is information. Deliver it early.",
+"Disappointment is survivable. Stop negotiating with ghosts.",
+"Their reaction is not your instruction. Hold position.",
+"Politeness is editing the truth. Restore one sentence.",
+"Tact has become self-erasure. Speak with edges.",
+"Directness is mercy. Use it before resentment edits.",
+"Silence is not peace. Inspect the quiet.",
+"Harmony is paid for. Find the payer.",
+"The nice version is false. Try the kind version.",
+"Forgiveness is not amnesia. Keep the file.",
+"Trust is a structure. Stop decorating ruins.",
+"Desire is not destiny. Slow down.",
+"Chemistry is bad evidence. Wait for pattern.",
+"Calm is information. Stop insulting it.",
+"Peace feels unfamiliar because it is new. Don’t sabotage it.",
+"Safety is allowed to be quiet. Learn the volume.",
+"The attraction is historical. Check the archive.",
+"The fantasy is useful. Ask what it refuses to risk.",
+"Longing is not a plan. Make one.",
+"The crush is a clue, not a command. Translate it.",
+"Jealousy is pointing badly at a need. Re-aim it.",
+"Comparison is theft with a mirror. Recover the object.",
+"Success looks wrong from inside. Stop waiting for the poster.",
+"Failure is data with poor manners. Read it anyway.",
+"Rejection is a filter, not a verdict. Continue sorting.",
+"Embarrassment is the entry fee. Pay once.",
+"Dignity is slowing the work. Loosen it.",
+"Perfection is refusal with manners. Call it by name.",
+"The unfinished thing knows why it stopped. Ask the edge.",
+"The project wants less intelligence. Give it hands.",
+"The joke is carrying the truth. Don’t overexplain it.",
+"The serious part is dead weight. Cut respectfully.",
+"The absurd part is load-bearing. Keep it.",
+"The accidental phrase is the title. Move it up.",
+"The title is lying. Replace it.",
+"The frame is stronger than the content. Break the frame.",
+"The content is stronger than the frame. Get out of the way.",
+"The style is compensating. Reduce the costume.",
+"The plain sentence has more authority. Try it first.",
+"The ornate sentence is hiding shame. Undress it.",
+"The image knows before the argument. Follow the image.",
+"The argument is afraid of the image. Put them together.",
+"The gap is deliberate. Stop filling it.",
+"Tiredness is testimony. Stop treating it as weakness.",
+"Hunger is not metaphorical. Eat before interpreting.",
+"Sleep is part of thinking. Schedule the intelligence.",
+"Rest is not retreat. Protect the operation.",
+"Exhaustion is not nobility. Drop the crown.",
+"Burnout is a verdict on the arrangement. Change the arrangement.",
+"Discipline is not self-punishment. Remove the whip.",
+"Routine is a container, not a prison. Redesign it.",
+"Freedom needs scaffolding. Build the boring part.",
+"The glamorous part is bait. Check the hook.",
+"Motivation is unreliable weather. Build indoors.",
+"Willpower is an expensive fuel. Spend less.",
+"Consistency is kindness to future you. Lower the drama.",
+"The environment is stronger than the promise. Move the object.",
+"Friction is policy. Remove one unnecessary obstacle.",
+"Ease is design, not moral failure. Use it.",
+"Effort is not always virtue. Look for leverage.",
+"Leverage is hiding in the boring place. Inspect there.",
+"The loud task is stealing from the important one. Arrest it.",
+"Importance is quiet. Listen for the quieter demand.",
+"Urgency is contagious. Quarantine it.",
+"The emergency is real. Cut everything ornamental.",
+"The emergency is fake. Continue at human speed.",
+"“Later” is a storage unit. Stop renting it.",
+"Postponement compounds interest. Pay now.",
+"Waiting is a decision. Own it.",
+"Indecision is protecting comfort. Price the comfort.",
+"Deciding badly is sometimes cheaper. Compare invoices.",
+"Discomfort is not evidence of error. Stay with it.",
+"Permission will never arrive. Build without it.",
+"Permission already arrived and you missed it. Check yesterday’s mail.",
+"Everybody is impressed. What still feels false?",
+"Praise is sugar. Don’t make dinner from it.",
+"Criticism is weather. Check for useful rain.",
+"Contempt is not criticism. Discard it.",
+"Flattery is not support. Ask what it enables.",
+"Support feels boring. Recognise it anyway.",
+"Opposition is not hatred. Learn if possible.",
+"Agreement is not understanding. Ask for the mechanism.",
+"Understanding is not approval. Stop begging.",
+"Explanation is not repair. Fix the hinge.",
+"Closure is a luxury product. Stop waiting at the counter.",
+"The ritual is doing real work. Keep only the work.",
+"The symbol became a substitute. Return to the thing.",
+"The metaphor is outdated. Retire it.",
+"Your favourite metaphor is a cage. Open it.",
+"Nostalgia is bad lighting. Turn on another lamp.",
+"Tomorrow is not morally superior. Use today.",
+"The younger version still wants a vote. Hear them, then govern.",
+"The older version is tired of your loops. Obey once.",
+"Mortality is practical information. Cancel one false duty.",
+"Your day is a budget. Audit leakage.",
+"Your habits are votes. Count the election.",
+"Your defaults are rulers. Overthrow one.",
+"The tiny leak sinks the boat. Patch it before philosophy.",
+"The big theory is avoiding the small leak. Patch first.",
+"The local problem is the whole problem in miniature. Fix locally.",
+"Scale is seducing you. Return to the instance.",
+"The incentive is stronger than the speech. Follow the incentive.",
+"The policy is the behaviour, not the document. Watch the hands, not the handbook.",
+"Culture is what happens under pressure. Watch the pressure point.",
+"Values are revealed by inconvenience. Add inconvenience.",
+"Ethics begins where comfort ends. Take one step past the warm zone.",
+"The righteous answer flatters you. Make it harder.",
+"The cruel answer sounds efficient. Add the human.",
+"The humane answer still needs structure. Build it.",
+"The villain has a correct sentence. Extract it carefully.",
+"Your enemy is useful. Learn without joining.",
+"Nuance is sometimes cowardice. Commit where needed.",
+"Simplicity is sometimes violence. Restore the missing parts.",
+"The centre is not where people point. Look at costs.",
+"The solution harms someone. Find them first.",
+"The fix creates a new problem. Invite it early.",
+"The outlier is not noise. Ask why it survived.",
+"The average is lying. Look at distribution.",
+"The report is clean because the mess was excluded. Read the exclusions.",
+"The graph has politics. Inspect the axis.",
+"The number is true and misleading. Ask what it omits.",
+"Measurement changed the thing. Measure the damage.",
+"The category created the behaviour. Rename carefully.",
+"The label is a tiny prison. Leave the door ajar.",
+"The diagnosis is useful and incomplete. Don’t marry it.",
+"The explanation relieves you and traps you. Keep the key.",
+"Insight is not change. Demand evidence.",
+"Awareness is cheap. Spend behaviour.",
+"Intention is not impact. Count bruises.",
+"Impact is not identity. Repair without theatre.",
+"Harm can be accidental and real. Stop negotiating reality.",
+"The outcome is not the whole story. Bring process.",
+"Process is not a shrine. Deliver something.",
+"Delivery without care creates debt. Pay now.",
+"Quality is not perfection. Define enough.",
+"The box is too small. Break it after using it.",
+"The format is teaching the thought. Change format.",
+"The medium is not neutral. Choose another surface.",
+"Handwriting knows something typing forgot. Try it.",
+"The voice needs a different instrument. Switch tools.",
+"Misuse is research. Learn what breaks.",
+"The task is pretending to be a tool problem. Stop buying tools.",
+"The purchase is a ritual. Ask what it replaces.",
+"The collection is grief with shelves. Dust honestly.",
+"The archive has become a substitute for living. Open the door.",
+"Possession is delayed action. Use or release.",
+"Minimalism is sometimes control. Keep one unnecessary thing.",
+"Clutter is sometimes grief. Don’t tidy the wound first.",
+"The chair knows how long you avoid. Stand up.",
+"The table knows what you refuse to finish. Clear it.",
+"Maintenance is love without applause. Tighten the same screw again.",
+"Neglect is a message. Read it without melodrama.",
+"Decay is feedback. Repair before replacing.",
+"Replacement is avoidance. Fix once.",
+"Fixing is avoidance. Replace once.",
+"The material is telling you the method. Touch it.",
+"The surface is the argument. Clean or scar it.",
+"The mark belongs there. Stop hiding history.",
+"Ugliness is not truth. Don’t worship grit.",
+"Refinement is sometimes fear of being obvious. Be obvious.",
+"Roughness is sometimes laziness. Finish the edge.",
+"Polish is sometimes burial. Dig one thing up.",
+"The clean version lost blood. Restore circulation.",
+"The dirty version knows the street. Let it speak.",
+"Play is serious technology. Use it deliberately.",
+"Seriousness is afraid of play. Make it play anyway.",
+"Absurdity is not nonsense. Find the load-bearing joke.",
+"The joke is the safe container. Put truth inside.",
+"Laughter is recognition. Ask what recognised what.",
+"Nonsense is a diagnostic instrument. Listen for the crack.",
+"The random prompt is not random to you. Notice why.",
+"Coincidence is selection with amnesia. Check your hand.",
+"The strange detail is the handle. Pull it.",
+"The weird version is more honest. Compare pressure.",
+"The normal version is propaganda. Break cadence.",
+"The formal version is hiding sweat. Let it sweat.",
+"The informal version is hiding rigour. Add bones.",
+"The second image is cowardice. Return to the first.",
+"The title wants to accuse you. Let it.",
+"The question wants to be shorter. Cut until it resists.",
+"The question wants to be an axiom. Harden it.",
+"The axiom is false but useful. Use then test.",
+"The axiom is true and dangerous. Handle it with gloves.",
+"The fulcrum is misplaced. Move one inch.",
+"One inch is enough. Stop demanding transformation.",
+"Transformation begins as housekeeping. Sweep.",
+"The grand change is hiding in admin. File it.",
+"Bureaucracy is emotion with forms. Fill the right one.",
+"The form is asking the real question. Answer literally.",
+"Literalness is the cure. Stop implying.",
+"Implication is where the violence hides. Spell it out.",
+"Ambiguity is being used tactically. Remove cover.",
+"Ambiguity is protecting complexity. Don’t flatten it.",
+"Precision is kindness. Define the noun.",
+"The noun is wrong. Replace it.",
+"The verb is weak. Strengthen the action.",
+"The adjective is lying. Cut it.",
+"The adverb is begging. Remove it.",
+"Grammar is ethics at sentence level. Repair agreement.",
+"Syntax reveals power. Move the subject.",
+"The passive voice knows the culprit. Find them.",
+"The sentence is avoiding blame. Rewrite with agency.",
+"Agency is distributed. Rewrite with systems.",
+"The person is not the whole system. Keep the map.",
+"The territory refuses your map. Apologise to reality.",
+"Reality is not offended by your theory. It will continue.",
+"Your test is too friendly. Make it adversarial.",
+"Your critic is necessary. Invite the sharp one.",
+"Your critic is lazy. Demand specifics.",
+"Specifics will save you. Request three.",
+"Examples outrank declarations. Bring one.",
+"The example disproves the brand. Believe the example.",
+"The brand is louder than the work. Lower it.",
+"Craft is the ethical part. Sand the hidden side too.",
+"Practice is identity before belief. Show up before you agree with yourself.",
+"Belief follows behaviour. Do the small thing until it convinces you.",
+"Behaviour follows design. Move the obstacle off the path tonight.",
+"The path follows desire. Clarify the desire.",
+"Pain follows meaning. Find what it’s guarding before you numb it.",
+"Use follows contact. Pick the thing up before theorising it.",
+"Contact follows risk. Spend one honest sentence and see.",
+"Risk is being exaggerated. Measure it.",
+"Risk is being minimised. Count the bodies.",
+"Danger is a story. Check the facts.",
+"Humility is not hesitation. Bow quickly and keep walking.",
+"Confidence is not certainty. Proceed without worship.",
+"Learning will embarrass you. Budget for it.",
+"The lesson is smaller than the drama. Take only the lesson.",
+"The drama is hiding grief. Stop staging and mourn.",
+"Grief is not inefficiency. Give it hours.",
+"Mourning is part of planning. Include it.",
+"The loss without plan is a shrine. Add movement.",
+"Movement without meaning is running. Slow down.",
+"Starting is not commitment. Begin as experiment.",
+"Experiment beats identity. Test before naming.",
+"Naming freezes the thing. Delay the label.",
+"The label helps later. Use it after contact.",
+"The category is premature. Stay with the object.",
+"The special case is the point. Don’t flatten it.",
+"One condition controls more than expected. Try it.",
+"The leverage is embarrassing. Use it anyway.",
+"The solution is low-status. Choose it.",
+"The cheap solution is honest. Test before upgrading.",
+"Money is not the only cost. Count attention.",
+"Pride is expensive. Check the bill.",
+"Humility is cheap today. Buy some.",
+"You are waiting for emotional unanimity. Overrule the minority.",
+"Some part of you will object forever. Proceed with minutes noted.",
+"Inner conflict is normal governance. Hold the vote.",
+"The loudest inner voice is not the majority. Recount.",
+"The card is wrong in a useful way. Reason forward anyway.",
+"The counterintuitive premise is a tool, not a truth. Use and release.",
+"You must act from this premise for one hour. Set the timer.",
+"The opposite premise is also partly true. Build a bridge.",
+"The frame creates the answer. Change the frame.",
+"The wall is not there. Walk until it proves itself.",
+"The wall is there. Stop bleeding on it.",
+"The lock is not moral. Find the key.",
+"The key is not hidden. Try your hand.",
+"The hand is the tool. Stop waiting for machinery.",
+"The machinery is unnecessary. Remove one part.",
+"The unnecessary part is loved. Remove it carefully.",
+"Function is not an exemption from beauty. Restore it.",
+"The machine wants a soul. Add friction.",
+"The soul wants a machine. Add structure.",
+"Structure is freedom in advance. Build rails.",
+"Rails are not destiny. Leave a switch.",
+"The switch is enough. Stop dynamiting the track.",
+"Demolition is theatre. Repair instead.",
+"The ornament carries weight. Don’t mock it.",
+"The weight is emotional. Reinforce accordingly.",
+"The emotional part is structural. Put it in the plan.",
+"The rational part is decorative. Demand proof.",
+"Rationalisation is beautifully dressed fear. Undress it.",
+"Care without direction becomes control. Add direction.",
+"Control is grief refusing uncertainty. Loosen carefully.",
+"Uncertainty is the room, not a problem in the room. Furnish it.",
+"The season changed. Stop wearing last year’s armour.",
+"The threshold is psychological. Step over physically.",
+"Reality rewards contact. Touch the task.",
+"Abstraction is expensive today. Pay with one concrete act.",
+"Concreteness will embarrass the theory. Let it.",
+"The survivor is smaller. Feed what’s left, not what died.",
+"Smaller is the point. Stop inflating.",
+"Inflation is fear of being ignored. Speak plainly.",
+"Plainness is not poverty. Trust the line.",
+"The line is too long. Cut it in half.",
+"The half-line is enough. Leave air.",
+"Air is part of meaning. Don’t fill it.",
+"The pause knows more than the speech. Pause first.",
+"Improvement can destroy signal. Compare before polishing.",
+"The signal is faint. Remove noise, not meaning.",
+"Noise has become identity. Lower it anyway.",
+"Identity is negotiable. Renegotiate one clause.",
+"The clause was written under duress. Void it.",
+"The contract was never signed. Leave.",
+"The contract is valid. Honour it or amend it.",
+"Honour requires change. Change without betrayal.",
+"Betrayal sometimes tells the truth. Hear it once.",
+"Change is not disloyal. Prove it by care.",
+"Care is not softness. Make it exact.",
+"Exactness is a form of mercy. Remove vagueness.",
+"Vagueness protects someone. Ask who.",
+"The protected person is you. Be honest.",
+"The protected person is absent. Stop serving ghosts.",
+"The ghost is not owed governance. Hold elections.",
+"The living need priority. Act accordingly.",
+"The dead instruction has expired. Archive it.",
+"The archive is not a temple. Open windows.",
+"The relic is not the relationship. Release it.",
+"Forgetting is sometimes hygiene. Clean once.",
+"Remembering is sometimes duty. Keep one clear record.",
+"The record is distorted. Add dates.",
+"Dates will puncture mythology. Use them.",
+"Mythology is serving shame. Replace it with sequence.",
+"Sequence reduces drama. Welcome the reduction.",
+"Drama is hungry. Stop feeding it scenes.",
+"The scene is unnecessary. Leave before the speech.",
+"The speech is necessary. Make it short.",
+"Short is harder. Do the harder thing.",
+"The hard thing is not dramatic. Do it unnoticed.",
+"Unnoticed work is still work. Count it.",
+"Invisible repair is real. Log it where only you will read it.",
+"Spectacle corrupts the motive. Choose silence.",
+"Once is enough. Don’t chase certainty with repetition.",
+"Belief follows evidence. Hand them behaviour, not arguments.",
+"Behaviour is the only apology. Begin there.",
+"The sentence is trapping itself. Stop living inside it.",
+"One grain matters. Stop hiding in accumulation.",
+"The tiny change is not tiny. Count the slope.",
+"The grey area is the real area. Build there.",
+"Precision will cost you comfort. Pay.",
+"The line was drawn by fear. Redraw with evidence.",
+"Both choices starve you. Leave the stable.",
+"Perfect balance is paralysis. Tilt deliberately.",
+"Equal options are a trap. Choose by consequence.",
+"Hesitation is already a policy. Name its citizens.",
+"Indecision has made its decision. Read the result.",
+"Prediction changes the choice. Choose with that burden.",
+"The reward is bait for your self-image. Check the hook.",
+"Your best argument loses money. Notice what it still buys.",
+"You can justify either path. Stop worshipping justification.",
+"The test will surprise you. Prepare without theatrics.",
+"The announcement changes the event. Listen for the change.",
+"Knowing the rule breaks the game. Play from ignorance.",
+"The secret is useful only while hidden. Stop demanding disclosure.",
+"Expectation has become part of the machine. Remove one expectation.",
+"The forecast is influencing the weather. Speak less loudly.",
+"The prophecy needs your cooperation. Refuse politely.",
+"Avoiding fate is how you fulfil it. Change scale.",
+"The trap requires your cleverness. Be simple.",
+"Cleverness keeps finding new cages. Choose a door, not a theory.",
+"Not knowing is honest. Stop turning it into theatre.",
+"You cannot learn what you refuse to approach. Stand closer than comfort allows.",
+"Inquiry begins with admitted poverty. Spend pride.",
+"You are searching for what you already half-know. Recognise it.",
+"Recognition is not possession. Learn again.",
+"Language is altering the problem. Try another sentence.",
+"The word is too small. Do not shrink the thing.",
+"The word is too large. Do not inflate the thing.",
+"The description has become ownership. Release the object.",
+"The witness is sincere and wrong. Keep both facts.",
+"What feels fictional is emotionally real. Treat the effect seriously.",
+"The invented thing has real consequences. Stop mocking it.",
+"The imaginary witness changes your behaviour. Ask why.",
+"Fiction is rehearsal. Notice what role you keep choosing.",
+"The made-up fear is pointing at a made-real habit. Follow it.",
+"The symbol is not harmless. Ask what it trains.",
+"Pleasure disappears when chased directly. Work beside it.",
+"Happiness is a side effect. Stop staring at the machine.",
+"Joy hates surveillance. Give it privacy.",
+"The best thing cannot survive being measured every minute. Stop counting.",
+"Fulfilment arrives diagonally. Stop marching at it.",
+"Wanting too hard distorts the object. Loosen the grip.",
+"The reward punishes direct pursuit. Change the pursuit.",
+"Pleasure is shy. Build conditions, then leave it alone.",
+"The ship is still yours after repair. Stop grieving every plank.",
+"The ship is no longer yours after repair. Bless the new vessel.",
+"Continuity is a story you maintain. Maintain it honestly.",
+"Replacement is not betrayal. Keep the function alive.",
+"Preservation is not loyalty. Let the dead plank go.",
+"Identity survives change unevenly. Protect the living thread.",
+"The original was never pure. Stop chasing the first plank.",
+"The self is maintenance. Do the maintenance.",
+"Freedom creates responsibility. Stop calling it escape.",
+"Responsibility creates freedom. Choose the binding.",
+"The pure act is impossible. Remove purity from the job description.",
+"Your motive is mixed. Let the better part drive.",
+"Consequences will not flatter your intention. Plan harder.",
+"Intention is invisible to the injured. Repair visibly.",
+"Luck helped your virtue. Be less proud.",
+"Luck damaged your failure. Be less cruel.",
+"Blame is sometimes lazy causality. Investigate before sentencing.",
+"Innocence is not the same as harmlessness. Count the damage.",
+"The clean answer is edited. Restore the mess.",
+"The false premise is emotionally useful. Replace the usefulness.",
+"The correction humiliates the identity. Correct anyway.",
+"The myth survives because it reduces work. Add work.",
+"The superstition contains a practical fear. Keep only the fear.",
+"The argument wins and the life loses. Change courts.",
+"The perfect distinction is useless at the scene. Bring water.",
+"The edge case is the real case. Begin there.",
+"The general rule is hiding from the particular person. Introduce them.",
+"The particular case is seducing you away from the pattern. Step back.",
+"Both scales are necessary. Change distance twice.",
+"The close view lies with detail. Zoom out.",
+"The far view lies with neatness. Zoom in.",
+"The whole truth is badly proportioned. Adjust weight.",
+"The thesis survives only by excluding the wound. Include it.",
+"Your structure becomes cruel when it refuses contact. Add contact.",
+"The incentive is morally fluent. Listen to what it says.",
+"The consequence is the author. Read the ending first.",
+"The process is the confession. Watch the hands.",
+"The outcome is noisy. Ask what keeps recurring.",
+"The recurrence is the message. Stop calling it coincidence.",
+"Coincidence is not permission. Decide without omens.",
+"The omen is your appetite wearing costume. Feed the appetite directly.",
+"The sign means nothing. What do you still want?",
+"The universe is silent. Lower your voice and choose.",
+"The universe is loud. Ask why you only hear yourself.",
+"Your faith is sincere and convenient. Separate the two.",
+"The convenient part is the dangerous part. Inspect there.",
+"The sincere part is still wrong. Correct without contempt.",
+"Innovation is a disguise for impatience. Slow the claim.",
+"Patience is a disguise for surrender. Move one object.",
+"Your tools are voting. Count them.",
+"Every unopened file is a promise. Break or keep it.",
+"The finished thing will not save you. Finish anyway.",
+"Ordinary is harder than brilliant. Practise plainly.",
+"Brilliance is sometimes camouflage. Ask what it covers.",
+"Your mythology needs an audience. Starve it.",
+"Privacy will improve the decision. Decide before announcing.",
+"Announcement is being used as substitute action. Go quiet.",
+"The passive voice is protecting the culprit. Name the actor.",
+"“Things happened” is a confession. Ask who did what.",
+"“I had no choice” is incomplete. Find the invisible choice.",
+"The price was real. Stop mocking your hesitation.",
+"The price is lower now. Stop using old invoices.",
+"The debt has been paid. Stop sending money to the past.",
+"Access is not the same as trust. Build slowly.",
+"Betrayal is information. Do not turn it into identity.",
+"The aphorism is too elegant. Damage it with reality.",
+"The quote is not wisdom until it costs you something. Spend carefully.",
+"The lesson is hiding in the part you dislike. Stay there.",
+"Disgust is moving too fast. Slow the verdict.",
+"The beautiful thing is also dangerous. Respect both facts.",
+"The unresolved part is honest. Stop forcing closure.",
+"Closure is sometimes aesthetic, not moral. Leave the seam visible.",
+"The next premise must earn its power. Make it work.",
+"Permission will not arrive. You are the granting authority.",
+"The premise is temporarily true. The next move is practical.",
+"The proof can wait. The consequence cannot.",
+"The first answer is usable. Do not polish it into disappearance.",
+"The objection is noted. Proceed as if it is not fatal.",
+"The missing certainty is not required for the first step. Take it uninsured.",
+"The premise is uncomfortable because it is close to the hinge.",
+"The useful version is smaller than the impressive one. Ship the small one.",
+"The decision is reversible. Stop treating it like a monument.",
+"The decision is irreversible. Stop treating it like a mood.",
+"The cost is real and still acceptable.",
+"The cost is real and therefore decisive. Read the price tag aloud.",
+"The delay has produced all the information it can. The rest is rent.",
+"The hesitation is loyal to an older danger. Thank it; the danger moved.",
+"The current rule was written for a different life. Check whose handwriting it is.",
+"The simplest next act is the test. Run it before lunch.",
+"The first draft is evidence, not identity.",
+"The finished object will not repair the maker.",
+"The maker still has to finish the object.",
+"The answer is ordinary. Its ordinariness is not a defect.",
+"The dramatic version is hiding the actionable version. Cut the score; keep the scene.",
+"The actionable version is embarrassingly small. Do it before pride wakes up.",
+"The system is behaving as designed. Argue with the design, not the output.",
+"The design is visible in the repeated failure.",
+"The pattern is not a curse. It is a mechanism.",
+"The mechanism has a lever. Find the lever.",
+"The lever is boring. Use it anyway.",
+"The explanation has expired. Behaviour is now required.",
+"The feeling is allowed. It is not allowed to govern alone.",
+"The thought is persuasive. It is still only a thought.",
+"The fear contains information, not instructions.",
+"The mood is a weather report, not a constitution.",
+"The body is voting. Count the vote.",
+"The body is tired. Do not call the tiredness philosophy.",
+"The wound is real. The story around it still needs editing.",
+"The old defence saved you once. It is overemployed now.",
+"The mask is functioning. That is the problem.",
+"The role is familiar because it is assigned, not chosen.",
+"The assigned role can be refused without explanation.",
+"The refusal will disappoint someone. That is not sufficient evidence against it.",
+"The explanation is shorter than the performance.",
+"The sentence you are avoiding is the useful one.",
+"The useful sentence will not be elegant at first.",
+"The elegant sentence is not automatically truer. Drop it; see what breaks.",
+"The rough sentence has better contact with the problem.",
+"The plain sentence is strong enough.",
+"The audience is imaginary. The work is real.",
+"The work is asking for contact, not admiration.",
+"The work is asking for structure, not inspiration.",
+"The structure is too weak to carry the feeling.",
+"The feeling is too strong to be left unstructured.",
+"The idea is not sacred. Test it.",
+"The idea is fragile. Protect the test, not the fantasy.",
+"The fantasy has taught you what the desire is.",
+"The desire is legitimate. The fantasy is negotiable.",
+"The plan is a hypothesis with furniture.",
+"The hypothesis needs a harsher room.",
+"The room is too friendly. Invite friction.",
+"The critic is useful only after becoming specific.",
+"The compliment is useful only after becoming behavioural.",
+"The evidence is already in the calendar.",
+"The calendar is the cleanest confession available.",
+"The budget knows what the speech denies.",
+"The habit is the real doctrine. Read your week like scripture.",
+"The doctrine is visible in repetition.",
+"The repetition is not accidental enough to ignore. Three times is a policy.",
+"The exception is not rare enough to dismiss. Give it a file of its own.",
+"The exception is not broad enough to govern. Keep it off the throne.",
+"The rule is useful until it starts deleting people.",
+"The category is doing violence. Rename carefully.",
+"The category is doing useful work. Do not dissolve it too soon.",
+"The binary is convenient because it removes responsibility.",
+"The third option is real but not automatically better.",
+"The compromise has a beneficiary. Identify them.",
+"The balance is false if one side pays in silence.",
+"The silence is not neutral. It is distributing cost.",
+"The conflict is not proof of failure. It’s the load finding the beam.",
+"The conflict is the place where the real design begins.",
+"The contradiction is information under pressure.",
+"The contradiction cannot be solved by better lighting.",
+"The answer is hidden in what keeps needing translation.",
+"The translation is the work. Stop polishing the original.",
+"The misunderstanding is repeated enough to count as design.",
+"The misunderstanding is convenient enough to suspect.",
+"The assumption is carrying more weight than the argument.",
+"The frame is deciding before the evidence speaks.",
+"The frame can be changed without betraying the facts.",
+"The facts remain. Your arrangement of them can change.",
+"The conclusion is emotionally attractive. Hold it at arm’s length.",
+"The conclusion is emotionally costly. That does not make it false.",
+"The easy reading flatters you. Take the one that costs something.",
+"The harder reading gives you more agency.",
+"The harder reading gives them more humanity.",
+"The accusation may be true. The remedy still needs thought.",
+"The remedy may be wrong. The harm still counts.",
+"The harm is distributed. That does not make it small.",
+"The benefit is distributed. That does not make it innocent.",
+"The person affected gets standing.",
+"The person absent is still part of the decision.",
+"The least powerful person in the system is the diagnostic instrument.",
+"The quietest cost is the one to count first.",
+"The visible cost is not the whole cost. Ask who pays off-screen.",
+"The invisible cost has been compounding.",
+"The trade-off is the truth. Name it.",
+"The trade-off is acceptable only when named.",
+"The bargain is voluntary only if refusal is possible.",
+"The yes is meaningful only if no survives.",
+"The no is meaningful only if consequence survives.",
+"The boundary is real only when tested.",
+"The request is real only when made plainly.",
+"The apology is real only when behaviour changes.",
+"The repair is real only when the harmed person has less work.",
+"The promise is real only when scheduled.",
+"The value is real only when inconvenient.",
+"The priority is real only when protected.",
+"The preference is real only when it costs something.",
+"The standard is real only when it applies to you.",
+"The principle is real only when it survives your favourite exception.",
+"The exception is real only when it can face the rule.",
+"The rule is too clean for the case.",
+"The case is too messy for the slogan.",
+"The slogan is useful only after application.",
+"The application is where the moral work begins.",
+"The moral work is local before it is theatrical.",
+"The theatrical version is cheaper than the responsible one.",
+"The responsible version is less photogenic.",
+"The less photogenic option may be the honest one.",
+"The honest option may still be badly timed.",
+"The timing is part of the act. Right words on the wrong day still wound.",
+"The delivery is part of the truth.",
+"The method is part of the result. A stolen win arrives pre-broken.",
+"The process has already taught the outcome how to behave.",
+"The outcome stops being surprising once the process is inspected. Open the kitchen.",
+"The process is not clean because the outcome pleased you. Audit the lucky win too.",
+"The good outcome does not acquit the bad method.",
+"The bad outcome does not disprove the careful method.",
+"The careful method needs patience, not worship.",
+"The fast method needs humility, not excuses.",
+"The shortcut is a loan.",
+"The loan is due. Stop refinancing with apologies.",
+"The debt is not only money. Count the hours and the favours.",
+"The payment is not only effort. Some bills want honesty.",
+"The effort is not automatically meaningful. Sweat is not a signature.",
+"The meaning is not automatically useful. Put it to work or shelve it.",
+"The useful thing may not feel meaningful yet.",
+"The meaningful thing may need a maintenance plan.",
+"The maintenance plan is the real romance.",
+"The romance is false if maintenance is impossible.",
+"The maintenance is love without spectacle.",
+"The spectacle is not proof of love. Check the quiet ledger instead.",
+"The intensity is not proof of truth. Loud weather, same facts.",
+"The calm is not proof of absence. Still water carries cargo.",
+"The absence is also a form of evidence.",
+"The presence is also a form of pressure.",
+"The pressure is borrowed. Return what is not yours.",
+"The pressure is internal. Stop outsourcing it.",
+"The authority is imaginary. Test it.",
+"The authority is real. Negotiate with it, not with your fear.",
+"The rule is social, not natural. Gravity never blushed.",
+"The rule is natural enough to respect.",
+"The social rule can be broken. Budget for the frowns.",
+"The natural limit cannot be argued away.",
+"The limit is information. Map the wall before cursing it.",
+"The limit is not identity. You hit a wall; you are not one.",
+"The identity is not evidence. “Who I am” proves nothing in court.",
+"The biography is not destiny. The next chapter takes dictation from you.",
+"The past is not a warrant. Yesterday can’t authorise today’s raid.",
+"The past is not irrelevant. Read it as data, not as orders.",
+"The archive is useful and incomplete.",
+"The memory is sincere and edited. Find the director’s cut.",
+"The edited memory still points somewhere.",
+"The place it points is not the place it proves. Follow the evidence, not the finger.",
+"The witness is unreliable and still worth hearing.",
+"The unreliable witness may be the only witness.",
+"The only witness is not enough for certainty. Hold the verdict open.",
+"The uncertainty is acceptable for motion.",
+"The motion is acceptable before confidence.",
+"The confidence can be earned after beginning.",
+"The beginning can be ugly. Pretty is a third-draft luxury.",
+"The ugly beginning has more evidence than the perfect delay.",
+"The delay has become aesthetically convincing.",
+"The aesthetics are hiding administration.",
+"The administration is the spiritual problem today.",
+"The form must be filled before the revelation arrives.",
+"The revelation is not coming. The form is enough.",
+"The bureaucratic step is the heroic step in disguise.",
+"The heroic version is wasting time.",
+"The small version is the usable version.",
+"The usable version is the ethical version.",
+"The ethical version must survive being boring.",
+"The boring version must survive being necessary.",
+"The necessary thing does not need charisma.",
+"The charismatic thing still needs a mechanism.",
+"The mechanism is missing. Find the how before buying the why.",
+"The mechanism is present and unpleasant.",
+"The unpleasant mechanism is the truth to manage.",
+"The manageable truth is smaller than the feared one.",
+"The feared truth is larger because it is unnamed.",
+"The name reduces the monster. Spell it out and watch it shrink.",
+"The monster may become a task. Tasks have deadlines, not teeth.",
+"The task may become a calendar entry.",
+"The calendar entry may become a life.",
+"The life is built from repeated permissions.",
+"The permission can be granted once.",
+"The first permission is enough for the next hour.",
+"The next hour is the correct scale.",
+"The correct scale is smaller than your anxiety.",
+"The anxiety is using the wrong scale.",
+"The fear is forecasting beyond its licence.",
+"The forecast is not the weather. Step outside before cancelling.",
+"The weather is not the climate. One bad sky is not a verdict.",
+"The climate is not fate. Plant for it anyway.",
+"The fate story is trying to remove agency.",
+"The agency is partial. Partial is enough.",
+"The control is limited. Limited is still usable.",
+"The uncontrollable part is not your assignment. Hand it back; keep your desk.",
+"The assignment is smaller than the guilt.",
+"The guilt is larger than the responsibility.",
+"The responsibility is specific. Name the task, not the guilt.",
+"The specific responsibility is survivable.",
+"The survivable thing should be faced.",
+"The unbearable thing should be divided.",
+"The divided thing should be scheduled.",
+"The scheduled thing should be started badly.",
+"The bad start should be protected from commentary.",
+"The commentary is premature. The thing isn’t finished being a thing.",
+"The premature judgement is trying to prevent evidence.",
+"The evidence requires exposure. It can’t testify from your drawer.",
+"The exposure requires a container.",
+"The container is not a prison. Check for a lid before mourning.",
+"The prison is the container you never review.",
+"The review is overdue. Book the hour; bring the numbers.",
+"The overdue review is not a moral failure. It’s a meeting you haven’t held.",
+"The moral failure would be refusing the review.",
+"The review will remove some cherished excuses.",
+"The excuse once served a purpose. Pension it off with honours.",
+"The purpose is obsolete. The job ended; the salary kept going.",
+"The obsolete purpose still has emotional authority.",
+"The emotional authority can be thanked and overruled.",
+"The override does not require cruelty.",
+"The gentler move is still a move. Soft hands can carry weight.",
+"The firm move is not automatically harsh. A clean cut heals straighter.",
+"The harsh move may be a lazy firm move.",
+"The soft move may be a lazy honest move.",
+"The honest move has a spine. Let it stand up in the room.",
+"The spine is currently missing. Borrow one from your best day.",
+"The spine can be added sentence by sentence.",
+"The sentence can be short.",
+"The short sentence can be enough.",
+"The enough point is being moved to avoid completion.",
+"The completion will disappoint the fantasy.",
+"The fantasy was never the contract.",
+"The contract is with the object.",
+"The object wants to exist.",
+"The object wants to be used.",
+"The object wants to stop being potential.",
+"The potential has become a hiding place.",
+"The hiding place is beautifully furnished.",
+"The furniture is not the home. You can sit anywhere; you live somewhere.",
+"The home is elsewhere. Pack light and admit it.",
+"The elsewhere is not as far as advertised. Check the actual distance.",
+"The distance is emotional, not logistical.",
+"The logistics are easier than the admission.",
+"The admission is the actual threshold.",
+"The threshold is low and humiliating.",
+"The humiliation is temporary. The avoidance compounds daily.",
+"The avoidance is permanent if fed.",
+"The feeding stops today.",
+"The first unfed hour matters. Starve the habit before breakfast.",
+"The first clean hour will feel strange.",
+"The strangeness is not danger. New rooms echo; they don’t bite.",
+"The danger is old and mislabelled.",
+"The label can be replaced.",
+"The replacement label must be plain.",
+"The plain label will offend the old arrangement.",
+"The old arrangement is allowed to complain.",
+"The complaint is not a command. File it; don’t obey it.",
+"The command is not legitimate just because it is loud. Volume isn’t rank.",
+"The loud thing is not always the central thing. Listen under the noise.",
+"The central thing is quiet because it has been waiting longer.",
+"The waiting has made it look less urgent.",
+"The urgency is hidden by familiarity.",
+"The familiarity is not proof of safety. Old roads grow new potholes.",
+"The safety is not proof of aliveness. Locked rooms keep everything out.",
+"The aliveness is allowed to matter.",
+"The mattering is not vanity. Wanting to count is not a crime.",
+"The vanity accusation is policing desire.",
+"The desire can be inspected without being punished.",
+"The punishment is not required for seriousness. You can mean it gently.",
+"The seriousness is proven by care.",
+"The care is proven by design. Build the reminder, not the apology.",
+"The design is proven under stress.",
+"The stress test is the app’s purpose.",
+"The premise is the stress test. Load it until something honest cracks.",
+"The granted premise does not need to be loved.",
+"The granted premise only needs to be followed for one step.",
+"The one step is the whole assignment.",
+"The whole assignment is smaller than the life story.",
+"The life story is too heavy for this decision.",
+"The decision is asking to be freed from autobiography.",
+"The autobiography is overexplaining. One true sentence beats the saga.",
+"The explanation is trying to win sympathy.",
+"The sympathy is not the missing tool. Bring a wrench too.",
+"The missing tool is a constraint.",
+"The constraint is already available.",
+"The available constraint is time.",
+"The available constraint is money.",
+"The available constraint is attention.",
+"The available constraint is embarrassment.",
+"The available constraint is silence.",
+"The silence will reveal the appetite.",
+"The appetite will reveal the direction.",
+"The direction will reveal the next refusal.",
+"The refusal will reveal the real cost.",
+"The real cost will simplify the choice.",
+"The simplified choice will look less noble.",
+"The less noble choice may be more honest.",
+"The honest choice may be selfish in appearance.",
+"The appearance is not the court. Nobody is sentencing your draft.",
+"The court is consequences. Dress for that judge.",
+"The consequences will testify later.",
+"The later testimony starts with now.",
+"The present act is the only admissible exhibit.",
+"The exhibit is small but valid. Enter it; stop apologising for its size.",
+"The valid exhibit outranks the imagined case.",
+"The imagined case is entertaining the fear.",
+"The fear is no longer chairing the meeting.",
+"The meeting is now administrative.",
+"The agenda is one action. Cross out the other nine.",
+"The action is already known. You came here to delay it.",
+"The known action is being avoided.",
+"The avoidance is not mysterious. You know exactly which door.",
+"The mystery is ornamental. Behind it is a chore."];
+
+var state={current:null,recent:[],casting:false};
+
+function escapeHtml(s){return String(s).replace(/[&<>]/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[m]})}
+function choose(){
+ var n=CARDS.length,i,t=0;
+ do{ i=Math.floor(Math.random()*n); t++; }while(state.recent.indexOf(i)>=0 && t<60);
+ state.recent.unshift(i); state.recent=state.recent.slice(0,Math.min(20,n-1));
+ return i;
+}
+function lineHtml(s){ return '<span class="line">'+escapeHtml(s)+'</span>'; }
+function idleHtml(s){ return '<span class="line idle">'+escapeHtml(s)+'</span>'; }
+function dump(){
+ if(state.casting) return;
+ state.casting=true;
+ var btn=$('ask'); btn.classList.add('busy');
+ var t=$('text'); t.classList.add('out-fade');
+ setTimeout(function(){
+   var i=choose();
+   state.current=CARDS[i];
+   t.innerHTML=lineHtml(CARDS[i]);
+   var out=t.closest('.output');
+   if(out){ out.classList.remove('cast'); void out.offsetWidth; out.classList.add('cast'); setTimeout(function(){out.classList.remove('cast')},460); }
+   t.classList.remove('out-fade');
+   btn.classList.remove('busy');
+   state.casting=false;
+ },150);
+}
+function copyText(txt){
+ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(copied).catch(function(){fallback(txt)}); }
+ else fallback(txt);
+}
+function copied(){ var c=$('copy'); c.classList.add('ok'); c.textContent='COPIED'; setTimeout(function(){c.classList.remove('ok');c.textContent='COPY'},900); toast('copied'); }
+function fallback(txt){ var ta=document.createElement('textarea'); ta.value=txt; ta.style.position='fixed'; ta.style.left='-9999px'; ta.style.fontSize='16px'; document.body.appendChild(ta); ta.focus(); ta.select(); try{document.execCommand('copy');copied();}catch(e){toast('copy failed');} document.body.removeChild(ta); }
+function show(v){ ['vMain','vAbout'].forEach(function(x){$(x).classList.toggle('on',x===v)}); }
+function toast(s){ var t=$('toast'); t.textContent=s; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(function(){t.classList.remove('on')},1400); }
+
+function bind(){
+ $('ask').addEventListener('click',dump);
+ $('copy').addEventListener('click',function(){ if(state.current) copyText(PREFIX+state.current+'\n\n'+TAG); else toast('press the button first'); });
+ $('clear').addEventListener('click',function(){ state.current=null; var t=$('text'); t.classList.add('out-fade'); setTimeout(function(){ t.innerHTML=idleHtml('press to grant a premise.'); t.classList.remove('out-fade'); },150); var c=$('copy'); c.classList.remove('ok'); c.textContent='COPY'; });
+ $('aboutLink').addEventListener('click',function(){ $('deckCount').textContent=CARDS.length; show('vAbout'); });
+ $('back').addEventListener('click',function(){show('vMain')});
+ $('brand').addEventListener('click',function(){show('vMain')});
+ document.addEventListener('keydown',function(e){
+   if((e.key==='Enter'||e.key===' ')&&$('vMain').classList.contains('on')&&document.activeElement.tagName!=='BUTTON'){ e.preventDefault(); dump(); }
+   if(e.key==='Escape'){ if(!$('vMain').classList.contains('on')) show('vMain'); }
+ });
+ setTimeout(function(){$('screen').classList.remove('power')},700);
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind); else bind();
+})();
+</script>
+</body>
+</html>
