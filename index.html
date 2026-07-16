@@ -6231,7 +6231,10 @@ function buildHood(){
   const pavement=new THREE.MeshStandardMaterial({color:0xa8a197,roughness:.94,metalness:.01});
   for(const sx of [-1,1]){const walk=new THREE.Mesh(new THREE.PlaneGeometry(8,hoodDepth-18),pavement);walk.rotation.x=-Math.PI/2;walk.position.set(x0+sx*56,.052,mid);scene.add(walk);}
   const lampSteel=new THREE.MeshStandardMaterial({color:0x252b2e,roughness:.42,metalness:.66});
-  for(let i=0;i<12;i++)for(const sx of [-1,1]){const lp=new THREE.Group();lp.position.set(x0+sx*53,0,z0+18+i*22);scene.add(lp);const post=new THREE.Mesh(new THREE.CylinderGeometry(.07,.10,5.6,10),lampSteel);post.position.y=2.8;lp.add(post);const arm=new THREE.Mesh(new THREE.BoxGeometry(1.25,.08,.08),lampSteel);arm.position.set(-sx*.58,5.45,0);lp.add(arm);const bulb=new THREE.PointLight(0xffd8a6,.72,12,1.8);bulb.position.set(-sx*1.08,5.32,0);lp.add(bulb);regLight('hood',bulb);}
+  for(let i=0;i<12;i++)for(const sx of [-1,1]){
+    if(sx<0 && (i===6||i===7)) continue; // The Cave's relocated cliff face now sits here — its own lighting covers this stretch.
+    const lp=new THREE.Group();lp.position.set(x0+sx*53,0,z0+18+i*22);scene.add(lp);const post=new THREE.Mesh(new THREE.CylinderGeometry(.07,.10,5.6,10),lampSteel);post.position.y=2.8;lp.add(post);const arm=new THREE.Mesh(new THREE.BoxGeometry(1.25,.08,.08),lampSteel);arm.position.set(-sx*.58,5.45,0);lp.add(arm);const bulb=new THREE.PointLight(0xffd8a6,.72,12,1.8);bulb.position.set(-sx*1.08,5.32,0);lp.add(bulb);regLight('hood',bulb);
+  }
 
   // Ten-kilometre road is represented by a convincing terminal spur; travel
   // itself remains vehicular and cinematic rather than a fake walkable strip.
@@ -6328,7 +6331,73 @@ function buildHood(){
   hoodLiftLayout={wx,wz,tx,tz,px,pz,lx,lz,plx,plz};
   const floor=new THREE.Mesh(new THREE.BoxGeometry(W,.18,D),new THREE.MeshStandardMaterial({color:0x8b8479,roughness:.88}));floor.position.set(wx,.09,wz);scene.add(floor);
   // Side and rear shell; the grand front is split around a generous entry.
-  for(const side of [-1,1]){const wall=new THREE.Mesh(new THREE.BoxGeometry(.52,H,D),brick);wall.position.set(wx+side*W/2,H/2,wz);scene.add(wall);}
+  // The west wall additionally opens onto The Cave (see below) — a second,
+  // smaller gap so that venue reads as directly off the hall rather than a
+  // separate destination reached by a long walk.
+  {const wall=new THREE.Mesh(new THREE.BoxGeometry(.52,H,D),brick);wall.position.set(wx+W/2,H/2,wz);scene.add(wall);}
+  const caveGapZ=wz+17, caveGapHalf=6;
+  {const north=new THREE.Mesh(new THREE.BoxGeometry(.52,H,(caveGapZ-caveGapHalf)-(wz-D/2)),brick);north.position.set(wx-W/2,H/2,(wz-D/2+caveGapZ-caveGapHalf)/2);scene.add(north);
+   const south=new THREE.Mesh(new THREE.BoxGeometry(.52,H,wz+D/2-(caveGapZ+caveGapHalf)),brick);south.position.set(wx-W/2,H/2,(caveGapZ+caveGapHalf+wz+D/2)/2);scene.add(south);
+   const caveLintel=new THREE.Mesh(new THREE.BoxGeometry(.52,H-6.5,caveGapHalf*2),brick);caveLintel.position.set(wx-W/2,(H+6.5)/2,caveGapZ);scene.add(caveLintel);
+   const caveDoorSign=new THREE.Mesh(new THREE.PlaneGeometry(6.4,.85),new THREE.MeshBasicMaterial({map:makeSignTexture('THE CAVE','venue · 100 seats'),transparent:true}));caveDoorSign.position.set(wx-W/2+.30,7.6,caveGapZ);caveDoorSign.rotation.y=Math.PI/2;scene.add(caveDoorSign);}
+
+  // THE CAVE — a 100-seat studio amphitheatre carved behind a waterfall,
+  // moved from its original spot at the far end of the 120 m formal garden
+  // (a 300+ m walk, hidden past a waterfall) to directly beside the grand
+  // hall's own west wall. It reads immediately on exiting through the gap
+  // above: a monumental cliff and waterfall across a short open plaza,
+  // rather than a destination nobody would stumble on. Internal geometry
+  // (cliff/cave/passage/stage/seating) is unchanged from the original —
+  // only its anchor moved, from the garden's centreline to the hall itself.
+  const veX=wx-70,cliffZ=wz+10;
+  const cliff=new THREE.Mesh(new THREE.BoxGeometry(48,21,7),new THREE.MeshStandardMaterial({color:0x594d42,roughness:1}));cliff.position.set(veX,10.5,cliffZ);scene.add(cliff);
+  const fallMat=new THREE.ShaderMaterial({transparent:true,side:THREE.DoubleSide,depthWrite:false,uniforms:{uTime:{value:0}},vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`uniform float uTime;varying vec2 vUv;float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}void main(){float n=h(floor(vec2(vUv.x*38.,(vUv.y+uTime*.28)*70.)));float bands=.48+.32*sin((vUv.x*19.+n*2.)*6.283);float edge=smoothstep(.02,.12,vUv.x)*smoothstep(.02,.12,1.-vUv.x);float a=edge*(.50+.38*bands)*smoothstep(0.,.16,vUv.y);gl_FragColor=vec4(mix(vec3(.43,.70,.79),vec3(.93,.98,1.),bands),a);}`});
+  const fall=new THREE.Mesh(new THREE.PlaneGeometry(20,18),fallMat);fall.position.set(veX,11,cliffZ-3.56);scene.add(fall);hoodWaterfallFX={material:fallMat};
+  const plunge=lake(veX,cliffZ-7.5,1.5,.50);
+
+  // A lit side passage makes the entrance believable without punching a fake
+  // door through the water. Ten rising rows follow the geology of the slope.
+  const caveZ=cliffZ+32,caveW=42,caveD=38;
+  const caveFloor=new THREE.Mesh(new THREE.PlaneGeometry(caveW,caveD),new THREE.MeshStandardMaterial({color:0x272522,roughness:.96}));caveFloor.rotation.x=-Math.PI/2;caveFloor.position.set(veX,.12,caveZ);scene.add(caveFloor);
+  const caveCeil=new THREE.Mesh(new THREE.PlaneGeometry(caveW,caveD),new THREE.MeshStandardMaterial({color:0x1b1a18,roughness:1,side:THREE.DoubleSide}));caveCeil.rotation.x=Math.PI/2;caveCeil.position.set(veX,12.8,caveZ);scene.add(caveCeil);
+  const caveRockMat=new THREE.MeshStandardMaterial({color:0x4b443d,roughness:1,metalness:0});
+  for(let i=0;i<56;i++){const side=i%2?-1:1,rock=new THREE.Mesh(new THREE.DodecahedronGeometry(2.1+(i%5)*.38,1),caveRockMat);rock.scale.set(1.1,1.45+(i%3)*.12,1.35);rock.position.set(veX+side*(caveW/2-.8+(i%3)*.35),2.1+(i%4)*2.25,caveZ-caveD/2+1+(i%28)*(caveD-2)/27);rock.rotation.set(i*.17,i*.31,i*.11);scene.add(rock);}
+  // Curved entrance passage at the waterfall's eastern shoulder — the side
+  // that already faces back toward the hall.
+  const passage=new THREE.Mesh(new THREE.PlaneGeometry(6,31),limestone);passage.rotation.x=-Math.PI/2;passage.position.set(veX+17,.17,cliffZ+12);scene.add(passage);
+  for(let i=0;i<6;i++){const arch=new THREE.Mesh(new THREE.TorusGeometry(3.0,.32,10,28,Math.PI),caveRockMat);arch.position.set(veX+17,3.0,cliffZ+1+i*5.2);arch.rotation.x=Math.PI/2;scene.add(arch);}
+  const caveTitle=new THREE.Mesh(new THREE.PlaneGeometry(7.8,.95),new THREE.MeshBasicMaterial({map:makeSignTexture('THE CAVE','100-seat headquarters studio'),transparent:true,toneMapped:false}));caveTitle.position.set(veX+16.98,5.2,cliffZ+.1);caveTitle.rotation.y=Math.PI;scene.add(caveTitle);
+
+  // The stage is architectural: blackened steel proscenium, generous live
+  // screen and a shallow apron for talks, screenings and future performances.
+  const caveStageZ=caveZ-caveD/2+3.0;
+  const caveStage=new THREE.Mesh(new THREE.BoxGeometry(25,.58,5.8),new THREE.MeshStandardMaterial({color:0x17191a,roughness:.52,metalness:.35}));caveStage.position.set(veX,.34,caveStageZ+1.4);scene.add(caveStage);
+  for(const sx of [-1,1]){const jamb=new THREE.Mesh(new THREE.BoxGeometry(.65,9.2,.65),steel);jamb.position.set(veX+sx*13.2,5.7,caveStageZ-.8);scene.add(jamb);}for(const yy of [1.1,10.3]){const beam=new THREE.Mesh(new THREE.BoxGeometry(27,.65,.65),steel);beam.position.set(veX,yy,caveStageZ-.8);scene.add(beam);}
+  const caveRecess=new THREE.Mesh(new THREE.BoxGeometry(25.7,7.9,.82),new THREE.MeshStandardMaterial({color:0x080909,roughness:.85}));caveRecess.position.set(veX,5.7,caveStageZ-.62);scene.add(caveRecess);
+  const caveScreenSurface=new THREE.Mesh(new THREE.PlaneGeometry(24.8,7.2),new THREE.MeshBasicMaterial({color:0x050606,toneMapped:false,side:THREE.DoubleSide}));caveScreenSurface.position.set(veX,5.7,caveStageZ-.17);scene.add(caveScreenSurface);
+  const caveLive=createPassiveWallIframe(CHANNEL_URLS.saywhat,'Headquarters Cave wide projection',24.8,7.2);caveLive.position.set(veX,5.7,caveStageZ-.15);scene.add(caveLive);
+  hoodCaveWallScreen=registerScreen({
+    mesh:caveScreenSurface,css:caveLive,url:CHANNEL_URLS.saywhat,
+    title:'THE CAVE · wide projection',room:'hood',activeRadius:38
+  });
+  const caveGlow=new THREE.PointLight(0xb8d9e7,2.3,30,1.55);caveGlow.position.set(veX,7.8,caveStageZ+4.5);scene.add(caveGlow);regLight('hood',caveGlow);
+
+  const caveSeatMat=new THREE.MeshStandardMaterial({color:0x6d302d,roughness:.72});
+  const caveSeatWood=new THREE.MeshStandardMaterial({color:0x6b4931,roughness:.76});
+  for(let row=0;row<10;row++){
+    const y=.48+row*.34,z=caveStageZ+6.0+row*2.45,curve=1+row*.018;
+    const tier=new THREE.Mesh(new THREE.BoxGeometry(30,.28,2.18),new THREE.MeshStandardMaterial({color:row%2?0x595149:0x635b52,roughness:1}));tier.position.set(veX,y-.34,z);scene.add(tier);
+    for(let col=0;col<10;col++){
+      const x=veX+(col-4.5)*2.62*curve;
+      const chair=new THREE.Group();chair.position.set(x,y,z);scene.add(chair);
+      const seat=new THREE.Mesh(new THREE.BoxGeometry(1.55,.32,1.02),caveSeatMat);seat.position.y=.28;chair.add(seat);
+      const back=new THREE.Mesh(new THREE.BoxGeometry(1.55,1.22,.26),caveSeatMat);back.position.set(0,.84,.39);back.rotation.x=-.10;chair.add(back);
+      const armL=new THREE.Mesh(new THREE.BoxGeometry(.12,.48,1.0),caveSeatWood),armR=armL.clone();armL.position.set(-.82,.48,0);armR.position.set(.82,.48,0);chair.add(armL,armR);
+      sitPoint('hood',seat,`Cave · row ${row+1}, seat ${col+1}`,new THREE.Vector3(x,y+1.05,z),0,-.04);
+    }
+    const aisle=new THREE.PointLight(0xffb76e,.32,5,1.8);aisle.position.set(veX-15.1,y+.16,z);scene.add(aisle);regLight('hood',aisle);
+  }
+
   for(const side of [-1,1]){const rearWing=new THREE.Mesh(new THREE.BoxGeometry((W-12)/2,H,.52),brick);rearWing.position.set(wx+side*(6+(W-12)/4),H/2,wz+D/2);scene.add(rearWing);}
   const rearLintel=new THREE.Mesh(new THREE.BoxGeometry(12,H-7,.52),brick);rearLintel.position.set(wx,(H+7)/2,wz+D/2);scene.add(rearLintel);
   for(const side of [-1,1]){const frontWing=new THREE.Mesh(new THREE.BoxGeometry((W-14)/2,H,.52),brick);frontWing.position.set(wx+side*(14/2+(W-14)/4),H/2,wz-D/2);scene.add(frontWing);}
@@ -6388,16 +6457,24 @@ function buildHood(){
 
   // The complete Cadavre Expat sequence now belongs to Headquarters. All four
   // works are monumental (11.2 m wide, matching IV): I/II/III were previously
-  // a modest opposing-wall trio, now enlarged to the same scale as IV and
-  // redistributed along the east wall with generous museum-grade spacing
-  // instead of their old cramped pitch. Aspect ratios are preserved exactly
-  // (each width/height pair is the original pairing scaled uniformly), so
-  // nothing is stretched or cropped — see makeFittedCanvasTexture's contain-fit
-  // behaviour inside addFramedWallArt.
+  // a modest opposing-wall trio, now enlarged to the same scale as IV.
+  // Aspect ratios are preserved exactly (each width/height pair is the
+  // original pairing scaled uniformly), so nothing is stretched or cropped —
+  // see makeFittedCanvasTexture's contain-fit behaviour inside addFramedWallArt.
+  //
+  // The tower directly above this wall (see "Tower shell" below) plants two
+  // of its four full-height support columns at x=wx+35.15 — effectively on
+  // this wall's face — at z=wz-1.6 and z=wz+19.6. An earlier pass spaced I/II/
+  // III without accounting for those columns, so the monumental II and III
+  // ended up with a support column driven straight through the canvas. Each
+  // piece is now placed to sit cleanly in one of the three gaps the columns
+  // leave along the wall (north of the first column, between the two, and
+  // south of the second), rather than moving the columns themselves — they
+  // carry the tower above and aren't decorative.
   const cadavreHallWorks=[
-    {src:CADAVRE_EXPAT_SRC,title:'CADAVRE EXPAT I',subtitle:'HrM · handmade mixed media collage',w:11.2,h:11.2*(4.9/7.4),z:wz-25},
-    {src:CADAVRE_EXPAT_II_SRC,title:'CADAVRE EXPAT II',subtitle:'HrM · impasto, glue, oil and acrylic echo',w:11.2,h:11.2*(6.1/6.1),z:wz-2},
-    {src:CADAVRE_EXPAT_III_SRC,title:'CADAVRE EXPAT III',subtitle:'HrM · reclaimed cardboard and fading impressions',w:11.2,h:11.2*(5.5/7.6),z:wz+21}
+    {src:CADAVRE_EXPAT_SRC,title:'CADAVRE EXPAT I',subtitle:'HrM · handmade mixed media collage',w:11.2,h:11.2*(4.9/7.4),z:wz-26},
+    {src:CADAVRE_EXPAT_II_SRC,title:'CADAVRE EXPAT II',subtitle:'HrM · impasto, glue, oil and acrylic echo',w:11.2,h:11.2*(6.1/6.1),z:wz-13},
+    {src:CADAVRE_EXPAT_III_SRC,title:'CADAVRE EXPAT III',subtitle:'HrM · reclaimed cardboard and fading impressions',w:11.2,h:11.2*(5.5/7.6),z:wz+9}
   ];
   cadavreHallWorks.forEach((a,i)=>{
     const backing=new THREE.Mesh(new THREE.BoxGeometry(.32,a.h+1.8,a.w+1.6),new THREE.MeshStandardMaterial({color:0xefe8dc,roughness:.88,metalness:.01}));backing.position.set(wx+W/2-.72,a.h/2+1.02,a.z);scene.add(backing);
@@ -6406,23 +6483,24 @@ function buildHood(){
   });
   cadavreHallWorks.forEach(a=>{const b=new THREE.Mesh(new THREE.BoxGeometry(5.4,.34,1.05),wood);b.position.set(wx+23,.55,a.z);b.rotation.y=Math.PI/2;scene.add(b);sitPoint('hood',b,a.title,new THREE.Vector3(wx+23,1.28,a.z),-Math.PI/2,-.02);});
 
-  // A sunken concrete ramp, cut into the gap between Cadavre Expat II and III,
-  // reads as a real descent rather than another lift call — the basement gets
-  // a walkable second way in. Portals in this engine are click-through
-  // thresholds rather than continuously walkable slopes (see travelTo), so the
-  // ramp itself is built set-dressing: a tilted floor and retaining walls that
-  // visibly drop away, ending at a door that actually performs the transition.
+  // A sunken concrete ramp, in the same south-of-the-second-column gap as the
+  // Cadavre Expat III clearance above, reads as a real descent rather than
+  // another lift call — the basement gets a walkable second way in. Portals
+  // in this engine are click-through thresholds rather than continuously
+  // walkable slopes (see travelTo), so the ramp itself is built set-dressing:
+  // a tilted floor and retaining walls that visibly drop away, ending at a
+  // door that actually performs the transition.
   function buildRampDescent(cx,z0,y0,z1,y1,width,floorMat,wallMat){
     const run=z1-z0, drop=y0-y1, slopeLen=Math.hypot(run,drop), tiltX=-Math.PI/2+Math.atan2(drop,run);
     const midY=(y0+y1)/2, midZ=(z0+z1)/2;
     const rampFloor=new THREE.Mesh(new THREE.BoxGeometry(width,.22,slopeLen),floorMat);rampFloor.position.set(cx,midY,midZ);rampFloor.rotation.x=tiltX;scene.add(rampFloor);
     for(const side of [-1,1]){const wall=new THREE.Mesh(new THREE.BoxGeometry(.28,1.5,slopeLen),wallMat);wall.position.set(cx+side*(width/2+.14),midY+.62,midZ);wall.rotation.x=tiltX;scene.add(wall);}
   }
-  buildRampDescent(wx+27,wz+5,0,wz+11,-3.0,5.0,darkConcrete,concrete);
-  const reserveLanding=new THREE.Mesh(new THREE.BoxGeometry(5.0,.20,1.4),darkConcrete);reserveLanding.position.set(wx+27,-3.0,wz+11.7);scene.add(reserveLanding);
-  const reserveSign=new THREE.Mesh(new THREE.PlaneGeometry(5.6,.72),new THREE.MeshBasicMaterial({map:makeSignTexture('THE RESERVE ↓','basement archive · ramp'),transparent:true}));reserveSign.position.set(wx+27,3.6,wz+4.6);reserveSign.rotation.y=Math.PI;scene.add(reserveSign);
-  const reserveGlow=new THREE.PointLight(0xcfe6ee,1.7,14,1.7);reserveGlow.position.set(wx+27,.4,wz+9.5);scene.add(reserveGlow);regLight('hood',reserveGlow);
-  const reserveDoor=addPremiumPortalDoor({x:wx+27,y:-1.2,z:wz+12.6,width:3.6,height:3.6,orientation:'front',title:'THE RESERVE',subtitle:'basement archive',accent:0x8a9295,dark:0x14171a});
+  buildRampDescent(wx+27,wz+21,0,wz+27,-3.0,5.0,darkConcrete,concrete);
+  const reserveLanding=new THREE.Mesh(new THREE.BoxGeometry(5.0,.20,1.4),darkConcrete);reserveLanding.position.set(wx+27,-3.0,wz+27.7);scene.add(reserveLanding);
+  const reserveSign=new THREE.Mesh(new THREE.PlaneGeometry(5.6,.72),new THREE.MeshBasicMaterial({map:makeSignTexture('THE RESERVE ↓','basement archive · ramp'),transparent:true}));reserveSign.position.set(wx+27,3.6,wz+18);reserveSign.rotation.y=Math.PI;scene.add(reserveSign);
+  const reserveGlow=new THREE.PointLight(0xcfe6ee,1.7,14,1.7);reserveGlow.position.set(wx+27,.4,wz+24);scene.add(reserveGlow);regLight('hood',reserveGlow);
+  const reserveDoor=addPremiumPortalDoor({x:wx+27,y:-1.2,z:wz+28.6,width:3.6,height:3.6,orientation:'front',title:'THE RESERVE',subtitle:'basement archive',accent:0x8a9295,dark:0x14171a});
   registerPortal({
     mesh:reserveDoor.slab, field:reserveDoor.field, doorParts:reserveDoor.doorParts, openAxis:reserveDoor.openAxis,
     room:'hood-basement', fromRoom:'hood', label:'The Reserve',
@@ -6531,7 +6609,7 @@ function buildHood(){
   registerPortal({
     mesh:groundZeroDoor.slab, field:groundZeroDoor.field, doorParts:groundZeroDoor.doorParts, openAxis:groundZeroDoor.openAxis,
     room:'hood', fromRoom:'hood-basement', label:'Ground Zero / Grand Hall',
-    targetPos:new THREE.Vector3(wx+27, cameraHeight, wz+11.7),
+    targetPos:new THREE.Vector3(wx+27, cameraHeight, wz+27.7),
     targetYaw:Math.PI, slideAxis:groundZeroDoor.openAxis, slideDist:2.2
   });
 
@@ -6551,7 +6629,7 @@ function buildHood(){
     const cap=new THREE.Mesh(new THREE.BoxGeometry(1.9,.32,1.9),brass);cap.position.set(gx+sx*9.8,4.82,gardenFront+.4);scene.add(cap);
     const wallA=new THREE.Mesh(new THREE.BoxGeometry(51,.92,.82),limestone);wallA.position.set(gx+sx*35.2,.46,gardenFront+.2);scene.add(wallA);
   }
-  const gardenTitle=new THREE.Mesh(new THREE.PlaneGeometry(11.2,1.0),new THREE.MeshBasicMaterial({map:makeSignTexture('THE WATER GARDEN','formal axis · lakes · waterfall · cave'),transparent:true,toneMapped:false}));gardenTitle.position.set(gx,5.8,gardenFront+.25);gardenTitle.rotation.y=Math.PI;scene.add(gardenTitle);
+  const gardenTitle=new THREE.Mesh(new THREE.PlaneGeometry(11.2,1.0),new THREE.MeshBasicMaterial({map:makeSignTexture('THE WATER GARDEN','formal axis · lakes · pavilions'),transparent:true,toneMapped:false}));gardenTitle.position.set(gx,5.8,gardenFront+.25);gardenTitle.rotation.y=Math.PI;scene.add(gardenTitle);
   // Parterres and clipped hedges.
   for(const sx of [-1,1])for(const sz of [-1,1]){
     const cx=gx+sx*34,cz=gz-8+sz*22;
@@ -6566,67 +6644,6 @@ function buildHood(){
   // Pavilions and a range of sit points at lakes, terraces and hidden rooms.
   for(const sx of [-1,1]){const pg=new THREE.Group();pg.position.set(gx+sx*59,0,gz-38);scene.add(pg);const roof=new THREE.Mesh(new THREE.CylinderGeometry(5.2,5.2,.55,8),limestone);roof.position.y=4.8;pg.add(roof);for(let a=0;a<8;a++){const col=new THREE.Mesh(new THREE.CylinderGeometry(.18,.24,4.4,12),paleStone);col.position.set(Math.cos(a*Math.PI/4)*4.1,2.2,Math.sin(a*Math.PI/4)*4.1);pg.add(col);}const seat=new THREE.Mesh(new THREE.CylinderGeometry(3.1,3.1,.45,32),wood);seat.position.y=.45;pg.add(seat);sitPoint('hood',seat,'Garden pavilion',new THREE.Vector3(gx+sx*59,1.35,gz-38),sx<0?-Math.PI/2:Math.PI/2);}
   [[-44,18,0],[44,18,0],[-30,45,Math.PI],[30,45,Math.PI],[-67,5,-Math.PI/2],[67,5,Math.PI/2]].forEach(([dx,dz,ry],i)=>{const bench=new THREE.Mesh(new THREE.BoxGeometry(4.2,.34,1.0),wood);bench.position.set(gx+dx,.55,gz+dz);bench.rotation.y=ry;scene.add(bench);sitPoint('hood',bench,i<2?'Lake edge':'Garden terrace',new THREE.Vector3(gx+dx,1.28,gz+dz),ry);});
-
-  // Monumental cliff waterfall at the end of the central axis.
-  const cliffZ=gz+57;const cliff=new THREE.Mesh(new THREE.BoxGeometry(48,21,7),new THREE.MeshStandardMaterial({color:0x594d42,roughness:1}));cliff.position.set(gx,10.5,cliffZ);scene.add(cliff);
-  const fallMat=new THREE.ShaderMaterial({transparent:true,side:THREE.DoubleSide,depthWrite:false,uniforms:{uTime:{value:0}},vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`uniform float uTime;varying vec2 vUv;float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}void main(){float n=h(floor(vec2(vUv.x*38.,(vUv.y+uTime*.28)*70.)));float bands=.48+.32*sin((vUv.x*19.+n*2.)*6.283);float edge=smoothstep(.02,.12,vUv.x)*smoothstep(.02,.12,1.-vUv.x);float a=edge*(.50+.38*bands)*smoothstep(0.,.16,vUv.y);gl_FragColor=vec4(mix(vec3(.43,.70,.79),vec3(.93,.98,1.),bands),a);}`});
-  const fall=new THREE.Mesh(new THREE.PlaneGeometry(20,18),fallMat);fall.position.set(gx,11,cliffZ-3.56);scene.add(fall);hoodWaterfallFX={material:fallMat};
-  const plunge=lake(gx,cliffZ-7.5,1.5,.50);
-
-  // THE CAVE — a 100-seat studio amphitheatre carved behind the waterfall.
-  // A lit side passage makes the entrance believable without punching a fake
-  // door through the water. Ten rising rows follow the geology of the slope.
-  const caveZ=cliffZ+32,caveW=42,caveD=38;
-  const caveFloor=new THREE.Mesh(new THREE.PlaneGeometry(caveW,caveD),new THREE.MeshStandardMaterial({color:0x272522,roughness:.96}));caveFloor.rotation.x=-Math.PI/2;caveFloor.position.set(gx,.12,caveZ);scene.add(caveFloor);
-  const caveCeil=new THREE.Mesh(new THREE.PlaneGeometry(caveW,caveD),new THREE.MeshStandardMaterial({color:0x1b1a18,roughness:1,side:THREE.DoubleSide}));caveCeil.rotation.x=Math.PI/2;caveCeil.position.set(gx,12.8,caveZ);scene.add(caveCeil);
-  const caveRockMat=new THREE.MeshStandardMaterial({color:0x4b443d,roughness:1,metalness:0});
-  for(let i=0;i<56;i++){const side=i%2?-1:1,rock=new THREE.Mesh(new THREE.DodecahedronGeometry(2.1+(i%5)*.38,1),caveRockMat);rock.scale.set(1.1,1.45+(i%3)*.12,1.35);rock.position.set(gx+side*(caveW/2-.8+(i%3)*.35),2.1+(i%4)*2.25,caveZ-caveD/2+1+(i%28)*(caveD-2)/27);rock.rotation.set(i*.17,i*.31,i*.11);scene.add(rock);}
-  // Curved entrance passage at the waterfall's eastern shoulder.
-  const passage=new THREE.Mesh(new THREE.PlaneGeometry(6,31),limestone);passage.rotation.x=-Math.PI/2;passage.position.set(gx+17,.17,cliffZ+12);scene.add(passage);
-  for(let i=0;i<6;i++){const arch=new THREE.Mesh(new THREE.TorusGeometry(3.0,.32,10,28,Math.PI),caveRockMat);arch.position.set(gx+17,3.0,cliffZ+1+i*5.2);arch.rotation.x=Math.PI/2;scene.add(arch);}
-  const caveTitle=new THREE.Mesh(new THREE.PlaneGeometry(7.8,.95),new THREE.MeshBasicMaterial({map:makeSignTexture('THE CAVE','100-seat headquarters studio'),transparent:true,toneMapped:false}));caveTitle.position.set(gx+16.98,5.2,cliffZ+.1);caveTitle.rotation.y=Math.PI;scene.add(caveTitle);
-
-  // The stage is architectural: blackened steel proscenium, generous live
-  // screen and a shallow apron for talks, screenings and future performances.
-  const caveStageZ=caveZ-caveD/2+3.0;
-  const caveStage=new THREE.Mesh(new THREE.BoxGeometry(25,.58,5.8),new THREE.MeshStandardMaterial({color:0x17191a,roughness:.52,metalness:.35}));caveStage.position.set(gx,.34,caveStageZ+1.4);scene.add(caveStage);
-  for(const sx of [-1,1]){const jamb=new THREE.Mesh(new THREE.BoxGeometry(.65,9.2,.65),steel);jamb.position.set(gx+sx*13.2,5.7,caveStageZ-.8);scene.add(jamb);}for(const yy of [1.1,10.3]){const beam=new THREE.Mesh(new THREE.BoxGeometry(27,.65,.65),steel);beam.position.set(gx,yy,caveStageZ-.8);scene.add(beam);}
-  const caveRecess=new THREE.Mesh(new THREE.BoxGeometry(25.7,7.9,.82),new THREE.MeshStandardMaterial({color:0x080909,roughness:.85}));caveRecess.position.set(gx,5.7,caveStageZ-.62);scene.add(caveRecess);
-  const caveScreenSurface=new THREE.Mesh(new THREE.PlaneGeometry(24.8,7.2),new THREE.MeshBasicMaterial({color:0x050606,toneMapped:false,side:THREE.DoubleSide}));caveScreenSurface.position.set(gx,5.7,caveStageZ-.17);scene.add(caveScreenSurface);
-  const caveLive=createPassiveWallIframe(CHANNEL_URLS.saywhat,'Headquarters Cave wide projection',24.8,7.2);caveLive.position.set(gx,5.7,caveStageZ-.15);scene.add(caveLive);
-  // This used to be the only major CSS3D projection omitted from the shared
-  // registry. It therefore ignored depth occlusion, room visibility and the
-  // universal projection remote, reading as a small detached rectangle. The
-  // full 24.8 × 7.2 m architectural surface is now the single source of truth.
-  hoodCaveWallScreen=registerScreen({
-    mesh:caveScreenSurface,css:caveLive,url:CHANNEL_URLS.saywhat,
-    title:'THE CAVE · wide projection',room:'hood',activeRadius:38
-  });
-  const caveGlow=new THREE.PointLight(0xb8d9e7,2.3,30,1.55);caveGlow.position.set(gx,7.8,caveStageZ+4.5);scene.add(caveGlow);regLight('hood',caveGlow);
-
-  const caveSeatMat=new THREE.MeshStandardMaterial({color:0x6d302d,roughness:.72});
-  const caveSeatWood=new THREE.MeshStandardMaterial({color:0x6b4931,roughness:.76});
-  for(let row=0;row<10;row++){
-    const y=.48+row*.34,z=caveStageZ+6.0+row*2.45,curve=1+row*.018;
-    const tier=new THREE.Mesh(new THREE.BoxGeometry(30,.28,2.18),new THREE.MeshStandardMaterial({color:row%2?0x595149:0x635b52,roughness:1}));tier.position.set(gx,y-.34,z);scene.add(tier);
-    for(let col=0;col<10;col++){
-      const x=gx+(col-4.5)*2.62*curve;
-      const chair=new THREE.Group();chair.position.set(x,y,z);scene.add(chair);
-      const seat=new THREE.Mesh(new THREE.BoxGeometry(1.55,.32,1.02),caveSeatMat);seat.position.y=.28;chair.add(seat);
-      const back=new THREE.Mesh(new THREE.BoxGeometry(1.55,1.22,.26),caveSeatMat);back.position.set(0,.84,.39);back.rotation.x=-.10;chair.add(back);
-      const armL=new THREE.Mesh(new THREE.BoxGeometry(.12,.48,1.0),caveSeatWood),armR=armL.clone();armL.position.set(-.82,.48,0);armR.position.set(.82,.48,0);chair.add(armL,armR);
-      sitPoint('hood',seat,`Cave · row ${row+1}, seat ${col+1}`,new THREE.Vector3(x,y+1.05,z),0,-.04);
-    }
-    const aisle=new THREE.PointLight(0xffb76e,.32,5,1.8);aisle.position.set(gx-15.1,y+.16,z);scene.add(aisle);regLight('hood',aisle);
-  }
-  // These are landscape-format works on a portrait-shaped plane; a bare
-  // TextureLoader map here would stretch/warp them badly. Use the same
-  // contain-fit + quiet-field texture as every other artwork placement
-  // (index.html:4803-4806) instead, keeping the frameless cave look.
-  const caveArtAspect = 5.7/7.2;
-  const caveArtLeft=new THREE.Mesh(new THREE.PlaneGeometry(5.7,7.2),new THREE.MeshBasicMaterial({map:makeFittedCanvasTexture(CADAVRE_EXPAT_IV_SRC,caveArtAspect,'Cadavre Expat IV'),toneMapped:false}));caveArtLeft.position.set(gx-16.8,5.0,caveStageZ+1);caveArtLeft.rotation.y=Math.PI/2;scene.add(caveArtLeft);
-  const caveArtRight=new THREE.Mesh(new THREE.PlaneGeometry(5.7,7.2),new THREE.MeshBasicMaterial({map:makeFittedCanvasTexture(CADAVRE_EXPAT_III_SRC,caveArtAspect,'Cadavre Expat III'),toneMapped:false}));caveArtRight.position.set(gx+16.8,5.0,caveStageZ+1);caveArtRight.rotation.y=-Math.PI/2;scene.add(caveArtRight);
-  for(const sx of [-1,1]){const artSpot=new THREE.SpotLight(0xffd4a0,3.4,19,.38,.60,1.4);artSpot.position.set(gx+sx*11,10,caveStageZ+5);artSpot.target.position.set(gx+sx*16.7,4.8,caveStageZ+1);scene.add(artSpot,artSpot.target);regLight('hood',artSpot);}
 
   // Exterior daylight and floor-specific interior lighting.
   const hemi=new THREE.HemisphereLight(0xeaf6ff,0x625342,2.05);scene.add(hemi);regLight('hood',hemi);
