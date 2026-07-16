@@ -8833,9 +8833,43 @@ function buildTunnelPassage(){
   const corridorLen = L - wrLen;
   const corridorMid = z0 + wrLen + corridorLen/2;
 
-  const stoneMat = new THREE.MeshStandardMaterial({color:0x5a4f45, roughness:.95, metalness:.02});
-  const stoneDark = new THREE.MeshStandardMaterial({color:0x3a332d, roughness:.97, metalness:.02});
-  const floorMat = new THREE.MeshStandardMaterial({color:0x443b33, roughness:.91, metalness:.03});
+  // Textured stone shell (batch: visual improvement phase 5). This 100m
+  // passage was previously flat MeshStandardMaterial on every surface -- the
+  // single biggest texture gap in the museum, since it's the longest walk
+  // every visitor takes. Corridor and waiting-room surfaces get separately-
+  // scaled texture instances (repeat is per-object, and the two spaces are
+  // very different sizes), following the Hall wall precedent of distinct
+  // divisors per axis rather than a uniform one.
+  const corridorLen0 = L - wrLen;
+  const corridorWallTex = makeStoneTexture('#5a4f45','rgba(96,88,76,.16)','rgba(52,46,38,.14)');
+  corridorWallTex.repeat.set(corridorLen0/9, h/3.4);
+  const corridorCeilTex = makeStoneTexture('#3a332d','rgba(70,64,54,.14)','rgba(30,26,22,.12)');
+  corridorCeilTex.repeat.set(hw*2/5, corridorLen0/5);
+  const corridorFloorTex = makeStoneTexture('#443b33','rgba(80,72,60,.15)','rgba(36,32,26,.13)');
+  corridorFloorTex.repeat.set(hw*2/5, corridorLen0/5);
+  const corridorEndTex = makeStoneTexture('#5a4f45','rgba(96,88,76,.16)','rgba(52,46,38,.14)');
+  corridorEndTex.repeat.set(hw*2/5, h/3.4);
+
+  const wrWallTex = makeStoneTexture('#5a4f45','rgba(96,88,76,.16)','rgba(52,46,38,.14)');
+  wrWallTex.repeat.set(wrHW*2/9, wrH/3.4);
+  const wrSideWallTex = makeStoneTexture('#5a4f45','rgba(96,88,76,.16)','rgba(52,46,38,.14)');
+  wrSideWallTex.repeat.set(wrLen/9, wrH/3.4);
+  const wrCeilTex = makeStoneTexture('#3a332d','rgba(70,64,54,.14)','rgba(30,26,22,.12)');
+  wrCeilTex.repeat.set(wrHW*2/5, wrLen/5);
+  const wrFloorTex = makeStoneTexture('#443b33','rgba(80,72,60,.15)','rgba(36,32,26,.13)');
+  wrFloorTex.repeat.set(wrHW*2/5, wrLen/5);
+  const wrShoulderTex = makeStoneTexture('#5a4f45','rgba(96,88,76,.16)','rgba(52,46,38,.14)');
+  wrShoulderTex.repeat.set(Math.max(1,(wrHW-hw)/5), wrH/3.4);
+
+  const stoneMat = new THREE.MeshStandardMaterial({map:corridorWallTex, roughness:.95, metalness:.02});
+  const stoneEndMat = new THREE.MeshStandardMaterial({map:corridorEndTex, roughness:.95, metalness:.02});
+  const stoneDark = new THREE.MeshStandardMaterial({map:corridorCeilTex, roughness:.97, metalness:.02});
+  const floorMat = new THREE.MeshStandardMaterial({map:corridorFloorTex, roughness:.91, metalness:.03});
+  const wrWallMat = new THREE.MeshStandardMaterial({map:wrWallTex, roughness:.95, metalness:.02});
+  const wrSideWallMat = new THREE.MeshStandardMaterial({map:wrSideWallTex, roughness:.95, metalness:.02});
+  const wrShoulderMat = new THREE.MeshStandardMaterial({map:wrShoulderTex, roughness:.95, metalness:.02});
+  const wrCeilMat = new THREE.MeshStandardMaterial({map:wrCeilTex, roughness:.97, metalness:.02});
+  const wrFloorMat = new THREE.MeshStandardMaterial({map:wrFloorTex, roughness:.91, metalness:.03});
   const ironMat = new THREE.MeshStandardMaterial({color:0x1d1a17, roughness:.6, metalness:.5});
 
   // Corridor shell begins after the waiting room, leaving the full 15 × 12 m chamber open.
@@ -8847,22 +8881,22 @@ function buildTunnelPassage(){
   wl.rotation.y = Math.PI/2; wl.position.set(x0-hw,h/2,corridorMid); scene.add(wl);
   const wr = new THREE.Mesh(new THREE.PlaneGeometry(corridorLen, h), stoneMat);
   wr.rotation.y = -Math.PI/2; wr.position.set(x0+hw,h/2,corridorMid); scene.add(wr);
-  const endCap = new THREE.Mesh(new THREE.PlaneGeometry(hw*2, h), stoneMat);
+  const endCap = new THREE.Mesh(new THREE.PlaneGeometry(hw*2, h), stoneEndMat);
   endCap.rotation.y = Math.PI; endCap.position.set(x0,h/2,z1); scene.add(endCap);
 
   // Waiting room: a tall former factory hall, now gallery, lounge and observatory.
-  const wrFloor = new THREE.Mesh(new THREE.PlaneGeometry(wrHW*2, wrLen), floorMat);
+  const wrFloor = new THREE.Mesh(new THREE.PlaneGeometry(wrHW*2, wrLen), wrFloorMat);
   wrFloor.rotation.x = -Math.PI/2; wrFloor.position.set(x0,0,z0+wrLen/2); scene.add(wrFloor);
-  const wrCeil = new THREE.Mesh(new THREE.PlaneGeometry(wrHW*2, wrLen), stoneDark);
+  const wrCeil = new THREE.Mesh(new THREE.PlaneGeometry(wrHW*2, wrLen), wrCeilMat);
   wrCeil.rotation.x = Math.PI/2; wrCeil.position.set(x0,wrH,z0+wrLen/2); scene.add(wrCeil);
-  const wrBack = new THREE.Mesh(new THREE.PlaneGeometry(wrHW*2, wrH), stoneMat);
+  const wrBack = new THREE.Mesh(new THREE.PlaneGeometry(wrHW*2, wrH), wrWallMat);
   wrBack.position.set(x0,wrH/2,z0); scene.add(wrBack);
-  const wrL = new THREE.Mesh(new THREE.PlaneGeometry(wrLen, wrH), stoneMat);
+  const wrL = new THREE.Mesh(new THREE.PlaneGeometry(wrLen, wrH), wrSideWallMat);
   wrL.rotation.y = Math.PI/2; wrL.position.set(x0-wrHW,wrH/2,z0+wrLen/2); scene.add(wrL);
-  const wrR = new THREE.Mesh(new THREE.PlaneGeometry(wrLen, wrH), stoneMat);
+  const wrR = new THREE.Mesh(new THREE.PlaneGeometry(wrLen, wrH), wrSideWallMat);
   wrR.rotation.y = -Math.PI/2; wrR.position.set(x0+wrHW,wrH/2,z0+wrLen/2); scene.add(wrR);
   for(const sxx of [-1,1]){
-    const shoulder = new THREE.Mesh(new THREE.PlaneGeometry(wrHW-hw, wrH), stoneMat);
+    const shoulder = new THREE.Mesh(new THREE.PlaneGeometry(wrHW-hw, wrH), wrShoulderMat);
     shoulder.rotation.y = Math.PI;
     shoulder.position.set(x0+sxx*(hw+(wrHW-hw)/2),wrH/2,z0+wrLen);
     scene.add(shoulder);
