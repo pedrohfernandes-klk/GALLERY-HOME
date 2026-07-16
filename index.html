@@ -3993,6 +3993,35 @@ function runWorkshopSelfTest(){
     check(p.targetPos && p.targetPos.isVector3, `portal target · ${p.label||'?'}`, p.label);
   });
 
+  // Portal-graph connectivity (batch: room rewiring). Individual Hood floors
+  // (hood-*) are reached by the lift, not a portal, so they're excluded from
+  // this graph on purpose — only the base 'hood' arrival needs a portal.
+  {
+    const edges = {};
+    portals.forEach(p=>{
+      if(!p.fromRoom || !p.room) return;
+      (edges[p.fromRoom] = edges[p.fromRoom]||[]).push(p.room);
+    });
+    const reachableFrom = start=>{
+      const seen = new Set([start]), queue=[start];
+      while(queue.length){
+        const cur = queue.shift();
+        (edges[cur]||[]).forEach(next=>{ if(!seen.has(next)){ seen.add(next); queue.push(next); } });
+      }
+      return seen;
+    };
+    const routableRooms = [...knownRooms].filter(r=>!/^hood-/.test(r));
+    const fromGallery = reachableFrom('gallery');
+    routableRooms.forEach(room=>{
+      check(fromGallery.has(room), `room reachable from gallery · ${room}`, room);
+    });
+    const fromTunnel = reachableFrom('tunnel');
+    routableRooms.forEach(room=>{
+      if(room === 'gallery' || room === 'tunnel') return;
+      check(fromTunnel.has(room), `room reachable from tunnel · ${room}`, room);
+    });
+  }
+
   check(screens.length >= 3, 'screens registered', `${screens.length} screens`);
   screens.forEach(s=>{
     check(s.mesh && inScene(s.mesh), `screen in scene · ${s.title||'?'}`, s.title);
@@ -5179,6 +5208,18 @@ function buildNightRoom(){
     targetYaw:0, slideAxis:outdoorDoor.openAxis, slideDist:3.55
   });
 
+  // Second return leg: the tunnel's waiting hall (batch: room rewiring).
+  const tunnelReturnDoor = addPremiumPortalDoor({
+    x:x0-hw+.12, y:3.0, z:z0 + depth*.56, width:3.2, height:6.0, orientation:'left',
+    title:'The Tunnel', subtitle:'return', accent:0xc98d4a, dark:0x17110b
+  });
+  registerPortal({
+    mesh:tunnelReturnDoor.slab, field:tunnelReturnDoor.field, doorParts:tunnelReturnDoor.doorParts, openAxis:tunnelReturnDoor.openAxis,
+    room:'tunnel', fromRoom:'night', label:'The Tunnel',
+    targetPos:new THREE.Vector3(tunnelRoomOrigin.x+7.97, cameraHeight, tunnelRoomOrigin.z+15.15),
+    targetYaw:Math.PI/2, slideAxis:tunnelReturnDoor.openAxis, slideDist:3.2
+  });
+
   const hemi = new THREE.HemisphereLight(0xdfe5ef,0x5b4636,.82);
   scene.add(hemi); regLight('night', hemi);
 
@@ -5939,24 +5980,16 @@ function buildOutdoorSpace(){
     const threshold=new THREE.Mesh(new THREE.BoxGeometry(9.4,.18,4.2),portalStone);threshold.position.set(0,.09,0);portal.add(threshold);
     const sign=new THREE.Mesh(new THREE.PlaneGeometry(7.6,.88),new THREE.MeshBasicMaterial({map:makeSignTexture('HEADQUARTERS','the Hood · portal passage'),transparent:true}));sign.position.set(0,7.28,.74);portal.add(sign);
     const portalLight=new THREE.PointLight(0xd7f2ff,2.8,18,1.5);portalLight.position.set(0,3.2,1.6);portal.add(portalLight);regLight('outdoor',portalLight);
-    registerInteractable({type:'portal',room:'outdoor',mesh:field,label:'Portal to Headquarters',hintId:'hood-portal',priority:9,
-      hintText:'A full-scale passage to the Headquarters district.',prompt:()=>'Enter the Headquarters portal',onUse:()=>vehicleTravel('hood')});
+    registerPortal({
+      mesh:field, room:'hood', fromRoom:'outdoor', label:'Headquarters',
+      targetPos:new THREE.Vector3(hoodOrigin.x-72, cameraHeight, hoodOrigin.z+72),
+      targetYaw:Math.PI/2
+    });
   }
 
   const hemi = new THREE.HemisphereLight(0xf5fbff,0x71884c,1.62); scene.add(hemi); regLight('outdoor', hemi);
   const sun = new THREE.DirectionalLight(0xfff1d3,2.35); sun.position.set(x0-26,29,z0+10); scene.add(sun); regLight('outdoor', sun);
   const skyFill = new THREE.PointLight(0xe5f4ff,1.08,100,1.75); skyFill.position.set(x0,18,midZ); scene.add(skyFill); regLight('outdoor', skyFill);
-}
-
-function vehicleTravel(destination){
-  const veil=$('fadeOverlay');
-  veil.classList.add('show');
-  msg(destination==='hood'?'Portal passage · Headquarters incoming…':'Portal passage · returning to the Grove…');
-  setTimeout(()=>{
-    if(destination==='hood')setPlayerLocation('hood',new THREE.Vector3(hoodOrigin.x-72, cameraHeight, hoodOrigin.z+72),Math.PI/2,'THE HOOD · gravel terminal');
-    else setPlayerLocation('outdoor',new THREE.Vector3(outdoorOrigin.x-48,cameraHeight,outdoorOrigin.z+30),-Math.PI/2,'THE GROVE · Headquarters portal');
-    setTimeout(()=>veil.classList.remove('show'),180);
-  },reducedMotion?80:720);
 }
 
 function hoodFloorDefinition(room){ return HOOD_ALL_FLOORS.find(f=>f.id===room) || HOOD_MAIN_FLOORS[1]; }
@@ -6101,7 +6134,11 @@ function buildHood(){
     const field=new THREE.Mesh(new THREE.PlaneGeometry(7.8,5.25),new THREE.MeshBasicMaterial({color:0xf4e0b6,transparent:true,opacity:.38,toneMapped:false,side:THREE.DoubleSide}));field.position.set(0,3.18,-.15);portal.add(field);
     const label=new THREE.Mesh(new THREE.PlaneGeometry(7.8,.86),new THREE.MeshBasicMaterial({map:makeSignTexture('THE GROVE','return portal'),transparent:true}));label.position.set(0,7.55,.82);portal.add(label);
     const glow=new THREE.PointLight(0xffe0ad,2.8,19,1.55);glow.position.set(0,3.2,1.8);portal.add(glow);regLight('hood',glow);
-    registerInteractable({type:'portal',room:'hood',mesh:field,label:'Portal to The Grove',hintId:'hood-return',priority:9,hintText:'Return directly to the Grove.',prompt:()=>'Enter the Grove portal',onUse:()=>vehicleTravel('grove')});
+    registerPortal({
+      mesh:field, room:'outdoor', fromRoom:'hood', label:'The Grove',
+      targetPos:new THREE.Vector3(outdoorOrigin.x-48, cameraHeight, outdoorOrigin.z+30),
+      targetYaw:-Math.PI/2
+    });
   }
 
   // Warehouse and tower geometry: a restored brick-and-black-steel shell with
@@ -7281,6 +7318,18 @@ function buildTheatre(){
     targetYaw:-Math.PI/2, slideAxis:built.openAxis, slideDist:4.2
   });
 
+  // Second return leg: the tunnel's waiting hall (batch: room rewiring).
+  const tunnelReturn = addPremiumPortalDoor({
+    x:theatreOrigin.x-6.5, y:3.0, z:z1-.18, width:2.8, height:5.0, orientation:'front',
+    title:'The Tunnel', subtitle:'return', accent:0xc98d4a, dark:0x17110b
+  });
+  registerPortal({
+    mesh:tunnelReturn.slab, field:tunnelReturn.field, doorParts:tunnelReturn.doorParts, openAxis:tunnelReturn.openAxis,
+    room:'tunnel', fromRoom:'theatre', label:'The Tunnel',
+    targetPos:new THREE.Vector3(tunnelRoomOrigin.x-7.97, cameraHeight, tunnelRoomOrigin.z+6.55),
+    targetYaw:-Math.PI/2, slideAxis:tunnelReturn.openAxis, slideDist:2.8
+  });
+
   // --- Venue theatrical polish (absorbed from buildExhibitionSpacesPolish, session 4) ---
   {
     {
@@ -7513,6 +7562,18 @@ function buildLaboratory(){
     room:'gallery', fromRoom:'lab', label:'Gallery',
     targetPos:new THREE.Vector3(-hallHalfWidth+3.1, cameraHeight, tunnelMouthZ + hallDepth*.50),
     targetYaw:-Math.PI/2, slideAxis:built.openAxis, slideDist:3.2
+  });
+
+  // Second return leg: the tunnel's waiting hall (batch: room rewiring).
+  const tunnelReturn = addPremiumPortalDoor({
+    x:labOrigin.x-3.3, y:2.3, z:entryZ-.18, width:2.2, height:4.2, orientation:'front',
+    title:'The Tunnel', subtitle:'return', accent:0xc98d4a, dark:0x17110b
+  });
+  registerPortal({
+    mesh:tunnelReturn.slab, field:tunnelReturn.field, doorParts:tunnelReturn.doorParts, openAxis:tunnelReturn.openAxis,
+    room:'tunnel', fromRoom:'lab', label:'The Tunnel',
+    targetPos:new THREE.Vector3(tunnelRoomOrigin.x-7.97, cameraHeight, tunnelRoomOrigin.z+2.25),
+    targetYaw:-Math.PI/2, slideAxis:tunnelReturn.openAxis, slideDist:2.2
   });
 
   // --- NO WORRIES projection framing (absorbed from buildExhibitionSpacesPolish, session 4) ---
@@ -7853,6 +7914,18 @@ function buildMazeGarden(){
       room:'gallery', fromRoom:'maze', label:'Workshop Hall',
       targetPos:new THREE.Vector3(0,cameraHeight,tunnelMouthZ+hallDepth*.22),
       targetYaw:0, slideAxis:hallDoor.openAxis, slideDist:3.0
+    });
+
+    // Second return leg: the tunnel's waiting hall (batch: room rewiring).
+    const tunnelReturn = addPremiumPortalDoor({
+      x:x0+12.7, y:3.0, z:zFront-.18, width:3.0, height:5.0, orientation:'front',
+      title:'The Tunnel', subtitle:'return', accent:0xc98d4a, dark:0x17110b
+    });
+    registerPortal({
+      mesh:tunnelReturn.slab, field:tunnelReturn.field, doorParts:tunnelReturn.doorParts, openAxis:tunnelReturn.openAxis,
+      room:'tunnel', fromRoom:'maze', label:'The Tunnel',
+      targetPos:new THREE.Vector3(tunnelRoomOrigin.x+7.97, cameraHeight, tunnelRoomOrigin.z+2.25),
+      targetYaw:Math.PI/2, slideAxis:tunnelReturn.openAxis, slideDist:3.0
     });
 
     const mapsDoor = addPremiumPortalDoor({
@@ -8221,6 +8294,18 @@ function buildMapGallery(){
   }
   const built = addEmpirePortalDoor({ x:x0, y:4.2, z:zFront-.22, width:5.4, height:8.0, title:'Experiment Garden', subtitle:'return portal', room:'maps' });
   registerPortal({ mesh:built.slab, field:built.field, doorParts:built.doorParts, openAxis:built.openAxis, room:'maze', fromRoom:'maps', label:'Experiment Garden', targetPos:new THREE.Vector3(mazeOrigin.x, cameraHeight, mazeOrigin.z - mazeRows*mazeCell + mazeCell*1.45), targetYaw:Math.PI, slideAxis:'x', slideDist:4.4 });
+
+  // Second return leg: the tunnel's waiting hall (batch: room rewiring).
+  const mapsTunnelReturn = addPremiumPortalDoor({
+    x:x0-9, y:3.5, z:zFront-.22, width:3.2, height:5.6, orientation:'front',
+    title:'The Tunnel', subtitle:'return', accent:0xc98d4a, dark:0x17110b
+  });
+  registerPortal({
+    mesh:mapsTunnelReturn.slab, field:mapsTunnelReturn.field, doorParts:mapsTunnelReturn.doorParts, openAxis:mapsTunnelReturn.openAxis,
+    room:'tunnel', fromRoom:'maps', label:'The Tunnel',
+    targetPos:new THREE.Vector3(tunnelRoomOrigin.x+7.97, cameraHeight, tunnelRoomOrigin.z+6.55),
+    targetYaw:Math.PI/2, slideAxis:mapsTunnelReturn.openAxis, slideDist:3.2
+  });
 
   // --- MANY MAPS cartographic polish (absorbed from buildExhibitionSpacesPolish, session 4) ---
   {
@@ -8718,6 +8803,18 @@ function buildSparkToolsLab(){
     room:'gallery', fromRoom:'spark', label:'Workshop Hall',
     targetPos:new THREE.Vector3(-hallHalfWidth+3.1, cameraHeight, tunnelMouthZ + hallDepth*.83), targetYaw:Math.PI/2,
     slideAxis:returnBuilt.openAxis, slideDist:4.4});
+
+  // Second return leg: the tunnel's waiting hall (batch: room rewiring).
+  const sparkTunnelReturn = addPremiumPortalDoor({
+    x:x0+7.5, y:2.9, z:z0+.12, width:3.0, height:4.6, orientation:'front',
+    title:'The Tunnel', subtitle:'return', accent:0xc98d4a, dark:0x17110b
+  });
+  registerPortal({
+    mesh:sparkTunnelReturn.slab, field:sparkTunnelReturn.field, doorParts:sparkTunnelReturn.doorParts, openAxis:sparkTunnelReturn.openAxis,
+    room:'tunnel', fromRoom:'spark', label:'The Tunnel',
+    targetPos:new THREE.Vector3(tunnelRoomOrigin.x+7.97, cameraHeight, tunnelRoomOrigin.z+10.85),
+    targetYaw:Math.PI/2, slideAxis:sparkTunnelReturn.openAxis, slideDist:3.0
+  });
 }
 
 let thinkingWallIframe = null;
@@ -9527,6 +9624,18 @@ function buildStudio(){
     room:'gallery', fromRoom:'studio', label:'Workshop Hall',
     targetPos:new THREE.Vector3(-hallHalfWidth+3.2, cameraHeight, tunnelMouthZ + hallDepth*.31),
     targetYaw:Math.PI/2, slideAxis:ret.openAxis, slideDist:3.3 });
+
+  // Second return leg: the tunnel's waiting hall (batch: room rewiring).
+  const tunnelReturn = addPremiumPortalDoor({
+    x:studioOrigin.x-5.5, y:2.25, z:z1-.14, width:2.6, height:4.0, orientation:'front',
+    title:'The Tunnel', subtitle:'return', accent:0xc98d4a, dark:0x17110b
+  });
+  registerPortal({
+    mesh:tunnelReturn.slab, field:tunnelReturn.field, doorParts:tunnelReturn.doorParts, openAxis:tunnelReturn.openAxis,
+    room:'tunnel', fromRoom:'studio', label:'The Tunnel',
+    targetPos:new THREE.Vector3(tunnelRoomOrigin.x-7.97, cameraHeight, tunnelRoomOrigin.z+15.15),
+    targetYaw:-Math.PI/2, slideAxis:tunnelReturn.openAxis, slideDist:2.6
+  });
 
   studioFX = {tiles:null, tileN:0, speakerRings, orbs, ball, tileTimer:0};
 }
