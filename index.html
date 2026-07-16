@@ -1721,6 +1721,16 @@ body.reduced #mobileInteractBtn.hasTarget{animation:none}
   pointer-events:none;transition:opacity .24s ease,visibility .24s ease;
 }
 #hoodLiftPanel.show{opacity:1;visibility:visible;pointer-events:auto}
+#viewModeBtn.active{background:#17120d;color:#fff9ed;border-color:#17120d;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+#rpgModeBadge{
+  position:fixed;left:50%;top:58px;z-index:58;display:none;transform:translateX(-50%);
+  padding:6px 10px;border:1px solid rgba(255,255,255,.26);border-radius:999px;
+  background:rgba(12,15,17,.72);color:#fff8eb;backdrop-filter:blur(10px);
+  font:800 8px/1 Arial,sans-serif;letter-spacing:.17em;text-transform:uppercase;
+  pointer-events:none;
+}
+body.rpgMode #rpgModeBadge{display:block}
+@media(max-width:760px){#rpgModeBadge{top:50px}}
 .liftCabinet{
   width:min(96vw,860px);max-height:min(91vh,840px);overflow:auto;color:#eee8dc;
   border:2px solid #b79b69;border-radius:8px;padding:28px 28px 22px;
@@ -1782,6 +1792,7 @@ body.reduced #mobileInteractBtn.hasTarget{animation:none}
     <nav id="actions" aria-label="Gallery controls">
       <button class="btn dark" id="enterBtn">Enter</button>
       <button class="btn" id="mapBtn" title="Choose a room (G)">Rooms</button>
+      <button class="btn" id="viewModeBtn" title="Toggle first-person / RPG view (V)" aria-pressed="false">RPG</button>
       <button class="btn" id="screenControlBtn">Projection</button>
       <button class="btn" id="helpBtn">Help</button>
       <button class="btn" id="catalogueBtn" hidden>Catalogue</button>
@@ -1917,6 +1928,7 @@ body.reduced #mobileInteractBtn.hasTarget{animation:none}
   </div>
 
   <div id="hintBanner"></div>
+  <div id="rpgModeBadge">RPG view · V returns to first person</div>
 
   <div id="wallAppControlOverlay" aria-label="Wall app control overlay">
     <div id="wallAppControlTop">
@@ -1986,6 +1998,7 @@ body.reduced #mobileInteractBtn.hasTarget{animation:none}
       <button class="mobileBtn" id="mobileFocusBtn" type="button">Focus</button>
       <button class="mobileBtn" id="mobileMapBtn" type="button">Rooms</button>
       <button class="mobileBtn" id="mobileRunBtn" type="button" aria-pressed="false">Run</button>
+      <button class="mobileBtn" id="mobileViewBtn" type="button" aria-pressed="false">View</button>
       <button class="mobileBtn" id="mobileNotesBtn" type="button">Notes</button>
     </div>
   </div>
@@ -2231,6 +2244,133 @@ const screenControlBadgeText = $('screenControlBadgeText');
 
 let renderer, cssRenderer, scene, camera, clock;
 let yaw = 0, pitch = 0, fov = 58;
+// Universal view rig. First-person remains the default, while RPG mode keeps a
+// separate visitor anchor so the camera can live above/behind the body without
+// changing room coordinates, portal targets or collision bounds.
+let rpgMode = false;
+let rpgAvatar = null;
+let rpgFacingYaw = 0;
+let rpgOrbitPitch = .43;
+let rpgCameraDistance = 5.4;
+let rpgCameraRayFrame = 0;
+let rpgCameraBoomLimit = Infinity;
+const rpgPlayerPosition = new THREE.Vector3();
+const rpgCameraDesired = new THREE.Vector3();
+const rpgCameraTarget = new THREE.Vector3();
+const rpgCameraDirection = new THREE.Vector3();
+const rpgCameraRay = new THREE.Raycaster();
+const rpgAvatarParts = { leftLeg:null, rightLeg:null, leftArm:null, rightArm:null };
+function getVisitorPosition(){ return rpgMode ? rpgPlayerPosition : camera.position; }
+function visitorFloorY(pos=getVisitorPosition()){
+  if(currentRoom === 'theatre') return theatreFloorY(pos.z);
+  if(isHoodRoom(currentRoom)) return hoodFloorY(currentRoom);
+  return 0;
+}
+function markRpgAvatar(object){
+  object.userData.rpgAvatar = true;
+  object.traverse?.(child=>{ child.userData.rpgAvatar = true; });
+  return object;
+}
+// A shade, not a figure: the visitor reads as a soft dark silhouette rather
+// than a lit, multi-coloured toy body, so it doesn't compete with the art.
+function buildRpgAvatar(){
+  const root=new THREE.Group();
+  root.name='Workshop RPG visitor';
+  const shade=new THREE.MeshBasicMaterial({color:0x07080a,transparent:true,opacity:.7,depthWrite:false,toneMapped:false});
+  const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.32,.5,6,12),shade);torso.position.y=1.24;root.add(torso);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.27,18,14),shade);head.scale.set(.86,1.05,.88);head.position.y=1.95;root.add(head);
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.09,.11,.18,10),shade);neck.position.y=1.70;root.add(neck);
+  const makeLimb=(x,y,length,radius)=>{const pivot=new THREE.Group();pivot.position.set(x,y,0);const mesh=new THREE.Mesh(new THREE.CapsuleGeometry(radius,length,5,9),shade);mesh.position.y=-(length/2+radius*.55);pivot.add(mesh);root.add(pivot);return pivot;};
+  rpgAvatarParts.leftLeg=makeLimb(-.17,.84,.56,.105);
+  rpgAvatarParts.rightLeg=makeLimb(.17,.84,.56,.105);
+  rpgAvatarParts.leftArm=makeLimb(-.40,1.50,.46,.09);
+  rpgAvatarParts.rightArm=makeLimb(.40,1.50,.46,.09);
+  root.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;o.frustumCulled=true;}});
+  markRpgAvatar(root);
+  root.visible=false;
+  scene.add(root);
+  rpgAvatar=root;
+}
+function isRpgCameraOccluder(hit){
+  let object=hit.object;
+  if(!object || !object.visible || object.isLine || object.isPoints || object.isSprite) return false;
+  for(let p=object;p;p=p.parent) if(p.userData?.rpgAvatar) return false;
+  const mats=Array.isArray(object.material)?object.material:[object.material];
+  if(mats.some(m=>m && ((m.transparent && Number(m.opacity)<.28) || m.depthWrite===false))) return false;
+  return true;
+}
+function updateRpgAvatar(dt=0,speed=0){
+  if(!rpgAvatar) return;
+  rpgAvatar.visible=rpgMode;
+  if(!rpgMode) return;
+  const floor=visitorFloorY(rpgPlayerPosition);
+  rpgAvatar.position.set(rpgPlayerPosition.x,floor,rpgPlayerPosition.z);
+  const moving=speed>.08;
+  if(moving) rpgFacingYaw=lerpAngle(rpgFacingYaw,Math.atan2(-velX,-velZ),Math.min(1,dt*11));
+  else rpgFacingYaw=lerpAngle(rpgFacingYaw,yaw,Math.min(1,dt*4));
+  rpgAvatar.rotation.y=rpgFacingYaw;
+  const swing=moving&&!reducedMotion?Math.sin(bobPhase*Math.PI*2)*.55:0;
+  rpgAvatarParts.leftLeg.rotation.x=swing;
+  rpgAvatarParts.rightLeg.rotation.x=-swing;
+  rpgAvatarParts.leftArm.rotation.x=-swing*.58;
+  rpgAvatarParts.rightArm.rotation.x=swing*.58;
+}
+function updateRpgCamera(dt=.016,snap=false){
+  if(!rpgMode || !camera) return;
+  const horizontal=Math.cos(rpgOrbitPitch)*rpgCameraDistance;
+  const vertical=Math.sin(rpgOrbitPitch)*rpgCameraDistance+.28;
+  rpgCameraTarget.set(rpgPlayerPosition.x,rpgPlayerPosition.y-.42,rpgPlayerPosition.z);
+  rpgCameraDesired.set(
+    rpgPlayerPosition.x+Math.sin(yaw)*horizontal,
+    rpgPlayerPosition.y+vertical,
+    rpgPlayerPosition.z+Math.cos(yaw)*horizontal
+  );
+  rpgCameraDirection.copy(rpgCameraDesired).sub(rpgCameraTarget);
+  const boomLength=rpgCameraDirection.length();
+  if(boomLength>.01){
+    rpgCameraDirection.normalize();
+    if(snap || (++rpgCameraRayFrame%2===0)){
+      rpgCameraRay.set(rpgCameraTarget,rpgCameraDirection);
+      rpgCameraRay.near=.38;rpgCameraRay.far=boomLength;
+      const hit=rpgCameraRay.intersectObjects(scene.children,true).find(isRpgCameraOccluder);
+      rpgCameraBoomLimit=hit?Math.max(1.15,hit.distance-.28):Infinity;
+    }
+    if(rpgCameraBoomLimit<boomLength) rpgCameraDesired.copy(rpgCameraTarget).addScaledVector(rpgCameraDirection,rpgCameraBoomLimit);
+  }
+  const alpha=snap?1:1-Math.exp(-Math.max(.001,dt)*10.5);
+  camera.position.lerp(rpgCameraDesired,alpha);
+  camera.lookAt(rpgCameraTarget);
+  camera.rotation.z=0;
+}
+function syncViewModeUi(){
+  document.body.classList.toggle('rpgMode',rpgMode);
+  const desktop=$('viewModeBtn'),mobile=$('mobileViewBtn');
+  if(desktop){desktop.classList.toggle('active',rpgMode);desktop.setAttribute('aria-pressed',String(rpgMode));desktop.textContent=rpgMode?'First person':'RPG';}
+  if(mobile){mobile.classList.toggle('active',rpgMode);mobile.setAttribute('aria-pressed',String(rpgMode));mobile.textContent=rpgMode?'First':'View';}
+  const hint=$('hint');
+  if(hint) hint.textContent=rpgMode?'RPG view · WASD moves · mouse orbits · wheel adjusts distance · V first person':'WASD moves · click doors/screens · G rooms · V RPG view';
+}
+function setRpgMode(next,{silent=false}={}){
+  next=!!next;
+  if(next===rpgMode && rpgAvatar){syncViewModeUi();return;}
+  cameraTransition.active=false;velX=0;velZ=0;smoothSpeed=0;bodyBob=0;roll=0;
+  if(next){
+    rpgPlayerPosition.copy(camera.position);
+    rpgPlayerPosition.y=visitorFloorY(camera.position)+cameraHeight;
+    rpgFacingYaw=yaw;
+    rpgCameraBoomLimit=Infinity;
+    pitch=0;
+  }else if(rpgMode){
+    camera.position.copy(rpgPlayerPosition);
+    pitch=0;
+  }
+  rpgMode=next;
+  if(rpgAvatar) rpgAvatar.visible=rpgMode;
+  try{localStorage.setItem('workshop:view-mode',rpgMode?'rpg':'first');}catch(e){}
+  syncViewModeUi();
+  if(rpgMode){updateRpgAvatar(0,0);updateRpgCamera(0,true);}else updateCameraRotation();
+  if(!silent) msg(rpgMode?'RPG view · character camera active':'First-person view');
+}
 let reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 let autoTour = false;
 let pageVisible = true;
@@ -2625,7 +2765,7 @@ function getNearestInteractable({types=null}={}){
   const world = new THREE.Vector3();
   activeInteractables(types).forEach(item=>{
     item.mesh.getWorldPosition(world);
-    const distance = world.distanceTo(camera.position);
+    const distance = world.distanceTo(getVisitorPosition());
     if(distance < bestDistance){ bestDistance = distance; best = item; }
   });
   return best;
@@ -2661,7 +2801,7 @@ function registerScreen(screen){
     enabled:()=>{
       if(!camera) return false;
       screen.mesh.getWorldPosition(_screenGateVec);
-      return _screenGateVec.distanceTo(camera.position) <= gateR;
+      return _screenGateVec.distanceTo(getVisitorPosition()) <= gateR;
     },
     prompt:()=>screen.action === 'research'
       ? `Click / R / Enter to open · ${screen.title}`
@@ -3940,6 +4080,10 @@ function init(){
   buildArchiveData();
   loadNotes();
   renderNotes();
+  buildRpgAvatar();
+  let savedViewMode='first';
+  try{savedViewMode=localStorage.getItem('workshop:view-mode')||'first';}catch(e){}
+  setRpgMode(savedViewMode==='rpg',{silent:true});
   resize();
   applyRoomLighting();
   selectNearest(true);
@@ -4043,6 +4187,10 @@ function runWorkshopSelfTest(){
   Object.entries(roomLights).forEach(([room, ls])=>{
     check(ls.length >= 1, `room lit · ${room}`, `${ls.length} lights`);
   });
+
+  check(!!rpgAvatar && inScene(rpgAvatar), 'RPG avatar in scene', rpgAvatar?.name || 'missing');
+  check(typeof setRpgMode === 'function' && typeof getVisitorPosition === 'function', 'RPG API available', `setRpgMode ${typeof setRpgMode}, getVisitorPosition ${typeof getVisitorPosition}`);
+  check(!!$('viewModeBtn') && !!$('mobileViewBtn'), 'RPG view-mode controls present', `desktop ${!!$('viewModeBtn')}, mobile ${!!$('mobileViewBtn')}`);
 
   const failed = results.filter(r=>!r.ok);
   if(console.table) console.table(results.map(r=>({ok:r.ok?'✓':'✗', test:r.test, detail:r.detail})));
@@ -5912,7 +6060,8 @@ function buildOutdoorSpace(){
       registerInteractable({type:'seat',room:'outdoor',mesh:seatTier,label:`Amphitheatre tier ${tier+1}`,hintId:'amph-seat',priority:3,
         hintText:'Select any stone tier to sit. Look around freely; move to stand.',prompt:()=>`Sit in amphitheatre · tier ${tier+1}`,
         onUse:()=>{
-          let theta=clamp(Math.atan2(camera.position.x-ax,camera.position.z-az),-1.17,1.17);
+          const visitor=getVisitorPosition();
+          let theta=clamp(Math.atan2(visitor.x-ax,visitor.z-az),-1.17,1.17);
           const slots=Array.from({length:14},(_,i)=>i).filter(i=>i!==6&&i!==7).map(i=>-1.17+i*(2.34/13));
           theta=slots.reduce((best,v)=>Math.abs(v-theta)<Math.abs(best-theta)?v:best,slots[0]);
           const sx=ax+Math.sin(theta)*r, sz=az+Math.cos(theta)*r;
@@ -10780,14 +10929,15 @@ function selectNearest(quiet=false){
     if(lookingAt !== selected || quiet) updateSelected(lookingAt, quiet);
     return;
   }
+  const visitor=getVisitorPosition();
   let best=0, bestScore=-Infinity;
   artworkObjects.forEach(o=>{
-    const dz = Math.abs(camera.position.z - o.z);
+    const dz = Math.abs(visitor.z - o.z);
     const wallX = o.side * 4.2;
-    const dx = Math.abs(camera.position.x - wallX);
+    const dx = Math.abs(visitor.x - wallX);
     const forwardness = 1 / (1 + dz);
     const proximity = 1 / (1 + dx*.55 + dz*.16);
-    const sideBonus = (o.side < 0 && camera.position.x < .8) || (o.side > 0 && camera.position.x > -.8) ? .15 : 0;
+    const sideBonus = (o.side < 0 && visitor.x < .8) || (o.side > 0 && visitor.x > -.8) ? .15 : 0;
     const score = proximity + forwardness*.55 + sideBonus;
     if(score > bestScore){ bestScore=score; best=o.index; }
   });
@@ -10795,6 +10945,15 @@ function selectNearest(quiet=false){
 }
 
 function startCameraTransition(toPos, toYaw, toPitch, duration=.85){
+  if(rpgMode){
+    rpgPlayerPosition.copy(toPos);
+    yaw=toYaw; pitch=0;
+    cameraTransition.active=false;
+    velX=0;velZ=0;smoothSpeed=0;
+    updateRpgAvatar(0,0);
+    updateRpgCamera(0,true);
+    return;
+  }
   cameraTransition.active = true;
   cameraTransition.t = 0;
   cameraTransition.duration = reducedMotion ? 0.001 : duration;
@@ -10835,12 +10994,20 @@ function updateCameraTransition(dt){
 function moveToArtwork(i, instant=false){
   const o = artworkObjects[i];
   const side = o.side;
+  const visitor=getVisitorPosition();
   // Approach along the artwork's normal, stopping like a visitor stepping close to the wall.
   const comfortableX = side * 2.42;
-  const targetZ = o.z + (Math.abs(camera.position.z - o.z) > 3.2 ? .72 * Math.sign(camera.position.z - o.z || 1) : 0);
+  const targetZ = o.z + (Math.abs(visitor.z - o.z) > 3.2 ? .72 * Math.sign(visitor.z - o.z || 1) : 0);
   const targetPos = new THREE.Vector3(comfortableX, cameraHeight, clamp(targetZ, hubBackZ+1.2, hallFront-3.2));
   const targetYaw = side < 0 ? Math.PI/2 : -Math.PI/2;
-  if(instant || reducedMotion){
+  if(rpgMode){
+    rpgPlayerPosition.copy(targetPos);
+    yaw=targetYaw;
+    pitch=0;
+    updateRpgAvatar(0,0);
+    updateRpgCamera(0,true);
+    cameraTransition.active=false;
+  }else if(instant || reducedMotion){
     camera.position.copy(targetPos);
     yaw = targetYaw;
     pitch = 0;
@@ -10855,6 +11022,7 @@ function focusNearest(){
   moveToArtwork(selected);
 }
 function updateCameraRotation(){
+  if(rpgMode){updateRpgCamera(0,true);return;}
   camera.rotation.order = 'YXZ';
   camera.rotation.y = yaw;
   camera.rotation.x = pitch;
@@ -10870,7 +11038,7 @@ function updateRoomsPanel(){
     thinking:['thinking'], spark:['spark']
   };
   let activePlace=(primaryPlaces[currentRoom]||[])[0]||null;
-  if(currentRoom==='tunnel') activePlace = camera.position.z < tunnelRoomOrigin.z + 21.0 ? 'waiting-room' : 'the-tunnel';
+  if(currentRoom==='tunnel') activePlace = getVisitorPosition().z < tunnelRoomOrigin.z + 21.0 ? 'waiting-room' : 'the-tunnel';
   document.querySelectorAll('.fastMapBtn[data-room]').forEach(btn=>{
     const active=btn.dataset.place===activePlace;
     btn.classList.toggle('active',active);
@@ -11029,7 +11197,7 @@ const screenOcclusionDir=new THREE.Vector3();
 function isScreenOccluder(hit,screen){
   const o=hit.object;
   if(!o || o===screen.mesh || !o.visible || o.isLine || o.isPoints || o.isSprite) return false;
-  let p=o; while(p){ if(p===screen.css) return false; p=p.parent; }
+  let p=o; while(p){ if(p===screen.css || p.userData?.rpgAvatar) return false; p=p.parent; }
   const mats=Array.isArray(o.material)?o.material:[o.material];
   if(mats.some(m=>m && m.transparent && Number(m.opacity)<.18)) return false;
   return true;
@@ -11520,13 +11688,15 @@ function setPlayerLocation(room, pos, newYaw, label, newPitch=0){
   cameraTransition.active = false;
   velX = 0; velZ = 0; smoothSpeed = 0; bodyBob = 0; roll = 0;
   keys.clear();
-  camera.position.copy(pos);
-  if(room === 'theatre') camera.position.y = theatreCameraY(camera.position.z);
-  else if(isHoodRoom(room)) camera.position.y = hoodFloorY(room)+cameraHeight;
-  else camera.position.y = cameraHeight;
+  const destination=rpgMode?rpgPlayerPosition:camera.position;
+  destination.copy(pos);
+  if(room === 'theatre') destination.y = theatreCameraY(destination.z);
+  else if(isHoodRoom(room)) destination.y = hoodFloorY(room)+cameraHeight;
+  else destination.y = cameraHeight;
   yaw = newYaw;
   pitch = newPitch;
   updateCameraRotation();
+  if(rpgMode){updateRpgAvatar(0,0);updateRpgCamera(0,true);}
   lookingAt = -1;
   lookingAtPortal = -1;
   lookingAtScreen = -1;
@@ -11650,15 +11820,16 @@ function travelTo(portal){
   velX = 0; velZ = 0; smoothSpeed = 0;
   const doorWorld = new THREE.Vector3();
   portal.mesh.getWorldPosition(doorWorld);
-  const approach = camera.position.clone();
-  const toDoor = doorWorld.clone().sub(camera.position);
+  const visitor=getVisitorPosition();
+  const approach = visitor.clone();
+  const toDoor = doorWorld.clone().sub(visitor);
   const flatDist = Math.hypot(toDoor.x, toDoor.z);
   if(flatDist > .001){
     toDoor.y = 0; toDoor.normalize();
     approach.copy(doorWorld).addScaledVector(toDoor, -1.45);
     approach.y = cameraHeight;
   }
-  const faceYaw = Math.atan2(-(doorWorld.x - camera.position.x), -(doorWorld.z - camera.position.z));
+  const faceYaw = Math.atan2(-(doorWorld.x - visitor.x), -(doorWorld.z - visitor.z));
   if(!reducedMotion) startCameraTransition(approach, faceYaw, 0, .46);
   const jump = ()=>{
     overlay.classList.add('show');
@@ -11675,11 +11846,13 @@ function travelTo(portal){
         }
         updateStudioNowPlaying(true);
       }
-      camera.position.copy(portal.targetPos);
+      const destination=rpgMode?rpgPlayerPosition:camera.position;
+      destination.copy(portal.targetPos);
       yaw = portal.targetYaw;
       pitch = 0;
       roll = 0; bodyBob = 0;
       updateCameraRotation();
+      if(rpgMode){updateRpgAvatar(0,0);updateRpgCamera(0,true);}
       velX = 0; velZ = 0;
       cameraTransition.active = false;
       lookingAt = -1;
@@ -11736,7 +11909,7 @@ function interactAtCenter({requestLock=true, types=null}={}){
     if(near){
       const world = new THREE.Vector3();
       near.mesh.getWorldPosition(world);
-      if(world.distanceTo(camera.position) < 6.5) return useInteractable(near, {source:'near'});
+      if(world.distanceTo(getVisitorPosition()) < 6.5) return useInteractable(near, {source:'near'});
     }
   }
   return false;
@@ -11746,21 +11919,21 @@ document.addEventListener('pointerlockchange', ()=>{
   const hint = $('hint');
   if(document.pointerLockElement === canvas){
     msg('Mouse captured');
-    hint.textContent = 'Mouse captured · W/S move · A/D strafe · arrows turn/walk · G map';
+    hint.textContent = rpgMode ? 'RPG view · W/S move · A/D strafe · mouse orbits · V first person' : 'Mouse captured · W/S move · A/D strafe · arrows turn/walk · G map';
   }else{
-    hint.textContent = isCoarsePointer ? 'Drag to look · joystick moves · ENTER uses the centred interaction' : 'Click to capture mouse · WASD moves with camera · G opens map';
+    hint.textContent = isCoarsePointer ? `Drag to look · joystick moves · ${rpgMode?'VIEW changes camera':'ENTER uses the centred interaction'}` : `Click to capture mouse · WASD moves · ${rpgMode?'V returns to first person':'V opens RPG view'}`;
   }
 });
 document.addEventListener('mousemove', e=>{
   if(document.pointerLockElement === canvas && !reducedMotion){
     yaw -= e.movementX * .0030;
-    pitch -= e.movementY * .0030;
-    pitch = clamp(pitch, -1.15, 1.05);
+    if(rpgMode) rpgOrbitPitch=clamp(rpgOrbitPitch+e.movementY*.0030,.18,.88);
+    else {pitch -= e.movementY * .0030;pitch = clamp(pitch, -1.15, 1.05);}
     updateCameraRotation();
   }else if(mouseDown && lastMouse && !reducedMotion){
     yaw -= (e.clientX - lastMouse.x) * .0052;
-    pitch -= (e.clientY - lastMouse.y) * .0052;
-    pitch = clamp(pitch, -1.15, 1.05);
+    if(rpgMode) rpgOrbitPitch=clamp(rpgOrbitPitch+(e.clientY-lastMouse.y)*.0052,.18,.88);
+    else {pitch -= (e.clientY - lastMouse.y) * .0052;pitch = clamp(pitch, -1.15, 1.05);}
     lastMouse = {x:e.clientX,y:e.clientY};
     updateCameraRotation();
   }
@@ -11769,6 +11942,12 @@ canvas.addEventListener('mousedown', e=>{mouseDown=true; lastMouse={x:e.clientX,
 document.addEventListener('mouseup', ()=>{mouseDown=false; lastMouse=null;});
 canvas.addEventListener('wheel', e=>{
   e.preventDefault();
+  if(rpgMode){
+    rpgCameraDistance=clamp(rpgCameraDistance+Math.sign(e.deltaY)*.55,3.15,8.5);
+    updateRpgCamera(0,true);
+    msg(`RPG camera ${rpgCameraDistance.toFixed(1)} m`);
+    return;
+  }
   fov = clamp(fov + Math.sign(e.deltaY)*3, 32, 78);
   camera.fov = fov;
   camera.updateProjectionMatrix();
@@ -11812,6 +11991,7 @@ function setupMobileControls(){
   const map = $('mobileMapBtn');
   const notes = $('mobileNotesBtn');
   const run = $('mobileRunBtn');
+  const view = $('mobileViewBtn');
 
   const resetJoy = ()=>{
     mobileInput.forward = 0;
@@ -11864,8 +12044,8 @@ function setupMobileControls(){
     const dy = e.clientY - mobileInput.lookLastY;
     if(Math.hypot(dx,dy) > 2) mobileInput.lookMoved = true;
     yaw -= dx * .0045;
-    pitch -= dy * .0045;
-    pitch = clamp(pitch, -1.15, 1.05);
+    if(rpgMode) rpgOrbitPitch=clamp(rpgOrbitPitch+dy*.0045,.18,.88);
+    else {pitch -= dy * .0045;pitch = clamp(pitch, -1.15, 1.05);}
     mobileInput.lookLastX = e.clientX;
     mobileInput.lookLastY = e.clientY;
     updateCameraRotation();
@@ -11883,6 +12063,7 @@ function setupMobileControls(){
   if(focus) focus.addEventListener('click', e=>{ e.preventDefault(); focusNearest(); });
   if(map) map.addEventListener('click', e=>{ e.preventDefault(); toggleRoomsPanel(); });
   if(notes) notes.addEventListener('click', e=>{ e.preventDefault(); openNotes(); });
+  if(view) view.addEventListener('click', e=>{e.preventDefault();setRpgMode(!rpgMode);});
   if(run) run.addEventListener('click', e=>{
     e.preventDefault(); mobileInput.run=!mobileInput.run;
     run.classList.toggle('active',mobileInput.run); run.setAttribute('aria-pressed',String(mobileInput.run));
@@ -11919,6 +12100,7 @@ window.addEventListener('keydown', e=>{
   if(k==='n') openNotes();
   if(k==='h') helpPanel.classList.toggle('open');
   if(k==='r') toggleNearestScreenControl();
+  if(k==='v') setRpgMode(!rpgMode);
   if(k==='m') toggleMotion();
   if(k==='l') cycleLightBoost();
 });
@@ -11966,6 +12148,7 @@ function toggleMotion(){
   msg(reducedMotion ? 'Motion reduced' : 'Motion restored');
 }
 $('motionBtn').onclick = toggleMotion;
+if($('viewModeBtn')) $('viewModeBtn').onclick = ()=>setRpgMode(!rpgMode);
 if($('lightsBtn')) $('lightsBtn').onclick = cycleLightBoost;
 if($('windowSoundBtn')) $('windowSoundBtn').onclick = toggleHallWindowSound;
 
@@ -11978,6 +12161,7 @@ function updateMovement(dt){
     return;
   }
   if(cameraTransition.active){ updateCameraTransition(dt); return; }
+  const movePos=getVisitorPosition();
 
   const sprinting = keys.has('shift') || (isCoarsePointer && mobileInput.run);
   const walkSpeed = currentRoom === 'maze' ? 4.45 : (currentRoom === 'maps' ? 6.25 : 5.8);
@@ -12010,7 +12194,7 @@ function updateMovement(dt){
   if(currentRoom==='gallery' && autoTour && !moving){
     targetX = 0;
     targetZ = -2.15;
-    if(camera.position.z < tunnelFarZ + 6){
+    if(movePos.z < tunnelFarZ + 6){
       const nextIndex = Math.min(artworkObjects.length-1, selected+1);
       moveToArtwork(nextIndex, false);
       autoTour = false;
@@ -12034,42 +12218,42 @@ function updateMovement(dt){
   velZ = damp(velZ, targetZ, response, dt);
   if(Math.hypot(velX, velZ) < .015 && !moving){ velX = 0; velZ = 0; }
 
-  camera.position.x += velX * dt;
-  camera.position.z += velZ * dt;
+  movePos.x += velX * dt;
+  movePos.z += velZ * dt;
 
   if(currentRoom === 'theatre'){
-    clampWithVelocity(camera.position, theatreOrigin.x-theatreHalfWidth+1.2, theatreOrigin.x+theatreHalfWidth-1.2, theatreOrigin.z+2.5, theatreOrigin.z+theatreDepth-1.2);
+    clampWithVelocity(movePos, theatreOrigin.x-theatreHalfWidth+1.2, theatreOrigin.x+theatreHalfWidth-1.2, theatreOrigin.z+2.5, theatreOrigin.z+theatreDepth-1.2);
   }else if(currentRoom === 'lab'){
-    clampWithVelocity(camera.position, labOrigin.x-labHalfWidth+.62, labOrigin.x+labHalfWidth-.62, labOrigin.z+1, labOrigin.z+labDepth-.65);
+    clampWithVelocity(movePos, labOrigin.x-labHalfWidth+.62, labOrigin.x+labHalfWidth-.62, labOrigin.z+1, labOrigin.z+labDepth-.65);
   }else if(currentRoom === 'maze'){
-    if(mazeGrid) resolveMazeCollision(camera.position);
-    clampWithVelocity(camera.position, mazeOrigin.x-(mazeCols*mazeCell)/2+.18, mazeOrigin.x+(mazeCols*mazeCell)/2-.18, mazeOrigin.z-mazeRows*mazeCell-.9, mazeOrigin.z+mazeCell*1.35);
+    if(mazeGrid) resolveMazeCollision(movePos);
+    clampWithVelocity(movePos, mazeOrigin.x-(mazeCols*mazeCell)/2+.18, mazeOrigin.x+(mazeCols*mazeCell)/2-.18, mazeOrigin.z-mazeRows*mazeCell-.9, mazeOrigin.z+mazeCell*1.35);
   }else if(currentRoom === 'maps'){
-    clampWithVelocity(camera.position, mapGalleryOrigin.x-mapGalleryHalfWidth+1.0, mapGalleryOrigin.x+mapGalleryHalfWidth-1.0, mapGalleryOrigin.z+1.2, mapGalleryOrigin.z+mapGalleryDepth-1.2);
+    clampWithVelocity(movePos, mapGalleryOrigin.x-mapGalleryHalfWidth+1.0, mapGalleryOrigin.x+mapGalleryHalfWidth-1.0, mapGalleryOrigin.z+1.2, mapGalleryOrigin.z+mapGalleryDepth-1.2);
   }else if(currentRoom === 'spark'){
-    clampWithVelocity(camera.position, sparkOrigin.x-sparkLabHalfWidth+1.4, sparkOrigin.x+sparkLabHalfWidth-1.4, sparkOrigin.z+1.3, sparkOrigin.z+sparkLabDepth-1.0);
+    clampWithVelocity(movePos, sparkOrigin.x-sparkLabHalfWidth+1.4, sparkOrigin.x+sparkLabHalfWidth-1.4, sparkOrigin.z+1.3, sparkOrigin.z+sparkLabDepth-1.0);
   }else if(currentRoom === 'thinking'){
-    clampWithVelocity(camera.position, thinkingOrigin.x-thinkingHalfWidth+1.2, thinkingOrigin.x+thinkingHalfWidth-1.2, thinkingOrigin.z+1.1, thinkingOrigin.z+thinkingDepth-1.2);
+    clampWithVelocity(movePos, thinkingOrigin.x-thinkingHalfWidth+1.2, thinkingOrigin.x+thinkingHalfWidth-1.2, thinkingOrigin.z+1.1, thinkingOrigin.z+thinkingDepth-1.2);
   }else if(currentRoom === 'night'){
-    clampWithVelocity(camera.position, nightRoomOrigin.x-nightRoomHalfWidth+1.15, nightRoomOrigin.x+nightRoomHalfWidth-1.15, nightRoomOrigin.z+1.05, nightRoomOrigin.z+nightRoomDepth-1.05);
+    clampWithVelocity(movePos, nightRoomOrigin.x-nightRoomHalfWidth+1.15, nightRoomOrigin.x+nightRoomHalfWidth-1.15, nightRoomOrigin.z+1.05, nightRoomOrigin.z+nightRoomDepth-1.05);
   }else if(currentRoom === 'studio'){
-    clampWithVelocity(camera.position, studioOrigin.x-studioHalfWidth+.85, studioOrigin.x+studioHalfWidth-.85, studioOrigin.z+1.0, studioOrigin.z+studioDepth-1.0);
+    clampWithVelocity(movePos, studioOrigin.x-studioHalfWidth+.85, studioOrigin.x+studioHalfWidth-.85, studioOrigin.z+1.0, studioOrigin.z+studioDepth-1.0);
   }else if(currentRoom === 'tunnel'){
-    const inWaiting = camera.position.z < tunnelRoomOrigin.z + 18.35;
+    const inWaiting = movePos.z < tunnelRoomOrigin.z + 18.35;
     const hwNow = inWaiting ? 10.05 : tunnelRoomHalfWidth - .55;
-    clampWithVelocity(camera.position, tunnelRoomOrigin.x-hwNow, tunnelRoomOrigin.x+hwNow, tunnelRoomOrigin.z+1.2, tunnelRoomOrigin.z+tunnelRoomLength-1.0);
+    clampWithVelocity(movePos, tunnelRoomOrigin.x-hwNow, tunnelRoomOrigin.x+hwNow, tunnelRoomOrigin.z+1.2, tunnelRoomOrigin.z+tunnelRoomLength-1.0);
   }else if(currentRoom === 'outdoor'){
-    clampWithVelocity(camera.position, outdoorOrigin.x-outdoorHalfWidth+1.2, outdoorOrigin.x+outdoorHalfWidth-1.2, outdoorOrigin.z+1.1, outdoorOrigin.z+outdoorDepth-1.2);
+    clampWithVelocity(movePos, outdoorOrigin.x-outdoorHalfWidth+1.2, outdoorOrigin.x+outdoorHalfWidth-1.2, outdoorOrigin.z+1.1, outdoorOrigin.z+outdoorDepth-1.2);
   }else if(isHoodRoom(currentRoom)){
     const bounds=hoodFloorBounds(currentRoom);
-    clampWithVelocity(camera.position,bounds.minX,bounds.maxX,bounds.minZ,bounds.maxZ);
+    clampWithVelocity(movePos,bounds.minX,bounds.maxX,bounds.minZ,bounds.maxZ);
   }else{
-    const rhw = galleryHalfWidthAt(camera.position.z);
-    clampWithVelocity(camera.position, -rhw, rhw, hubBackZ+.7, hallFront-2);
-    const wallGap = rhw - Math.abs(camera.position.x);
+    const rhw = galleryHalfWidthAt(movePos.z);
+    clampWithVelocity(movePos, -rhw, rhw, hubBackZ+.7, hallFront-2);
+    const wallGap = rhw - Math.abs(movePos.x);
     if(wallGap < .48){
-      const push = (camera.position.x > 0 ? -1 : 1) * (.48 - wallGap) * 1.6 * dt;
-      camera.position.x += push;
+      const push = (movePos.x > 0 ? -1 : 1) * (.48 - wallGap) * 1.6 * dt;
+      movePos.x += push;
       velX *= .82;
     }
   }
@@ -12091,11 +12275,13 @@ function updateMovement(dt){
   }
 
   const viewHeight = (currentRoom === 'studio' && seatedStudioView) ? 1.28 : (currentRoom==='outdoor'&&seatedAmphView) ? amphSeatEyeY : cameraHeight;
-  camera.position.y = (currentRoom === 'theatre' ? theatreFloorY(camera.position.z) : isHoodRoom(currentRoom) ? hoodFloorY(currentRoom) : 0) + viewHeight + bodyBob;
+  movePos.y = (currentRoom === 'theatre' ? theatreFloorY(movePos.z) : isHoodRoom(currentRoom) ? hoodFloorY(currentRoom) : 0) + viewHeight + bodyBob;
+  if(rpgMode) updateRpgAvatar(dt,speed);
 }
 
 function updateWorld(dt, t){
   updateHallWindow(dt);
+  const visitor=getVisitorPosition();
   if(hoodWaterfallFX?.material?.uniforms?.uTime) hoodWaterfallFX.material.uniforms.uTime.value=t;
   // Entering either real lift cabin opens its destination panel. The latch is
   // cleared only after walking away, so closing the panel does not trap users
@@ -12107,10 +12293,10 @@ function updateWorld(dt, t){
     let inside='';
     for(const c of candidates){
       if(c.mode==='private' && !c.enabled) continue;
-      if(Math.hypot(camera.position.x-c.x,camera.position.z-c.z)<1.62){inside=`${c.mode}:${currentRoom}`;if(hoodLiftAutoKey!==inside){hoodLiftAutoKey=inside;openHoodLift(c.mode);}break;}
+      if(Math.hypot(visitor.x-c.x,visitor.z-c.z)<1.62){inside=`${c.mode}:${currentRoom}`;if(hoodLiftAutoKey!==inside){hoodLiftAutoKey=inside;openHoodLift(c.mode);}break;}
     }
     if(!inside && hoodLiftAutoKey){
-      const allFar=candidates.every(c=>Math.hypot(camera.position.x-c.x,camera.position.z-c.z)>3.0);
+      const allFar=candidates.every(c=>Math.hypot(visitor.x-c.x,visitor.z-c.z)>3.0);
       if(allFar)hoodLiftAutoKey='';
     }
   }
@@ -12157,7 +12343,7 @@ function updateWorld(dt, t){
     }
   }
   artworkObjects.forEach((o,i)=>{
-    const dist = Math.abs(camera.position.z - o.z);
+    const dist = Math.abs(visitor.z - o.z);
     const scale = i===selected ? 1.055 : 1;
     o.group.scale.lerp(tmpVec.set(scale,scale,scale), .12);
     const opacity = dist < 18 ? 1 : .62;
@@ -12218,6 +12404,7 @@ function updateLookRay(){
   }
 }
 function drawMap(){
+  const visitor=getVisitorPosition();
   const w = miniMap.width, h = miniMap.height;
   const top = 30, bottom = h-30;
   miniCtx.clearRect(0,0,w,h);
@@ -12252,9 +12439,9 @@ function drawMap(){
     miniCtx.beginPath(); miniCtx.arc(x,y,i===selected?5.5:3.2,0,Math.PI*2); miniCtx.fill();
   });
 
-  const regionHW = currentRoom === 'gallery' ? galleryHalfWidthAt(camera.position.z) : halfWidth;
-  const px = 74 + ((camera.position.x + regionHW)/(regionHW*2))*(w-148);
-  const py = top + ((mapWorldFront - camera.position.z) / mapWorldSpan) * (bottom-top);
+  const regionHW = currentRoom === 'gallery' ? galleryHalfWidthAt(visitor.z) : halfWidth;
+  const px = 74 + ((visitor.x + regionHW)/(regionHW*2))*(w-148);
+  const py = top + ((mapWorldFront - visitor.z) / mapWorldSpan) * (bottom-top);
   // heading-aware visitor marker: an arrow pointing the way the visitor is facing
   const dx = -Math.sin(yaw), dy = Math.cos(yaw);
   const perpX = -dy, perpY = dx;
@@ -12267,7 +12454,7 @@ function drawMap(){
   miniCtx.fillStyle='#17120d';
   miniCtx.fill();
 
-  $('depthFill').style.width = clamp(((mapWorldFront-camera.position.z)/mapWorldSpan)*100,0,100).toFixed(1)+'%';
+  $('depthFill').style.width = clamp(((mapWorldFront-visitor.z)/mapWorldSpan)*100,0,100).toFixed(1)+'%';
 }
 
 // Runtime performance ladder (batch 127): if the average frame stays above
