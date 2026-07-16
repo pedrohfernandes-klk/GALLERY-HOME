@@ -2372,6 +2372,9 @@ let hoodLiftPanel = null;
 let hoodLiftLayout = null;
 let hoodWaterfallFX = null;
 let hoodLiftAutoKey = '';
+let hoodSky = null;
+let hoodHorizon = null;
+let hoodCaveWallScreen = null;
 
 const SESIMBRA_VIEW_SRC = "assets/extracted/sesimbra-view.webp";
 const GARDEN_LANDSCAPE_SRC = "assets/extracted/garden-landscape.webp";
@@ -3954,6 +3957,10 @@ function runWorkshopSelfTest(){
   const check = (ok, name, detail='') => results.push({test:name, ok:!!ok, detail:String(detail)});
   const inScene = (obj) => { let o = obj; while(o){ if(o === scene) return true; o = o.parent; } return false; };
   const knownRooms = new Set(Object.keys(roomLights));
+
+  check(!!hoodSky && hoodSky.material?.fog === false, 'Hood sky bypasses global fog', hoodSky?.material?.fog);
+  check(!!hoodHorizon && hoodHorizon.material?.fog === false, 'Hood ocean horizon bypasses global fog', hoodHorizon?.material?.fog);
+  check(!!hoodCaveWallScreen && screens.includes(hoodCaveWallScreen), 'Hood wide projection registered', hoodCaveWallScreen?.title || 'missing');
 
   check(portals.length >= 8, 'portals registered', `${portals.length} portals`);
   portals.forEach(p=>{
@@ -6068,7 +6075,7 @@ function buildHood(){
     q.fillStyle='rgba(65,78,86,.20)';q.fillRect(0,785,2048,55);
   }
   const hoodSkyTex=new THREE.CanvasTexture(hoodSkyCanvas);hoodSkyTex.colorSpace=THREE.SRGBColorSpace;
-  const hoodSky=new THREE.Mesh(new THREE.SphereGeometry(420,48,24),new THREE.MeshBasicMaterial({map:hoodSkyTex,side:THREE.BackSide,toneMapped:false}));hoodSky.position.set(x0,65,mid);scene.add(hoodSky);
+  hoodSky=new THREE.Mesh(new THREE.SphereGeometry(500,64,32),new THREE.MeshBasicMaterial({map:hoodSkyTex,side:THREE.BackSide,toneMapped:false,fog:false,depthWrite:false}));hoodSky.position.set(x0,72,mid);hoodSky.renderOrder=-100;scene.add(hoodSky);
 
   // A coherent industrial-public realm: broad pavements, planted rain beds,
   // utility lights and distant silhouettes rather than an empty grey plane.
@@ -6084,7 +6091,7 @@ function buildHood(){
 
   // Ocean horizon and project district.
   const seaC=document.createElement('canvas');seaC.width=1024;seaC.height=512;{const q=seaC.getContext('2d'),g=q.createLinearGradient(0,0,0,512);g.addColorStop(0,'#b7dceb');g.addColorStop(.42,'#efc7a2');g.addColorStop(.47,'#7aa7b5');g.addColorStop(1,'#244d5e');q.fillStyle=g;q.fillRect(0,0,1024,512);q.fillStyle='rgba(255,255,255,.54)';q.fillRect(0,242,1024,3);}
-  const seaTex=new THREE.CanvasTexture(seaC);seaTex.colorSpace=THREE.SRGBColorSpace;const horizon=new THREE.Mesh(new THREE.PlaneGeometry(230,62),new THREE.MeshBasicMaterial({map:seaTex,toneMapped:false}));horizon.position.set(x0,24,z0-7);scene.add(horizon);
+  const seaTex=new THREE.CanvasTexture(seaC);seaTex.colorSpace=THREE.SRGBColorSpace;hoodHorizon=new THREE.Mesh(new THREE.PlaneGeometry(230,62),new THREE.MeshBasicMaterial({map:seaTex,toneMapped:false,fog:false,depthWrite:false}));hoodHorizon.position.set(x0,24,z0-7);hoodHorizon.renderOrder=-80;scene.add(hoodHorizon);
   function graffitiTexture(seed,word){const c=document.createElement('canvas');c.width=1024;c.height=512;const q=c.getContext('2d');q.fillStyle='#5c5b56';q.fillRect(0,0,1024,512);let r=seed*983+11;const rnd=()=>{r=Math.sin(r*12.9898)*43758.5453;return Math.abs(r)%1;};q.globalAlpha=.34;for(let i=0;i<170;i++){q.fillStyle=['#d64337','#258e9d','#e6bd45','#181719'][i%4];q.fillRect(rnd()*1024,rnd()*512,30+rnd()*180,4+rnd()*17);}q.globalAlpha=1;q.translate(512,275);q.rotate((seed-.5)*.14);q.textAlign='center';q.font='900 170px Arial Black';q.lineWidth=21;q.strokeStyle='#171719';q.strokeText(word,0,0);q.fillStyle=seed>.5?'#e64b3d':'#e9cf45';q.fillText(word,0,0);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;}
   for(const side of [-1,1])for(let i=0;i<5;i++){
     const h=12+(i%3)*4.1,w=15+(i%2)*4,d=13;const bx=x0+side*(31+i*4.3),bz=z0+22+i*14.2;
@@ -6104,6 +6111,36 @@ function buildHood(){
     const canopy=new THREE.Mesh(new THREE.BoxGeometry(2.5,.18,4.4),i%2?brass:steel);canopy.position.set(bx-side*(w/2+1.0),2.35,bz-3.5);scene.add(canopy);
     const door=new THREE.Mesh(new THREE.PlaneGeometry(1.45,2.3),new THREE.MeshStandardMaterial({color:i%2?0x7a332b:0x244a4b,roughness:.55}));door.position.set(bx-side*(w/2+.03),1.2,bz-3.5);door.rotation.y=side>0?-Math.PI/2:Math.PI/2;scene.add(door);
   }
+  // Street-level life is legible without turning every façade into a prop
+  // catalogue. One coherent shopfront, one roof service element and one
+  // domestic trace per block establish an inhabited Mediterranean district.
+  const shopNames=['OFICINA','CAFÉ DO MIRADOURO','MERCEARIA','DISCOS & REPARAÇÕES','LAVANDARIA'];
+  const shopGlass=new THREE.MeshPhysicalMaterial({color:0x8fb1b3,roughness:.12,metalness:.08,transmission:.42,transparent:true,opacity:.58,depthWrite:false});
+  const canvasCloth=[0xe8d9bd,0xb85b4d,0x567d86,0xd5b64f].map(color=>new THREE.MeshStandardMaterial({color,roughness:.96,side:THREE.DoubleSide}));
+  for(const side of [-1,1])for(let i=0;i<5;i++){
+    const h=12+(i%3)*4.1,w=15+(i%2)*4,bx=x0+side*(31+i*4.3),bz=z0+22+i*14.2;
+    const faceX=bx-side*(w/2+.045),rotY=side>0?-Math.PI/2:Math.PI/2;
+    const shop=new THREE.Mesh(new THREE.PlaneGeometry(3.7,2.15),shopGlass);shop.position.set(faceX,1.15,bz+1.0);shop.rotation.y=rotY;scene.add(shop);
+    const shopSign=new THREE.Mesh(new THREE.PlaneGeometry(3.9,.62),new THREE.MeshBasicMaterial({map:makeSignTexture(shopNames[i],i%2?'bairro · desde 1998':'porta aberta'),transparent:true,toneMapped:false}));shopSign.position.set(faceX-side*.025,2.72,bz+1.0);shopSign.rotation.y=rotY;scene.add(shopSign);
+    const awning=new THREE.Mesh(new THREE.BoxGeometry(1.15,.14,4.25),new THREE.MeshStandardMaterial({color:i%2?0x9e4b3d:0xd7c39b,roughness:.72}));awning.position.set(faceX-side*.56,2.42,bz+1.0);scene.add(awning);
+    const tank=new THREE.Mesh(new THREE.CylinderGeometry(.72,.78,1.42,18),new THREE.MeshStandardMaterial({color:0x7e898a,roughness:.56,metalness:.34}));tank.position.set(bx,h+.82,bz+2.8);scene.add(tank);
+    const chimney=new THREE.Mesh(new THREE.CylinderGeometry(.20,.26,1.7,12),brick);chimney.position.set(bx+side*2.1,h+.85,bz-2.5);scene.add(chimney);
+    const line=new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,5.4,8),steel);line.rotation.x=Math.PI/2;line.position.set(faceX-side*2.16,5.75,bz);scene.add(line);
+    for(let k=0;k<3;k++){const cloth=new THREE.Mesh(new THREE.PlaneGeometry(.82,1.02),canvasCloth[(i+k)%canvasCloth.length]);cloth.position.set(faceX-side*2.18,5.24,bz-1.65+k*1.65);cloth.rotation.y=rotY;cloth.rotation.z=(k-1)*.035;scene.add(cloth);}
+  }
+
+  // A short paved neighbourhood street links the square to Headquarters. The
+  // only gravel remains the long Grove approach spur to the west.
+  const asphalt=new THREE.MeshStandardMaterial({color:0x45494a,roughness:.98,metalness:.01});
+  const civicStreet=new THREE.Mesh(new THREE.PlaneGeometry(18,45),asphalt);civicStreet.rotation.x=-Math.PI/2;civicStreet.position.set(x0,.058,z0+70);scene.add(civicStreet);
+  for(const sx of [-1,1]){
+    const kerb=new THREE.Mesh(new THREE.BoxGeometry(.30,.20,45),paleStone);kerb.position.set(x0+sx*9.15,.14,z0+70);scene.add(kerb);
+    for(let j=0;j<4;j++){
+      const planter=new THREE.Mesh(new THREE.BoxGeometry(2.2,.52,1.05),limestone);planter.position.set(x0+sx*11.0,.28,z0+53+j*10.5);scene.add(planter);
+      const shrub=new THREE.Mesh(new THREE.SphereGeometry(.82,14,10),hedgeMat);shrub.scale.set(1.1,.72,.72);shrub.position.set(x0+sx*11.0,1.02,z0+53+j*10.5);scene.add(shrub);
+    }
+  }
+  for(let j=0;j<5;j++)for(const sx of [-1,1]){const stripe=new THREE.Mesh(new THREE.PlaneGeometry(2.15,.42),new THREE.MeshBasicMaterial({color:0xe8e3d6,side:THREE.DoubleSide}));stripe.rotation.x=-Math.PI/2;stripe.position.set(x0+sx*3.0,.071,z0+49+j*1.3);scene.add(stripe);}
   // Public court and neighbourhood edges beyond the freestyle square.
   const court=new THREE.Mesh(new THREE.PlaneGeometry(28,16),new THREE.MeshStandardMaterial({color:0x9b654e,roughness:.94}));court.rotation.x=-Math.PI/2;court.position.set(x0+45,.055,z0+74);scene.add(court);
   const courtLines=new THREE.Mesh(new THREE.RingGeometry(3.0,3.10,48),new THREE.MeshBasicMaterial({color:0xe9dfcf,side:THREE.DoubleSide}));courtLines.rotation.x=-Math.PI/2;courtLines.position.set(x0+45,.07,z0+74);scene.add(courtLines);
@@ -6311,6 +6348,18 @@ function buildHood(){
   const lawn=new THREE.Mesh(new THREE.PlaneGeometry(gW,gD),gardenGround);lawn.rotation.x=-Math.PI/2;lawn.position.set(gx,.045,gz);scene.add(lawn);
   const axis=new THREE.Mesh(new THREE.PlaneGeometry(7.0,gD-8),limestone);axis.rotation.x=-Math.PI/2;axis.position.set(gx,.075,gz-2);scene.add(axis);
   const cross=new THREE.Mesh(new THREE.PlaneGeometry(gW-10,5.5),limestone);cross.rotation.x=-Math.PI/2;cross.position.set(gx,.08,gz-2);scene.add(cross);
+  // The garden begins as an architectural continuation of the warehouse,
+  // rather than an unrelated lawn: a restored stone terrace, shallow steps,
+  // gate piers and low boundary walls establish the transition and scale.
+  const gardenFront=gz-gD/2;
+  const terrace=new THREE.Mesh(new THREE.PlaneGeometry(46,13),paleStone);terrace.rotation.x=-Math.PI/2;terrace.position.set(gx,.13,gardenFront+5.5);scene.add(terrace);
+  for(let s=0;s<3;s++){const step=new THREE.Mesh(new THREE.BoxGeometry(16+s*2.2,.16,1.35),limestone);step.position.set(gx,.08+s*.08,gardenFront-1.1+s*.92);scene.add(step);}
+  for(const sx of [-1,1]){
+    const pier=new THREE.Mesh(new THREE.BoxGeometry(1.45,4.8,1.45),paleStone);pier.position.set(gx+sx*9.8,2.4,gardenFront+.4);scene.add(pier);
+    const cap=new THREE.Mesh(new THREE.BoxGeometry(1.9,.32,1.9),brass);cap.position.set(gx+sx*9.8,4.82,gardenFront+.4);scene.add(cap);
+    const wallA=new THREE.Mesh(new THREE.BoxGeometry(51,.92,.82),limestone);wallA.position.set(gx+sx*35.2,.46,gardenFront+.2);scene.add(wallA);
+  }
+  const gardenTitle=new THREE.Mesh(new THREE.PlaneGeometry(11.2,1.0),new THREE.MeshBasicMaterial({map:makeSignTexture('THE WATER GARDEN','formal axis · lakes · waterfall · cave'),transparent:true,toneMapped:false}));gardenTitle.position.set(gx,5.8,gardenFront+.25);gardenTitle.rotation.y=Math.PI;scene.add(gardenTitle);
   // Parterres and clipped hedges.
   for(const sx of [-1,1])for(const sz of [-1,1]){
     const cx=gx+sx*34,cz=gz-8+sz*22;
@@ -6351,7 +6400,16 @@ function buildHood(){
   const caveStage=new THREE.Mesh(new THREE.BoxGeometry(25,.58,5.8),new THREE.MeshStandardMaterial({color:0x17191a,roughness:.52,metalness:.35}));caveStage.position.set(gx,.34,caveStageZ+1.4);scene.add(caveStage);
   for(const sx of [-1,1]){const jamb=new THREE.Mesh(new THREE.BoxGeometry(.65,9.2,.65),steel);jamb.position.set(gx+sx*13.2,5.7,caveStageZ-.8);scene.add(jamb);}for(const yy of [1.1,10.3]){const beam=new THREE.Mesh(new THREE.BoxGeometry(27,.65,.65),steel);beam.position.set(gx,yy,caveStageZ-.8);scene.add(beam);}
   const caveRecess=new THREE.Mesh(new THREE.BoxGeometry(25.7,7.9,.82),new THREE.MeshStandardMaterial({color:0x080909,roughness:.85}));caveRecess.position.set(gx,5.7,caveStageZ-.62);scene.add(caveRecess);
-  const caveLive=createPassiveWallIframe(CHANNEL_URLS.saywhat,'Headquarters Cave live projection',24.8,7.2);caveLive.position.set(gx,5.7,caveStageZ-.15);scene.add(caveLive);
+  const caveScreenSurface=new THREE.Mesh(new THREE.PlaneGeometry(24.8,7.2),new THREE.MeshBasicMaterial({color:0x050606,toneMapped:false,side:THREE.DoubleSide}));caveScreenSurface.position.set(gx,5.7,caveStageZ-.17);scene.add(caveScreenSurface);
+  const caveLive=createPassiveWallIframe(CHANNEL_URLS.saywhat,'Headquarters Cave wide projection',24.8,7.2);caveLive.position.set(gx,5.7,caveStageZ-.15);scene.add(caveLive);
+  // This used to be the only major CSS3D projection omitted from the shared
+  // registry. It therefore ignored depth occlusion, room visibility and the
+  // universal projection remote, reading as a small detached rectangle. The
+  // full 24.8 × 7.2 m architectural surface is now the single source of truth.
+  hoodCaveWallScreen=registerScreen({
+    mesh:caveScreenSurface,css:caveLive,url:CHANNEL_URLS.saywhat,
+    title:'THE CAVE · wide projection',room:'hood',activeRadius:38
+  });
   const caveGlow=new THREE.PointLight(0xb8d9e7,2.3,30,1.55);caveGlow.position.set(gx,7.8,caveStageZ+4.5);scene.add(caveGlow);regLight('hood',caveGlow);
 
   const caveSeatMat=new THREE.MeshStandardMaterial({color:0x6d302d,roughness:.72});
@@ -6379,7 +6437,9 @@ function buildHood(){
   for(const sx of [-1,1]){const artSpot=new THREE.SpotLight(0xffd4a0,3.4,19,.38,.60,1.4);artSpot.position.set(gx+sx*11,10,caveStageZ+5);artSpot.target.position.set(gx+sx*16.7,4.8,caveStageZ+1);scene.add(artSpot,artSpot.target);regLight('hood',artSpot);}
 
   // Exterior daylight and floor-specific interior lighting.
-  const hemi=new THREE.HemisphereLight(0xddeeff,0x3c3129,1.42);scene.add(hemi);regLight('hood',hemi);const sun=new THREE.DirectionalLight(0xffd6a6,2.15);sun.position.set(x0-52,52,z0+35);scene.add(sun);regLight('hood',sun);
+  const hemi=new THREE.HemisphereLight(0xeaf6ff,0x625342,2.05);scene.add(hemi);regLight('hood',hemi);
+  const sun=new THREE.DirectionalLight(0xffe1b5,2.72);sun.position.set(x0-74,78,z0+18);scene.add(sun);sun.target.position.set(x0,0,z0+118);scene.add(sun.target);regLight('hood',sun);
+  const coastalFill=new THREE.DirectionalLight(0xb9dded,1.08);coastalFill.position.set(x0+82,38,z0-28);coastalFill.target.position.set(x0,4,z0+96);scene.add(coastalFill,coastalFill.target);regLight('hood',coastalFill);
   HOOD_ALL_FLOORS.filter(f=>f.id!=='hood').forEach((f,i)=>{const h=new THREE.HemisphereLight(0xe9eef0,0x292624,.44);scene.add(h);regLight(f.id,h);const p=new THREE.PointLight(i%2?0xffdfbd:0xcde5ef,2.15,38,1.65);p.position.set(/^hood-ph/.test(f.id)?px:tx,f.y+4.3,/^hood-ph/.test(f.id)?pz:tz);scene.add(p);regLight(f.id,p);});
 }
 
