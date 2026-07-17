@@ -2279,23 +2279,67 @@ function markRpgAvatar(object){
 }
 // A shade, not a figure: the visitor reads as a soft dark silhouette rather
 // than a lit, multi-coloured toy body, so it doesn't compete with the art.
+// The body uses a fresnel-style shader (dimmer toward grazing/rim angles,
+// most solid where the surface faces the camera) instead of one flat
+// opacity value, so it softens toward its own edges like an actual cast
+// shadow rather than reading as a uniformly-inked cutout. A separate blob
+// shadow on the floor (rpgAvatarShadow, updated in updateRpgAvatar)
+// reinforces the same idea from below.
+let rpgAvatarShadow=null;
+function makeShadeMaterial(){
+  return new THREE.ShaderMaterial({
+    transparent:true, depthWrite:false, toneMapped:false, side:THREE.DoubleSide,
+    uniforms:{ uColor:{value:new THREE.Color(0x07080a)}, uOpacity:{value:.72} },
+    vertexShader:`
+      varying vec3 vNormalV; varying vec3 vViewPos;
+      void main(){
+        vec4 mvPos = modelViewMatrix * vec4(position,1.0);
+        vViewPos = mvPos.xyz;
+        vNormalV = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * mvPos;
+      }`,
+    fragmentShader:`
+      uniform vec3 uColor; uniform float uOpacity;
+      varying vec3 vNormalV; varying vec3 vViewPos;
+      void main(){
+        vec3 viewDir = normalize(-vViewPos);
+        float rim = 1.0 - abs(dot(viewDir, normalize(vNormalV)));
+        float a = mix(uOpacity, uOpacity*0.32, pow(rim, 1.6));
+        gl_FragColor = vec4(uColor, a);
+      }`
+  });
+}
 function buildRpgAvatar(){
   const root=new THREE.Group();
   root.name='Workshop RPG visitor';
-  const shade=new THREE.MeshBasicMaterial({color:0x07080a,transparent:true,opacity:.7,depthWrite:false,toneMapped:false});
-  const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.32,.5,6,12),shade);torso.position.y=1.24;root.add(torso);
-  const head=new THREE.Mesh(new THREE.SphereGeometry(.27,18,14),shade);head.scale.set(.86,1.05,.88);head.position.y=1.95;root.add(head);
-  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.09,.11,.18,10),shade);neck.position.y=1.70;root.add(neck);
+  const shade=makeShadeMaterial();
+  const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.30,.56,6,12),shade);torso.position.y=1.26;root.add(torso);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.25,18,14),shade);head.scale.set(.84,1.08,.86);head.position.y=1.97;root.add(head);
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.085,.105,.18,10),shade);neck.position.y=1.72;root.add(neck);
   const makeLimb=(x,y,length,radius)=>{const pivot=new THREE.Group();pivot.position.set(x,y,0);const mesh=new THREE.Mesh(new THREE.CapsuleGeometry(radius,length,5,9),shade);mesh.position.y=-(length/2+radius*.55);pivot.add(mesh);root.add(pivot);return pivot;};
-  rpgAvatarParts.leftLeg=makeLimb(-.17,.84,.56,.105);
-  rpgAvatarParts.rightLeg=makeLimb(.17,.84,.56,.105);
-  rpgAvatarParts.leftArm=makeLimb(-.40,1.50,.46,.09);
-  rpgAvatarParts.rightArm=makeLimb(.40,1.50,.46,.09);
+  rpgAvatarParts.leftLeg=makeLimb(-.16,.86,.60,.10);
+  rpgAvatarParts.rightLeg=makeLimb(.16,.86,.60,.10);
+  rpgAvatarParts.leftArm=makeLimb(-.38,1.52,.48,.085);
+  rpgAvatarParts.rightArm=makeLimb(.38,1.52,.48,.085);
   root.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;o.frustumCulled=true;}});
   markRpgAvatar(root);
   root.visible=false;
   scene.add(root);
   rpgAvatar=root;
+
+  const shadowC=document.createElement('canvas');shadowC.width=128;shadowC.height=128;
+  {
+    const q=shadowC.getContext('2d');
+    const g=q.createRadialGradient(64,64,4,64,64,62);
+    g.addColorStop(0,'rgba(4,4,6,.62)');g.addColorStop(.6,'rgba(4,4,6,.34)');g.addColorStop(1,'rgba(4,4,6,0)');
+    q.fillStyle=g;q.fillRect(0,0,128,128);
+  }
+  const shadowTex=new THREE.CanvasTexture(shadowC);
+  rpgAvatarShadow=new THREE.Mesh(new THREE.PlaneGeometry(1.0,.62),new THREE.MeshBasicMaterial({map:shadowTex,transparent:true,depthWrite:false,toneMapped:false}));
+  rpgAvatarShadow.rotation.x=-Math.PI/2;
+  markRpgAvatar(rpgAvatarShadow);
+  rpgAvatarShadow.visible=false;
+  scene.add(rpgAvatarShadow);
 }
 function isRpgCameraOccluder(hit){
   let object=hit.object;
@@ -2308,9 +2352,11 @@ function isRpgCameraOccluder(hit){
 function updateRpgAvatar(dt=0,speed=0){
   if(!rpgAvatar) return;
   rpgAvatar.visible=rpgMode;
+  if(rpgAvatarShadow) rpgAvatarShadow.visible=rpgMode;
   if(!rpgMode) return;
   const floor=visitorFloorY(rpgPlayerPosition);
   rpgAvatar.position.set(rpgPlayerPosition.x,floor,rpgPlayerPosition.z);
+  if(rpgAvatarShadow) rpgAvatarShadow.position.set(rpgPlayerPosition.x,floor+.012,rpgPlayerPosition.z);
   const moving=speed>.08;
   if(moving) rpgFacingYaw=lerpAngle(rpgFacingYaw,Math.atan2(-velX,-velZ),Math.min(1,dt*11));
   else rpgFacingYaw=lerpAngle(rpgFacingYaw,yaw,Math.min(1,dt*4));
