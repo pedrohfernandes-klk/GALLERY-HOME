@@ -6437,7 +6437,14 @@ function buildHood(){
     const n=Math.ceil(len/2.2);for(let i=0;i<=n;i++){const post=new THREE.Mesh(new THREE.BoxGeometry(.065,1.02,.065),steel);if(axis==='x')post.position.x=-len/2+i*len/n;else post.position.z=-len/2+i*len/n;post.position.y=.51;rail.add(post);}
   }
   [11.2].forEach((y,idx)=>{
-    const backDeck=new THREE.Mesh(new THREE.BoxGeometry(W-1,.20,11),darkConcrete);backDeck.position.set(wx,y,wz+D/2-5.8);scene.add(backDeck);
+    // Depth trimmed from 11 to 8.2 (front edge unchanged, only the rear edge
+    // pulled in) — at the old depth this deck's y-slab (11.1-11.3) sliced
+    // straight through the top of the monumental CADAVRE EXPAT II now mounted
+    // on the rear wall at z≈wz+33.08 (11.2 tall, reaching y=12.25). The
+    // mezzanine's own room clamp (hoodFloorBounds, room 'hood-m1') is already
+    // a rectangle far larger than this literal deck geometry, so shortening
+    // it doesn't remove any walkable area a visitor could previously stand on.
+    const backDeck=new THREE.Mesh(new THREE.BoxGeometry(W-1,.20,8.2),darkConcrete);backDeck.position.set(wx,y,wz+D/2-7.2);scene.add(backDeck);
     for(const side of [-1,1]){const sideDeck=new THREE.Mesh(new THREE.BoxGeometry(12,.20,D-12),darkConcrete);sideDeck.position.set(wx+side*(W/2-6.2),y,wz-3);scene.add(sideDeck);guardRail(wx+side*(W/2-12.1),y+.1,wz-3,D-12,'z');}
     guardRail(wx,y+.1,wz+D/2-11.25,W-24,'x');
     const levelSign=new THREE.Mesh(new THREE.PlaneGeometry(5.4,.72),new THREE.MeshBasicMaterial({map:makeSignTexture('THE MEZZANINE','library · overlook · future programme'),transparent:true}));levelSign.position.set(wx-24,y+2.4,wz+D/2-.30);levelSign.rotation.y=Math.PI;scene.add(levelSign);
