@@ -9836,9 +9836,15 @@ function buildStudio(){
   const loungeLamp1 = new THREE.PointLight(0xffbfe6,.85,7.0,1.85); loungeLamp1.position.set(x0-4.4,2.2,z0+21.6); scene.add(loungeLamp1); regLight('studio', loungeLamp1);
   const loungeLamp2 = new THREE.PointLight(0xbfe0ff,.70,6.5,1.9); loungeLamp2.position.set(x0+4.4,2.2,z0+21.6); scene.add(loungeLamp2); regLight('studio', loungeLamp2);
 
-  // ===== Dedicated listening bay: two Eames-inspired lounge chairs and ottomans. =====
-  const viewingRug=new THREE.Mesh(new THREE.PlaneGeometry(7.2,4.4),new THREE.MeshStandardMaterial({color:0x25202b,roughness:.94,metalness:0}));
-  viewingRug.rotation.x=-Math.PI/2; viewingRug.position.set(x0,.025,z0+18.25); scene.add(viewingRug);
+  // ===== Dedicated listening bay: two Eames-inspired lounge chairs and ottomans.
+  // Was z0+18.55 — 18+ metres from the screen, past the entire dancefloor and
+  // carpet (which itself ends at dfZ+floorW ≈ z0+15.24). Moved to flank the
+  // carpet instead of sitting well behind it: still clear of the dancefloor
+  // (carpet spans x0±5.02) and the speaker stacks (at x0∓8), but roughly half
+  // the distance to the screen and with a real, unobstructed sightline to it. =====
+  const viewingRugL=new THREE.Mesh(new THREE.PlaneGeometry(2.6,3.2),new THREE.MeshStandardMaterial({color:0x25202b,roughness:.94,metalness:0}));
+  viewingRugL.rotation.x=-Math.PI/2; viewingRugL.position.set(x0-6.6,.025,z0+9); scene.add(viewingRugL);
+  const viewingRugR=viewingRugL.clone(); viewingRugR.position.x=x0+6.6; scene.add(viewingRugR);
   const leatherMat=new THREE.MeshStandardMaterial({color:0xf4f1e9,roughness:.48,metalness:.01});
   const plyMat=new THREE.MeshStandardMaterial({color:0xd8c7ab,roughness:.42,metalness:.02});
   const chairMetal=new THREE.MeshStandardMaterial({color:0xe3e7ea,roughness:.14,metalness:.92});
@@ -9860,34 +9866,50 @@ function buildStudio(){
       onUse:()=>{ seatedStudioView=true; velX=0; velZ=0; smoothSpeed=0; startCameraTransition(new THREE.Vector3(px,1.28,pz-.08),0,-.035,.8); msg('Seated viewing mode · look around freely · move to stand'); }
     });
   }
-  eamesLounge(x0-1.75,z0+18.55,-.06);
-  eamesLounge(x0+1.75,z0+18.55,.06);
-  const readingGlow=new THREE.PointLight(0xffe2bd,1.55,9.5,1.75); readingGlow.position.set(x0,3.3,z0+18.5); scene.add(readingGlow); regLight('studio',readingGlow);
+  eamesLounge(x0-6.6,z0+9,-.18);
+  eamesLounge(x0+6.6,z0+9,.18);
+  const readingGlow=new THREE.PointLight(0xffe2bd,1.55,9.5,1.75); readingGlow.position.set(x0,3.3,z0+9); scene.add(readingGlow); regLight('studio',readingGlow);
   for(const sx of [-1,1]){
     const chairSpot=new THREE.SpotLight(0xfff0d8,2.8,9,.42,.68,1.55);
-    chairSpot.position.set(x0+sx*1.75,5.7,z0+17.6); chairSpot.target.position.set(x0+sx*1.75,.8,z0+18.55);
+    chairSpot.position.set(x0+sx*6.6,5.7,z0+8.1); chairSpot.target.position.set(x0+sx*6.6,.8,z0+9);
     scene.add(chairSpot,chairSpot.target); regLight('studio',chairSpot);
   }
 
-  // ===== Music archive: a restrained rear-wall rhythm around the return door. =====
+  // ===== Music archive: a restrained rear-wall rhythm around the return door.
+  // This wall actually carries TWO return doors (the central "Workshop Hall"
+  // door at x0±1.65, and "The Tunnel" door at x0-5.5, spanning x0-6.8 to
+  // x0-4.2) plus the STUDIO wordmark sign (x0+3.15 to x0+6.95) — the tunnel
+  // door was added after this rhythm was laid out and was never re-checked
+  // against it, so DAMN. ended up mounted directly across the doorway.
+  // Re-spaced into the three real gaps this wall leaves: left of the tunnel
+  // door, between the two doors, and right of the sign. Only 3 pieces fit
+  // this wall cleanly now; Currents and the new Age of Adz moved to the
+  // side walls below instead of being crammed in. =====
   const albumWorks=[
-    {src:STUDIO_DECOR_SRCS[0],title:'DAMN.',x:x0-6.05,y:3.85,w:1.92,h:1.92},
-    {src:STUDIO_DECOR_SRCS[1],title:'Pink Floyd',x:x0-3.82,y:3.85,w:1.92,h:1.92},
-    {src:STUDIO_DECOR_SRCS[3],title:'Rubber Soul',x:x0+3.82,y:3.85,w:1.92,h:1.92},
-    {src:STUDIO_DECOR_SRCS[8],title:'Currents',x:x0+6.05,y:3.85,w:1.92,h:1.92}
+    {src:STUDIO_DECOR_SRCS[0],title:'DAMN.',x:x0-8.5,y:3.85,w:1.92,h:1.92},
+    {src:STUDIO_DECOR_SRCS[1],title:'Pink Floyd',x:x0-2.9,y:3.85,w:1.92,h:1.92},
+    {src:STUDIO_DECOR_SRCS[3],title:'Rubber Soul',x:x0+8.4,y:3.85,w:1.92,h:1.92}
   ];
   albumWorks.forEach(w=>addFramedWallArt({src:w.src,title:w.title,subtitle:'studio listening archive',width:w.w,height:w.h,x:w.x,y:w.y,z:z1-.17,rotationY:Math.PI,frameColor:0x171319,matteColor:0xeee7dc,showLabel:false}));
   const albumWashL=new THREE.PointLight(0xffd7b1,.82,6.2,1.9); albumWashL.position.set(x0-5.4,4.5,z1-2.0); scene.add(albumWashL); regLight('studio',albumWashL);
   const albumWashR=new THREE.PointLight(0xffd7b1,.82,6.2,1.9); albumWashR.position.set(x0+5.7,4.5,z1-2.0); scene.add(albumWashR); regLight('studio',albumWashR);
 
-  // ===== Lateral poster walls: large anchors with smaller records in measured bays. =====
+  // ===== Lateral poster walls: large anchors with smaller records in measured bays.
+  // Currents (moved off the crowded front wall) and The Age of Adz (new —
+  // save the actual cover to assets/new/age-of-adz.webp; until then this
+  // frame shows its title as a placeholder, same graceful fallback every
+  // other framed piece in this file uses) both land at z0+19, past the
+  // Eames chairs' new position and clear of every existing side-wall piece. =====
+  const AGE_OF_ADZ_SRC = 'assets/new/age-of-adz.webp';
   const studioWallWorks = [
     {src:STUDIO_DECOR_SRCS[2],title:'Sgt. Pepper',width:3.55,height:3.19,x:x0-hw+.16,y:3.65,z:z0+6.2,rotationY: Math.PI/2},
     {src:STUDIO_DECOR_SRCS[4],title:'Pink Floyd at Pompeii',width:1.75,height:2.55,x:x0-hw+.16,y:3.55,z:z0+12.0,rotationY: Math.PI/2},
     {src:STUDIO_TAYK_SRC,title:'Tay-K',width:1.78,height:2.18,x:x0-hw+.16,y:3.62,z:z0+16.4,rotationY: Math.PI/2},
+    {src:STUDIO_DECOR_SRCS[8],title:'Currents',width:1.92,height:1.92,x:x0-hw+.16,y:3.60,z:z0+19.0,rotationY: Math.PI/2},
     {src:STUDIO_DECOR_SRCS[6],title:'In Utero',width:2.35,height:2.35,x:x0+hw-.16,y:3.60,z:z0+6.0,rotationY:-Math.PI/2},
     {src:STUDIO_DECOR_SRCS[7],title:'Flower Boy',width:2.55,height:2.55,x:x0+hw-.16,y:3.60,z:z0+11.3,rotationY:-Math.PI/2},
-    {src:STUDIO_MURDER_BALLADS_SRC,title:'Murder Ballads',width:2.30,height:2.30,x:x0+hw-.16,y:3.60,z:z0+16.2,rotationY:-Math.PI/2}
+    {src:STUDIO_MURDER_BALLADS_SRC,title:'Murder Ballads',width:2.30,height:2.30,x:x0+hw-.16,y:3.60,z:z0+16.2,rotationY:-Math.PI/2},
+    {src:AGE_OF_ADZ_SRC,title:'The Age of Adz',width:2.35,height:2.35,x:x0+hw-.16,y:3.60,z:z0+19.0,rotationY:-Math.PI/2}
   ];
   studioWallWorks.forEach(w=>{
     addFramedWallArt({src:w.src, title:w.title, subtitle:'the studio',
@@ -9937,6 +9959,26 @@ function buildStudio(){
     targetPos:new THREE.Vector3(tunnelRoomOrigin.x-7.97, cameraHeight, tunnelRoomOrigin.z+15.15),
     targetYaw:-Math.PI/2, slideAxis:tunnelReturn.openAxis, slideDist:2.6
   });
+
+  // ===== Mixing desk: a working sound-making station, the Studio's answer to
+  // the Experiment Garden's painting/collage desk. Same pattern — a physical
+  // prop with a sign the visitor clicks, opening a dependency-free full-screen
+  // tool (openStudioMaker, below) — applied to sound instead of images. =====
+  const deskMat=new THREE.MeshStandardMaterial({color:0x1c1820,roughness:.5,metalness:.22});
+  const deskTop=new THREE.Mesh(new THREE.BoxGeometry(2.6,.10,1.15),deskMat);
+  deskTop.position.set(x0+7,.92,z0+17); scene.add(deskTop);
+  for(const dx of [-1.1,1.1]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.12,.9,.9),cabMat);leg.position.set(x0+7+dx,.46,z0+17);scene.add(leg);}
+  for(let i=0;i<8;i++){const fader=new THREE.Mesh(new THREE.BoxGeometry(.10,.05,.42),chromeMat);fader.position.set(x0+7-1.05+i*.30,.985,z0+16.85);scene.add(fader);}
+  for(let i=0;i<4;i++){const knob=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.09,16),brassMat);knob.rotation.x=Math.PI/2;knob.position.set(x0+7-.66+i*.44,.985,z0+17.28);scene.add(knob);}
+  for(const dx of [-1.35,1.35]){
+    const mon=new THREE.Mesh(new THREE.BoxGeometry(.42,.62,.42),cabMat); mon.position.set(x0+7+dx,1.23,z0+16.75); scene.add(mon);
+    const cone=new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,.05,20),coneMat); cone.rotation.x=Math.PI/2; cone.position.set(x0+7+dx,1.23,z0+16.53); scene.add(cone);
+  }
+  const deskGlow=new THREE.PointLight(0x9d6de2,1.1,7,1.9); deskGlow.position.set(x0+7,1.9,z0+17); scene.add(deskGlow); regLight('studio',deskGlow);
+  const deskSign=new THREE.Mesh(new THREE.PlaneGeometry(1.5,.9),new THREE.MeshBasicMaterial({map:makeSignTexture('MIX','loop · record · save'),toneMapped:false}));
+  deskSign.position.set(x0+7,1.55,z0+16.42); deskSign.rotation.x=-.34; scene.add(deskSign);
+  registerInteractable({type:'maker',room:'studio',mesh:deskSign,label:'Studio mixing desk',hintId:'studio-maker',priority:5,
+    hintText:'A working step sequencer — build a loop, then record it as a clip.',prompt:()=>'Open the mixing desk',onUse:openStudioMaker});
 
   studioFX = {tiles:null, tileN:0, speakerRings, orbs, ball, tileTimer:0};
 }
@@ -11445,6 +11487,117 @@ function openGardenMaker(){
     c.onpointerup=()=>{down=false;last=null;};
     file.onchange=()=>{const f=file.files[0];if(!f)return;const im=new Image();im.onload=()=>{stamp=im;mode='collage';};im.src=URL.createObjectURL(f);};
     panel.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.mode){mode=b.dataset.mode;return;}const a=b.dataset.act;if(a==='close'){panel.style.display='none';return;}if(a==='clear'){snapshot();paper();}if(a==='undo'&&history.length){const im=new Image();im.onload=()=>{q.clearRect(0,0,c.width,c.height);q.drawImage(im,0,0);};im.src=history.pop();}if(a==='save'){const link=document.createElement('a');link.download='hrm-garden-collage.png';link.href=c.toDataURL('image/png');link.click();}};
+  }
+  panel.style.display='grid';
+}
+// Small, dependency-free sound-making desk for The Studio — same pattern as
+// openGardenMaker (a full-screen in-memory tool, nothing persisted until the
+// visitor explicitly exports), applied to a 16-step sequencer instead of a
+// canvas. Recording uses MediaRecorder against a MediaStreamDestination fed
+// by the same master gain everything is heard through, so the exported clip
+// is exactly what was audible, not a separate offline render.
+function openStudioMaker(){
+  if(document.pointerLockElement) document.exitPointerLock();
+  let panel=$('studioMakerPanel');
+  if(!panel){
+    panel=document.createElement('div'); panel.id='studioMakerPanel';
+    panel.style.cssText='position:fixed;inset:0;z-index:12000;background:rgba(10,7,14,.95);display:grid;grid-template-rows:auto 1fr;padding:18px;gap:12px;color:#f1e8ff;font:13px Arial,sans-serif';
+    panel.innerHTML=`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="font:26px Georgia,serif;margin-right:12px">STUDIO MIXING DESK</b><label>wave <select><option value="sine">sine</option><option value="triangle" selected>triangle</option><option value="square">square</option><option value="sawtooth">saw</option></select></label><label>tempo <input type="range" min="60" max="200" value="112"> <span data-out="tempo">112</span> bpm</label><label>volume <input type="range" min="0" max="100" value="70"></label><button data-act="play">PLAY</button><button data-act="clear">CLEAR</button><button data-act="record">&#9679; RECORD</button><button data-act="close" style="margin-left:auto">CLOSE</button><span>Click cells to build a loop, press play. Record captures what you hear as a downloadable clip.</span></div><div style="min-height:0;display:grid;place-items:center"><div id="studioMakerGrid" style="display:grid;gap:4px;background:#1a1424;padding:14px;border-radius:8px;box-shadow:0 16px 60px #000"></div></div>`;
+    document.body.appendChild(panel);
+    panel.querySelectorAll('button').forEach(b=>b.style.cssText='border:1px solid #9d6de2;background:#211b30;color:#f1e8ff;padding:8px 11px;border-radius:3px;cursor:pointer');
+
+    const NOTES=[523.25,466.16,392.00,349.23,293.66,261.63];
+    const STEPS=16;
+    const grid=panel.querySelector('#studioMakerGrid');
+    grid.style.gridTemplateColumns=`repeat(${STEPS},22px)`;
+    const cells=[];
+    NOTES.forEach((freq,row)=>{
+      for(let col=0;col<STEPS;col++){
+        const cell=document.createElement('div');
+        cell.style.cssText='width:22px;height:22px;border-radius:3px;background:#2b2340;cursor:pointer;border:1px solid #3a2f52;transition:outline .05s';
+        cell.dataset.on='0';
+        cell.onclick=()=>{const on=cell.dataset.on==='1';cell.dataset.on=on?'0':'1';cell.style.background=on?'#2b2340':'#c76bff';};
+        grid.appendChild(cell);
+        cells.push({cell,row,col,freq});
+      }
+    });
+
+    let audioCtx=null, master=null, dest=null, recorder=null, chunks=[];
+    let playing=false, timer=null, step=0;
+    const waveSel=panel.querySelector('select');
+    const ranges=panel.querySelectorAll('input[type=range]');
+    const tempoInp=ranges[0], volInp=ranges[1];
+    const tempoOut=panel.querySelector('[data-out=tempo]');
+    tempoInp.oninput=()=>{tempoOut.textContent=tempoInp.value;};
+
+    function ensureAudio(){
+      if(audioCtx) return;
+      audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+      master=audioCtx.createGain(); master.gain.value=(+volInp.value)/100;
+      master.connect(audioCtx.destination);
+      dest=audioCtx.createMediaStreamDestination();
+      master.connect(dest);
+    }
+    volInp.oninput=()=>{if(master) master.gain.value=(+volInp.value)/100;};
+
+    function pluck(freq){
+      if(!audioCtx) return;
+      const osc=audioCtx.createOscillator(), g=audioCtx.createGain();
+      osc.type=waveSel.value; osc.frequency.value=freq;
+      g.gain.setValueAtTime(0,audioCtx.currentTime);
+      g.gain.linearRampToValueAtTime(.5,audioCtx.currentTime+.01);
+      g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.32);
+      osc.connect(g); g.connect(master);
+      osc.start(); osc.stop(audioCtx.currentTime+.34);
+    }
+
+    function advance(){
+      cells.filter(c=>c.col===step && c.cell.dataset.on==='1').forEach(c=>pluck(c.freq));
+      cells.forEach(c=>{c.cell.style.outline = c.col===step ? '2px solid #f1e8ff' : 'none';});
+      step=(step+1)%STEPS;
+    }
+
+    function setPlaying(on){
+      playing=on;
+      const btn=panel.querySelector('[data-act=play]');
+      if(on){
+        ensureAudio();
+        btn.textContent='STOP';
+        const loop=()=>{advance();timer=setTimeout(loop,60000/(+tempoInp.value)/4);};
+        loop();
+      }else{
+        btn.textContent='PLAY';
+        clearTimeout(timer);
+        cells.forEach(c=>{c.cell.style.outline='none';});
+      }
+    }
+
+    panel.onclick=e=>{
+      const b=e.target.closest('button'); if(!b) return;
+      const a=b.dataset.act;
+      if(a==='close'){ setPlaying(false); if(recorder && recorder.state==='recording') recorder.stop(); panel.style.display='none'; return; }
+      if(a==='play'){ setPlaying(!playing); return; }
+      if(a==='clear'){ cells.forEach(c=>{c.cell.dataset.on='0';c.cell.style.background='#2b2340';}); return; }
+      if(a==='record'){
+        ensureAudio();
+        if(!recorder || recorder.state==='inactive'){
+          chunks=[];
+          recorder=new MediaRecorder(dest.stream);
+          recorder.ondataavailable=ev=>chunks.push(ev.data);
+          recorder.onstop=()=>{
+            const blob=new Blob(chunks,{type:'audio/webm'});
+            const link=document.createElement('a'); link.download='hrm-studio-loop.webm'; link.href=URL.createObjectURL(blob); link.click();
+          };
+          recorder.start();
+          b.innerHTML='&#9632; STOP REC'; b.style.background='#c72b2b';
+          if(!playing) setPlaying(true);
+        }else{
+          recorder.stop();
+          b.innerHTML='&#9679; RECORD'; b.style.background='#211b30';
+        }
+        return;
+      }
+    };
   }
   panel.style.display='grid';
 }
