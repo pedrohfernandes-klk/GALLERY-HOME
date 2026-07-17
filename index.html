@@ -6339,7 +6339,13 @@ function buildHood(){
   const tx=wx+26,tz=wz+9,px=tx-3,pz=tz+1;
   const lx=tx-6,lz=tz-7,plx=px-7,plz=pz+4;
   hoodLiftLayout={wx,wz,tx,tz,px,pz,lx,lz,plx,plz};
-  const floor=new THREE.Mesh(new THREE.BoxGeometry(W,.18,D),new THREE.MeshStandardMaterial({color:0x8b8479,roughness:.88}));floor.position.set(wx,.09,wz);scene.add(floor);
+  // Was a flat MeshStandardMaterial — the single largest surface in Hood
+  // (72x68 m, under all four Cadavre Expat pieces) still missed by the
+  // phase-3a texture pass. Own texture instance (not the shared `concrete`
+  // used for the district's outdoor ground) so the repeat scale matches this
+  // much smaller floor rather than the 115 m-wide exterior.
+  const hallFloorTex=makeConcreteTexture('#8b8479');hallFloorTex.repeat.set(W/6,D/6);
+  const floor=new THREE.Mesh(new THREE.BoxGeometry(W,.18,D),new THREE.MeshStandardMaterial({map:hallFloorTex,roughness:.88}));floor.position.set(wx,.09,wz);scene.add(floor);
   // Side and rear shell; the grand front is split around a generous entry.
   // The west wall additionally opens onto The Cave (see below) — a second,
   // smaller gap so that venue reads as directly off the hall rather than a
@@ -6360,7 +6366,8 @@ function buildHood(){
   // (cliff/cave/passage/stage/seating) is unchanged from the original —
   // only its anchor moved, from the garden's centreline to the hall itself.
   const veX=wx-70,cliffZ=wz+10;
-  const cliff=new THREE.Mesh(new THREE.BoxGeometry(48,21,7),new THREE.MeshStandardMaterial({color:0x594d42,roughness:1}));cliff.position.set(veX,10.5,cliffZ);scene.add(cliff);
+  const cliffTex=makeStoneTexture('#594d42','rgba(110,96,80,.16)','rgba(50,42,34,.14)');cliffTex.repeat.set(8,3);
+  const cliff=new THREE.Mesh(new THREE.BoxGeometry(48,21,7),new THREE.MeshStandardMaterial({map:cliffTex,roughness:1}));cliff.position.set(veX,10.5,cliffZ);scene.add(cliff);
   const fallMat=new THREE.ShaderMaterial({transparent:true,side:THREE.DoubleSide,depthWrite:false,uniforms:{uTime:{value:0}},vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`uniform float uTime;varying vec2 vUv;float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}void main(){float n=h(floor(vec2(vUv.x*38.,(vUv.y+uTime*.28)*70.)));float bands=.48+.32*sin((vUv.x*19.+n*2.)*6.283);float edge=smoothstep(.02,.12,vUv.x)*smoothstep(.02,.12,1.-vUv.x);float a=edge*(.50+.38*bands)*smoothstep(0.,.16,vUv.y);gl_FragColor=vec4(mix(vec3(.43,.70,.79),vec3(.93,.98,1.),bands),a);}`});
   const fall=new THREE.Mesh(new THREE.PlaneGeometry(20,18),fallMat);fall.position.set(veX,11,cliffZ-3.56);scene.add(fall);hoodWaterfallFX={material:fallMat};
   const plunge=lake(veX,cliffZ-7.5,1.5,.50);
@@ -6368,9 +6375,12 @@ function buildHood(){
   // A lit side passage makes the entrance believable without punching a fake
   // door through the water. Ten rising rows follow the geology of the slope.
   const caveZ=cliffZ+32,caveW=42,caveD=38;
-  const caveFloor=new THREE.Mesh(new THREE.PlaneGeometry(caveW,caveD),new THREE.MeshStandardMaterial({color:0x272522,roughness:.96}));caveFloor.rotation.x=-Math.PI/2;caveFloor.position.set(veX,.12,caveZ);scene.add(caveFloor);
-  const caveCeil=new THREE.Mesh(new THREE.PlaneGeometry(caveW,caveD),new THREE.MeshStandardMaterial({color:0x1b1a18,roughness:1,side:THREE.DoubleSide}));caveCeil.rotation.x=Math.PI/2;caveCeil.position.set(veX,12.8,caveZ);scene.add(caveCeil);
-  const caveRockMat=new THREE.MeshStandardMaterial({color:0x4b443d,roughness:1,metalness:0});
+  const caveFloorTex=makeStoneTexture('#272522','rgba(70,64,58,.16)','rgba(15,13,11,.14)');caveFloorTex.repeat.set(caveW/6,caveD/6);
+  const caveFloor=new THREE.Mesh(new THREE.PlaneGeometry(caveW,caveD),new THREE.MeshStandardMaterial({map:caveFloorTex,roughness:.96}));caveFloor.rotation.x=-Math.PI/2;caveFloor.position.set(veX,.12,caveZ);scene.add(caveFloor);
+  const caveCeilTex=makeStoneTexture('#1b1a18','rgba(55,50,45,.14)','rgba(8,7,6,.12)');caveCeilTex.repeat.set(caveW/6,caveD/6);
+  const caveCeil=new THREE.Mesh(new THREE.PlaneGeometry(caveW,caveD),new THREE.MeshStandardMaterial({map:caveCeilTex,roughness:1,side:THREE.DoubleSide}));caveCeil.rotation.x=Math.PI/2;caveCeil.position.set(veX,12.8,caveZ);scene.add(caveCeil);
+  const caveRockTex=makeStoneTexture('#4b443d','rgba(96,86,72,.16)','rgba(30,26,20,.14)');caveRockTex.repeat.set(2,2);
+  const caveRockMat=new THREE.MeshStandardMaterial({map:caveRockTex,roughness:1,metalness:0});
   for(let i=0;i<56;i++){const side=i%2?-1:1,rock=new THREE.Mesh(new THREE.DodecahedronGeometry(2.1+(i%5)*.38,1),caveRockMat);rock.scale.set(1.1,1.45+(i%3)*.12,1.35);rock.position.set(veX+side*(caveW/2-.8+(i%3)*.35),2.1+(i%4)*2.25,caveZ-caveD/2+1+(i%28)*(caveD-2)/27);rock.rotation.set(i*.17,i*.31,i*.11);scene.add(rock);}
   // Curved entrance passage at the waterfall's eastern shoulder — the side
   // that already faces back toward the hall.
@@ -6537,7 +6547,6 @@ function buildHood(){
   // Spacious Art Deco residences. Each floor now has a real salon, dining
   // zone, screened private room, parquet field, architectural lighting and
   // wide framed views. The penthouse floors use the larger 28 × 23 m plate.
-  const decoIvory=new THREE.MeshStandardMaterial({color:0xe7ddca,roughness:.73,metalness:.02});
   const decoWalnut=new THREE.MeshStandardMaterial({color:0x4c3025,roughness:.58,metalness:.05});
   const decoVelvet=new THREE.MeshStandardMaterial({color:0x315a5a,roughness:.72,metalness:.02});
   const decoWine=new THREE.MeshStandardMaterial({color:0x6b2d33,roughness:.70,metalness:.02});
@@ -6550,7 +6559,13 @@ function buildHood(){
   }
   function buildDecoHome(f,cx,cz,wide=false,privateFloor=false){
     const W=wide?26:17.4,D=wide?21:19.6,y=f.y+.12;
-    const parquet=new THREE.Mesh(new THREE.PlaneGeometry(W,D),new THREE.MeshStandardMaterial({color:privateFloor?0x6d4932:0x795640,roughness:.72,metalness:.015}));parquet.rotation.x=-Math.PI/2;parquet.position.set(cx,y,cz);scene.add(parquet);
+    // Own texture instances per floor (not one shared across all 10 calls)
+    // so the repeat scale matches each floor's own W×D rather than a
+    // one-size-fits-all compromise between the 17.4x19.6 and 26x21 plates.
+    const parquetTex=makeWoodTexture(privateFloor?'#6d4932':'#795640');parquetTex.repeat.set(W/3,D/3);
+    const parquet=new THREE.Mesh(new THREE.PlaneGeometry(W,D),new THREE.MeshStandardMaterial({map:parquetTex,roughness:.72,metalness:.015}));parquet.rotation.x=-Math.PI/2;parquet.position.set(cx,y,cz);scene.add(parquet);
+    const decoIvoryTex=makeGridTexture('decoIvory','#e7ddca','rgba(90,78,58,.10)');decoIvoryTex.repeat.set(2,1);
+    const decoIvory=new THREE.MeshStandardMaterial({map:decoIvoryTex,roughness:.73,metalness:.02});
     // Perimeter wall sections leave the panoramic glass fully visible.
     for(const sx of [-1,1]){const wall=new THREE.Mesh(new THREE.BoxGeometry(.18,4.85,D-5.6),decoIvory);wall.position.set(cx+sx*W/2,y+2.42,cz+2.4);scene.add(wall);}
     const backL=new THREE.Mesh(new THREE.BoxGeometry(W*.34,4.85,.18),decoIvory);backL.position.set(cx-W*.33,y+2.42,cz-D/2);scene.add(backL);const backR=backL.clone();backR.position.x=cx+W*.33;scene.add(backR);
