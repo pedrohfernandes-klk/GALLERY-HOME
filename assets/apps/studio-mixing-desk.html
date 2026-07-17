@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#171512">
+  <title>Studio Mixing Desk</title>
+  <style>
+    :root {
+      --ink: #171717;
+      --paper: #f4f1e9;
+      --cream: #ded8cc;
+      --metal: #34383a;
+      --metal-2: #232628;
+      --line: rgba(239, 228, 204, .17);
+      --amber: #d6a55e;
+      --green: #97b49d;
+      --red: #dc6f5e;
+      --blue: #73a7ba;
+      --violet: #aa8db7;
+      --shadow: 0 24px 80px rgba(0,0,0,.48);
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      color: var(--paper);
+      background: linear-gradient(145deg, #d8d2c7, #b8b2a8);
+      font: 14px/1.35 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow-x: hidden;
+    }
+
+    body::before { display:none; }
+
+    button, input, select { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 2px solid var(--amber);
+      outline-offset: 2px;
+    }
+
+    .shell {
+      width: min(1480px, calc(100% - 24px));
+      margin: 12px auto 96px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 12px;
+      background: linear-gradient(160deg, #454849, #292c2d 32%, #1d1f20);
+      box-shadow: var(--shadow), inset 0 1px rgba(255,255,255,.06);
+      overflow: hidden;
+      transition: opacity .28s, transform .28s;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(250px, 1fr) auto;
+      gap: 20px;
+      align-items: center;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(90deg, #202324, #383b3c);
+    }
+
+    .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .brand-mark {
+      width: 46px;
+      height: 46px;
+      border: 1px solid rgba(239,168,77,.48);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--amber);
+      font: 600 12px/1 ui-monospace, monospace;
+      box-shadow: inset 0 0 0 5px rgba(239,168,77,.04), 0 0 24px rgba(239,168,77,.08);
+    }
+    h1 { margin: 0; font: 400 clamp(20px, 2vw, 31px)/1.05 Georgia, serif; letter-spacing: .02em; }
+    .eyebrow { margin: 0 0 4px; color: var(--amber); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; }
+    .status-line { margin-top: 5px; color: #aaa395; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .transport { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    .btn, .select, .number, .field {
+      border: 1px solid rgba(239,228,204,.24);
+      border-radius: 7px;
+      background: rgba(12,12,10,.72);
+      min-height: 38px;
+    }
+    .btn {
+      padding: 0 13px;
+      cursor: pointer;
+      letter-spacing: .04em;
+      transition: transform .12s, background .15s, border-color .15s, color .15s;
+    }
+    .btn:hover { background: rgba(239,228,204,.09); border-color: rgba(239,168,77,.6); }
+    .btn:active { transform: translateY(1px); }
+    .btn.primary { background: var(--paper); color: var(--ink); border-color: var(--paper); font-weight: 700; }
+    .btn.primary:hover { background: #fff8eb; }
+    .btn.active { color: #171410; background: var(--amber); border-color: var(--amber); }
+    .btn.danger.active { color: #fff; background: var(--red); border-color: var(--red); }
+    .btn.subtle { color: #b8b0a2; }
+    .btn.icon { width: 38px; padding: 0; display: grid; place-items: center; }
+    .record-dot { display: inline-block; width: 8px; height: 8px; margin-right: 7px; border-radius: 50%; background: var(--red); }
+    .recording .record-dot { animation: pulse 1s infinite; }
+    @keyframes pulse { 50% { opacity: .25; transform: scale(.7); } }
+
+    .level {
+      width: 96px;
+      height: 32px;
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 2px;
+      align-items: end;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: #0c0d0b;
+    }
+    .level i { height: 25%; background: #435a45; transition: height .06s, background .06s; }
+
+    .preset-strip {
+      display: flex;
+      gap: 8px;
+      padding: 12px 20px;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--line);
+      background: rgba(0,0,0,.22);
+      scrollbar-color: rgba(239,168,77,.4) transparent;
+    }
+    .preset {
+      flex: 0 0 auto;
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,.025);
+      color: #bbb3a4;
+      cursor: pointer;
+    }
+    .preset:hover, .preset.active { color: var(--ink); background: var(--amber); border-color: var(--amber); }
+
+    .worktop {
+      padding: 18px;
+      background:
+        linear-gradient(90deg, rgba(112,70,38,.12), transparent 5%, transparent 95%, rgba(112,70,38,.12)),
+        linear-gradient(#36393a, #202324);
+    }
+    .desk-grid { display: grid; grid-template-columns: minmax(700px, 1.8fr) minmax(290px, .62fr); gap: 14px; align-items: start; }
+    .panel {
+      border: 1px solid rgba(239,228,204,.16);
+      border-radius: var(--radius);
+      background: linear-gradient(155deg, rgba(64,67,68,.96), rgba(31,33,34,.98));
+      box-shadow: inset 0 1px rgba(255,255,255,.04), 0 12px 30px rgba(0,0,0,.22);
+      overflow: hidden;
+    }
+    .panel-head {
+      min-height: 44px;
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(0,0,0,.22);
+    }
+    .panel-title { margin: 0; font-size: 11px; letter-spacing: .17em; text-transform: uppercase; color: #cdc4b4; }
+    .panel-note { color: #8e887e; font-size: 11px; }
+
+    .sequencer-scroll { overflow-x: auto; padding: 10px 10px 12px; }
+    .step-numbers, .track-row {
+      display: grid;
+      grid-template-columns: 166px repeat(16, minmax(27px, 1fr));
+      gap: 5px;
+      min-width: 730px;
+      align-items: center;
+    }
+    .step-numbers { margin-bottom: 5px; color: #6f6c65; font: 9px/1 ui-monospace, monospace; text-align: center; }
+    .step-numbers span:nth-child(4n+2) { color: #b0a898; }
+    .track-row { min-height: 48px; padding: 4px 0; border-top: 1px solid rgba(239,228,204,.06); }
+    .track-row:first-of-type { border-top: 0; }
+    .track-meta { display: grid; grid-template-columns: 7px minmax(66px, 1fr) 26px 26px 26px; gap: 4px; align-items: center; min-width: 0; }
+    .track-colour { width: 4px; height: 30px; border-radius: 2px; background: var(--track); box-shadow: 0 0 12px color-mix(in srgb, var(--track) 55%, transparent); }
+    .track-name { min-width: 0; }
+    .track-name strong { display: block; font-size: 11px; letter-spacing: .06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .track-name select {
+      width: 100%;
+      margin-top: 2px;
+      padding: 0;
+      border: 0;
+      color: #817d75;
+      background: transparent;
+      font-size: 9px;
+      appearance: none;
+    }
+    .mini {
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border: 1px solid rgba(239,228,204,.15);
+      border-radius: 5px;
+      background: #151512;
+      color: #918c82;
+      cursor: pointer;
+      font: 10px/1 ui-monospace, monospace;
+    }
+    .mini:hover { color: var(--paper); border-color: var(--track); }
+    .mini.active { color: var(--ink); background: var(--track); border-color: var(--track); }
+    .step {
+      aspect-ratio: 1;
+      max-height: 32px;
+      min-height: 27px;
+      padding: 0;
+      border: 1px solid rgba(239,228,204,.14);
+      border-radius: 4px;
+      background: #161613;
+      cursor: pointer;
+      box-shadow: inset 0 1px rgba(255,255,255,.03);
+      position: relative;
+    }
+    .step:nth-of-type(4n+1) { border-right-color: rgba(239,228,204,.34); }
+    .step:hover { border-color: var(--track); }
+    .step.on { background: color-mix(in srgb, var(--track) 78%, #111); border-color: var(--track); box-shadow: 0 0 12px color-mix(in srgb, var(--track) 25%, transparent); }
+    .step.accent::after { content: ""; position: absolute; width: 4px; height: 4px; right: 3px; top: 3px; border-radius: 50%; background: #fff4d9; }
+    .step.current { outline: 1px solid #fff1cf; outline-offset: 2px; }
+
+    .right-stack { display: grid; gap: 14px; }
+    .performance { padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .perf {
+      min-height: 70px;
+      padding: 10px;
+      border: 1px solid rgba(239,228,204,.18);
+      border-radius: 9px;
+      background: linear-gradient(145deg, #302e28, #171714);
+      text-align: left;
+      cursor: pointer;
+      box-shadow: inset 0 1px rgba(255,255,255,.04);
+    }
+    .perf:hover { border-color: var(--amber); transform: translateY(-1px); }
+    .perf strong { display: block; font: 600 11px/1.2 ui-monospace, monospace; letter-spacing: .05em; }
+    .perf span { display: block; margin-top: 7px; color: #858078; font-size: 9px; }
+    .perf.active { color: #171410; background: var(--amber); border-color: var(--amber); }
+    .perf.active span { color: rgba(23,20,16,.65); }
+
+    .strange-wrap { padding: 14px; display: grid; grid-template-columns: 92px 1fr; gap: 16px; align-items: center; }
+    .dial {
+      --turn: -135deg;
+      width: 88px;
+      height: 88px;
+      border: 1px solid rgba(239,228,204,.28);
+      border-radius: 50%;
+      background: radial-gradient(circle at 38% 32%, #4c4940 0, #24231f 40%, #0e0e0c 72%);
+      position: relative;
+      box-shadow: inset 0 0 0 7px #151512, 0 9px 18px rgba(0,0,0,.36);
+      transform: rotate(var(--turn));
+    }
+    .dial::after { content: ""; position: absolute; left: 50%; top: 8px; width: 2px; height: 23px; background: var(--amber); transform: translateX(-50%); box-shadow: 0 0 8px var(--amber); }
+    .strange-data strong { display: block; font: 400 34px/1 Georgia, serif; color: var(--amber); }
+    .strange-data label { display: block; margin-bottom: 8px; font-size: 10px; letter-spacing: .15em; }
+    input[type="range"] { width: 100%; accent-color: var(--amber); }
+
+    .tools { margin-top: 14px; }
+    .tool-tabs { display: flex; gap: 5px; padding: 8px; border-bottom: 1px solid var(--line); }
+    .tab { min-height: 34px; padding: 0 12px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: #8f897e; cursor: pointer; }
+    .tab.active { color: var(--paper); border-color: rgba(239,228,204,.19); background: rgba(255,255,255,.05); }
+    .tool-page { display: none; padding: 16px; }
+    .tool-page.active { display: block; }
+    .tool-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .tool-card { min-height: 150px; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(0,0,0,.18); }
+    .tool-card h3 { margin: 0 0 7px; font: 400 18px/1.1 Georgia, serif; }
+    .tool-card p { margin: 0 0 12px; color: #928c81; font-size: 11px; }
+    .row { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+    .field { width: 100%; padding: 0 11px; color: var(--paper); }
+    .select { padding: 0 9px; color: var(--paper); }
+    .number { width: 70px; padding: 0 8px; color: var(--paper); }
+    option { background: #1a1916; color: var(--paper); }
+    .small { min-height: 32px; padding: 0 10px; font-size: 11px; }
+    .hint { margin-top: 8px; color: #746f67; font-size: 9px; }
+    .voice-mode-grid { display: flex; flex-wrap: wrap; gap: 5px; }
+    .mode-chip { padding: 7px 9px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: #9c968c; cursor: pointer; font-size: 9px; }
+    .mode-chip.active { color: var(--ink); border-color: var(--green); background: var(--green); }
+
+    .drop-zone {
+      min-height: 84px;
+      display: grid;
+      place-items: center;
+      padding: 12px;
+      border: 1px dashed rgba(239,228,204,.28);
+      border-radius: 8px;
+      text-align: center;
+      transition: border-color .15s, background .15s;
+    }
+    .drop-zone.dragging { border-color: var(--amber); background: rgba(239,168,77,.08); }
+    .sample-bank-head { display: flex; justify-content: space-between; align-items: end; gap: 12px; margin: 18px 0 8px; }
+    .sample-bank-head h3 { margin: 0; font: 400 19px/1.1 Georgia, serif; }
+    .sample-bank-head p { margin: 0; color: #817b72; font-size: 10px; }
+    .sample-bank { display: grid; grid-template-columns: repeat(8, minmax(100px, 1fr)); gap: 7px; }
+    .sample-slot {
+      min-height: 104px;
+      padding: 9px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(0,0,0,.18);
+      position: relative;
+      overflow: hidden;
+    }
+    .sample-slot.armed { border-color: var(--amber); box-shadow: 0 0 0 1px rgba(239,168,77,.25) inset; }
+    .slot-code { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 4px; color: var(--ink); background: var(--slot-colour, var(--amber)); font: 700 11px/1 ui-monospace, monospace; }
+    .sample-slot strong { display: block; margin: 8px 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; }
+    .sample-slot small { display: block; min-height: 24px; color: #777169; font-size: 8px; }
+    .slot-actions { display: flex; gap: 4px; margin-top: 6px; }
+    .slot-actions button { min-height: 24px; padding: 0 6px; font-size: 8px; }
+    .sample-code { color: #171410; font: 800 9px/1 ui-monospace, monospace; pointer-events: none; }
+    .source-links { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+    .source-links a { text-decoration: none; }
+
+    .yt-layout { display: grid; grid-template-columns: minmax(260px, 480px) 1fr; gap: 18px; align-items: start; }
+    .yt-monitor {
+      width: 100%;
+      min-height: 270px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(239,228,204,.18);
+      border-radius: 9px;
+      overflow: hidden;
+      background: #090909;
+      color: #5e5a53;
+      text-align: center;
+    }
+    .yt-monitor iframe { display: block; width: 100%; min-height: 270px; border: 0; }
+    .yt-dock {
+      display: none;
+      position: fixed;
+      z-index: 26;
+      right: 18px;
+      bottom: 96px;
+      width: 320px;
+      padding: 7px;
+      border: 1px solid rgba(239,228,204,.24);
+      border-radius: 11px;
+      background: rgba(12,12,10,.94);
+      box-shadow: 0 15px 45px rgba(0,0,0,.5);
+    }
+    body.walking .yt-dock.active { display: block; }
+    .yt-dock-label { display: flex; justify-content: space-between; align-items: center; padding: 2px 4px 7px; color: #a39c90; font-size: 8px; letter-spacing: .16em; text-transform: uppercase; }
+    .yt-dock .yt-monitor, .yt-dock .yt-monitor iframe { min-height: 200px; height: 200px; }
+    .yt-placeholder { padding: 28px; }
+    .yt-placeholder strong { display: block; margin-bottom: 6px; color: #8b857b; }
+    .yt-copy h3 { font: 400 24px/1.1 Georgia, serif; margin: 0 0 10px; }
+    .yt-copy p { max-width: 62ch; color: #a39c90; }
+    .notice { padding: 10px 12px; border-left: 2px solid var(--amber); background: rgba(239,168,77,.06); color: #a49b8c; font-size: 10px; }
+
+    .mix-grid { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 12px; }
+    .track-mix { display: grid; grid-template-columns: repeat(8, minmax(100px,1fr)); gap: 7px; margin-top: 12px; }
+    .control { padding: 12px; border: 1px solid var(--line); border-radius: 9px; background: rgba(0,0,0,.18); }
+    .control label { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 9px; color: #aaa397; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+
+    .tapes { margin-top: 14px; }
+    .tape-list { display: grid; grid-template-columns: repeat(4, minmax(180px, 1fr)); gap: 9px; padding: 12px; }
+    .empty { grid-column: 1/-1; padding: 26px; color: #777169; text-align: center; border: 1px dashed rgba(239,228,204,.14); border-radius: 8px; }
+    .tape { padding: 11px; border: 1px solid var(--line); border-radius: 8px; background: linear-gradient(135deg, rgba(239,228,204,.08), rgba(0,0,0,.16)); }
+    .tape strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tape small { color: #817b72; }
+    .tape .row { margin-top: 9px; }
+
+    .walk-scene { display: none; min-height: 100vh; place-items: center; padding: 24px; position: relative; overflow: hidden; }
+    .walk-scene::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(115deg, transparent 49.6%, rgba(225,182,105,.14) 49.8%, transparent 50.1%),
+        radial-gradient(ellipse at 50% 62%, rgba(230,170,92,.22), transparent 10%),
+        linear-gradient(#1a2430 0 45%, #5b4936 46%, #161514 78%);
+      filter: saturate(.7);
+    }
+    .walk-scene::after { content: ""; position: absolute; left: 50%; bottom: -20vh; width: 36vw; height: 76vh; background: linear-gradient(90deg, transparent, rgba(225,218,197,.07), transparent); transform: perspective(500px) rotateX(58deg) translateX(-50%); transform-origin: bottom; }
+    .walk-copy { position: relative; text-align: center; z-index: 1; }
+    .walk-copy p { color: rgba(238,231,218,.6); letter-spacing: .18em; text-transform: uppercase; font-size: 10px; }
+
+    body.walking .shell { display: none; }
+    body.walking .walk-scene { display: grid; }
+    .mini-player {
+      position: fixed;
+      z-index: 30;
+      left: 50%;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      width: min(720px, calc(100% - 24px));
+      min-height: 66px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 11px 10px 17px;
+      border: 1px solid rgba(239,228,204,.24);
+      border-radius: 14px;
+      background: rgba(16,16,14,.91);
+      box-shadow: 0 15px 50px rgba(0,0,0,.48);
+      backdrop-filter: blur(16px);
+      transform: translate(-50%, calc(100% + 40px));
+      transition: transform .3s ease;
+    }
+    body.walking .mini-player, .mini-player.show { transform: translate(-50%, 0); }
+    .now { min-width: 0; }
+    .now small { display: block; color: var(--amber); font-size: 8px; letter-spacing: .18em; text-transform: uppercase; }
+    .now strong { display: block; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mini-actions { display: flex; gap: 6px; }
+
+    .toast {
+      position: fixed;
+      z-index: 80;
+      left: 50%;
+      top: 18px;
+      max-width: min(520px, calc(100% - 30px));
+      padding: 11px 15px;
+      border: 1px solid rgba(239,168,77,.42);
+      border-radius: 8px;
+      background: rgba(19,18,15,.95);
+      color: var(--paper);
+      box-shadow: 0 12px 40px rgba(0,0,0,.4);
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, -15px);
+      transition: opacity .2s, transform .2s;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    dialog {
+      width: min(520px, calc(100% - 30px));
+      border: 1px solid rgba(239,228,204,.25);
+      border-radius: 14px;
+      padding: 0;
+      color: var(--paper);
+      background: #1b1a17;
+      box-shadow: var(--shadow);
+    }
+    dialog::backdrop { background: rgba(0,0,0,.64); backdrop-filter: blur(4px); }
+    .dialog-body { padding: 22px; }
+    .dialog-body h2 { margin: 0 0 8px; font: 400 25px/1.1 Georgia, serif; }
+    .dialog-body p { color: #aaa397; }
+
+    @media (max-width: 1080px) {
+      .topbar { grid-template-columns: 1fr; }
+      .transport { justify-content: flex-start; }
+      .desk-grid { grid-template-columns: 1fr; }
+      .right-stack { grid-template-columns: 1fr 1fr; }
+      .tools { grid-column: 1/-1; }
+      .tool-grid, .mix-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .track-mix { grid-template-columns: repeat(4, minmax(100px,1fr)); }
+      .sample-bank { grid-template-columns: repeat(4, minmax(100px,1fr)); }
+      .tape-list { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+
+    @media (max-width: 700px) {
+      .shell { width: 100%; margin: 0 0 96px; border-radius: 0; border-left: 0; border-right: 0; }
+      .topbar, .worktop { padding: 12px; }
+      .brand-mark { width: 38px; height: 38px; }
+      .transport { display: grid; grid-template-columns: repeat(3, 1fr); }
+      .transport .btn { padding: 0 7px; font-size: 10px; }
+      .level { display: none; }
+      .right-stack { grid-template-columns: 1fr; }
+      .tool-grid, .mix-grid, .tape-list, .yt-layout { grid-template-columns: 1fr; }
+      .track-mix { grid-template-columns: repeat(2, minmax(100px,1fr)); }
+      .sample-bank { grid-template-columns: repeat(2, minmax(100px,1fr)); }
+      .step-numbers, .track-row { grid-template-columns: 140px repeat(16, 29px); }
+      .mini-player { grid-template-columns: minmax(0,1fr) auto; }
+      .mini-player .btn.subtle { display: none; }
+      .yt-monitor, .yt-monitor iframe { min-height: 210px; }
+      .yt-dock { right: 8px; bottom: 92px; width: 220px; }
+      .yt-dock .yt-monitor, .yt-dock .yt-monitor iframe { min-height: 200px; height: 200px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behaviour: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell" id="desk">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">HrM</div>
+        <div>
+          <p class="eyebrow">The Studio · Instrument 01</p>
+          <h1>Studio Mixing Desk</h1>
+          <div class="status-line" id="statusLine">Choose a starting mix, alter a few lights, make a noise.</div>
+        </div>
+      </div>
+      <div class="transport" role="group" aria-label="Transport controls">
+        <button class="btn primary" id="playBtn" type="button">▶ PLAY</button>
+        <button class="btn" id="stopBtn" type="button">■ STOP</button>
+        <button class="btn danger" id="recordBtn" type="button"><span class="record-dot"></span>RECORD</button>
+        <button class="btn" id="bounceBtn" type="button">BOUNCE 2 LOOPS</button>
+        <button class="btn subtle" id="walkBtn" type="button">CLOSE TO WALK</button>
+        <div class="level" id="meter" role="meter" aria-label="Output level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+      </div>
+    </header>
+
+    <nav class="preset-strip" id="presetStrip" aria-label="Instant compositions"></nav>
+
+    <div class="worktop">
+      <div class="desk-grid">
+        <section class="panel sequencer" aria-labelledby="seqTitle">
+          <div class="panel-head">
+            <h2 class="panel-title" id="seqTitle">Eight-track loop</h2>
+            <span class="panel-note">Click once to play · twice quickly to accent</span>
+          </div>
+          <div class="sequencer-scroll">
+            <div class="step-numbers" id="stepNumbers"><span></span></div>
+            <div id="tracks"></div>
+          </div>
+        </section>
+
+        <aside class="right-stack" aria-label="Performance controls">
+          <section class="panel">
+            <div class="panel-head">
+              <h2 class="panel-title">Performance controls</h2>
+              <span class="panel-note">Live variations</span>
+            </div>
+            <div class="performance">
+              <button class="perf" data-action="worse" type="button"><strong>ADD VARIATION</strong><span>Add one event</span></button>
+              <button class="perf" data-action="panic" type="button"><strong>FILTER SWEEP</strong><span>Brief tonal movement</span></button>
+              <button class="perf" data-action="wrong" type="button"><strong>NOTE HIT</strong><span>Add a live accent</span></button>
+              <button class="perf" data-action="serious" type="button"><strong>CHORD</strong><span>Add harmonic weight</span></button>
+              <button class="perf" data-action="radio" type="button"><strong>RADIO FILTER</strong><span>Narrow the bandwidth</span></button>
+              <button class="perf" data-action="ghost" type="button"><strong>ECHO SEND</strong><span>Long delay and room</span></button>
+              <button class="perf" data-action="argue" type="button"><strong>CALL &amp; RESPONSE</strong><span>Two machine voices</span></button>
+              <button class="perf" data-action="exit" type="button"><strong>FADE OUT</strong><span>End the performance</span></button>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h2 class="panel-title">Character</h2>
+              <span class="panel-note">Reversible</span>
+            </div>
+            <div class="strange-wrap">
+              <div class="dial" id="strangeDial" aria-hidden="true"></div>
+              <div class="strange-data">
+                <label for="strangeRange">Variation amount</label>
+                <strong id="strangeValue">12</strong>
+                <input id="strangeRange" type="range" min="0" max="100" value="12">
+              </div>
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <section class="panel tools" aria-labelledby="toolsTitle">
+        <div class="panel-head">
+          <h2 class="panel-title" id="toolsTitle">Sound sources &amp; mix</h2>
+          <span class="panel-note">The simple surface opens when you need it</span>
+        </div>
+        <div class="tool-tabs" role="tablist">
+          <button class="tab active" data-page="voice" role="tab" aria-selected="true" type="button">VOICE &amp; SAMPLE</button>
+          <button class="tab" data-page="youtube" role="tab" aria-selected="false" type="button">YOUTUBE SOURCE</button>
+          <button class="tab" data-page="mix" role="tab" aria-selected="false" type="button">MIX</button>
+          <button class="tab" data-page="help" role="tab" aria-selected="false" type="button">HOW TO PLAY</button>
+        </div>
+
+        <div class="tool-page active" id="page-voice" role="tabpanel">
+          <div class="tool-grid">
+            <article class="tool-card">
+              <h3>Record a phrase</h3>
+              <p>Record up to eight seconds. It is automatically placed on the YOUR VOICE track and divided into four rhythmic slices.</p>
+              <div class="row">
+                <button class="btn small" id="micBtn" type="button"><span class="record-dot"></span>USE MICROPHONE</button>
+                <span id="micTime">00:00</span>
+              </div>
+              <div class="hint">Microphone access requires HTTPS or localhost.</div>
+            </article>
+            <article class="tool-card">
+              <h3>Drop in a sample pack</h3>
+              <p>Drop several short WAV, MP3, M4A or OGG files at once. Nothing is uploaded.</p>
+              <div class="drop-zone" id="dropZone">
+                <div><label class="btn small" for="sampleInput" style="display:inline-flex;align-items:center">CHOOSE AUDIO FILES</label><div class="hint">or drop them here</div></div>
+              </div>
+              <input id="sampleInput" type="file" accept="audio/*" multiple hidden>
+              <div class="hint" id="sampleName">Eight sample slots are available.</div>
+            </article>
+            <article class="tool-card">
+              <h3>Import from the web</h3>
+              <p>Paste a direct link ending in .wav, .mp3, .m4a or .ogg. The host must permit browser access.</p>
+              <input class="field" id="sampleUrl" type="url" placeholder="https://…/sound.wav" inputmode="url">
+              <button class="btn small" id="urlImport" type="button" style="margin-top:7px">IMPORT URL</button>
+              <nav class="source-links" aria-label="Free sample sources">
+                <a class="btn small" href="https://freesound.org/" target="_blank" rel="noopener">FREESOUND</a>
+                <a class="btn small" href="https://archive.org/details/audio" target="_blank" rel="noopener">INTERNET ARCHIVE</a>
+                <a class="btn small" href="https://sound-effects.bbcrewind.co.uk/" target="_blank" rel="noopener">BBC SFX</a>
+              </nav>
+              <div class="hint">Check each sound’s licence. BBC archive use is restricted to its stated terms.</div>
+            </article>
+            <article class="tool-card">
+              <h3>Voice character</h3>
+              <p>Transform the recorded or imported sound without losing the original.</p>
+              <div class="voice-mode-grid" id="voiceModes"></div>
+            </article>
+          </div>
+          <div class="sample-bank-head">
+            <div><h3>Sample tray</h3><p>Arm one sample, then click cells in the YOUR VOICE row to place it.</p></div>
+            <button class="btn small" id="clearSamples" type="button">CLEAR TRAY</button>
+          </div>
+          <div class="sample-bank" id="sampleBank" role="group" aria-label="Imported sample tray"></div>
+        </div>
+
+        <div class="tool-page" id="page-youtube" role="tabpanel">
+          <div class="yt-layout">
+            <div id="ytHome">
+              <div class="yt-monitor" id="ytMonitor">
+                <div class="yt-placeholder"><strong>YOUTUBE SOURCE MONITOR</strong>Paste a normal YouTube link to load its official player.</div>
+              </div>
+            </div>
+            <div class="yt-copy">
+              <h3>Play alongside a reference, speech or strange film</h3>
+              <p>YouTube can accompany the desk and has its own volume. The sequencer remains playable over it. The official picture stays visible here while active.</p>
+              <input class="field" id="ytUrl" type="url" placeholder="https://www.youtube.com/watch?v=…" inputmode="url">
+              <div class="row" style="margin-top:8px">
+                <button class="btn small" id="ytLoad" type="button">LOAD &amp; PLAY</button>
+                <button class="btn small" id="ytToggle" type="button" disabled>PAUSE</button>
+                <label for="ytVolume">VOL</label>
+                <input id="ytVolume" type="range" min="0" max="100" value="65" style="width:120px">
+              </div>
+              <p class="notice">YouTube remains a separate listening source. Browser security prevents it from entering the effects chain or downloaded recording; microphone and imported files do enter both.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-page" id="page-mix" role="tabpanel">
+          <div class="mix-grid">
+            <div class="control"><label for="bpm">Tempo <span id="bpmOut">108 BPM</span></label><input id="bpm" type="range" min="60" max="170" value="108"></div>
+            <div class="control"><label for="swing">Swing <span id="swingOut">8%</span></label><input id="swing" type="range" min="0" max="45" value="8"></div>
+            <div class="control"><label for="master">Master <span id="masterOut">78%</span></label><input id="master" type="range" min="0" max="100" value="78"></div>
+            <div class="control"><label for="reverb">Room <span id="reverbOut">22%</span></label><input id="reverb" type="range" min="0" max="65" value="22"></div>
+            <div class="control"><label for="delay">Echo <span id="delayOut">14%</span></label><input id="delay" type="range" min="0" max="65" value="14"></div>
+            <div class="control"><label for="tone">Tone <span id="toneOut">OPEN</span></label><input id="tone" type="range" min="800" max="18000" value="16000"></div>
+            <div class="control"><label for="keySelect">Key</label><select class="select" id="keySelect"><option>C</option><option>C♯</option><option>D</option><option>E♭</option><option>E</option><option>F</option><option>F♯</option><option>G</option><option>A♭</option><option>A</option><option>B♭</option><option>B</option></select></div>
+            <div class="control"><label for="scaleSelect">Scale</label><select class="select" id="scaleSelect"><option value="minor">Minor</option><option value="major">Major</option><option value="dorian">Dorian</option><option value="pentatonic">Pentatonic</option></select></div>
+          </div>
+          <div class="track-mix" id="trackMix" role="group" aria-label="Track volume controls"></div>
+        </div>
+
+        <div class="tool-page" id="page-help" role="tabpanel">
+          <div class="tool-grid">
+            <article class="tool-card"><h3>One minute</h3><p>Choose any named mix and press PLAY. Click illuminated cells to remove notes; click dark cells to add them. The music never needs to stop.</p></article>
+            <article class="tool-card"><h3>Five minutes</h3><p>Use dice on individual tracks. Lock the ones you like. Record a phrase, change its character, and press MAKE IT WORSE with reasonable confidence.</p></article>
+            <article class="tool-card"><h3>Keep it</h3><p>RECORD captures your live performance; BOUNCE captures two complete loops. Finished recordings appear on the Tape Shelf for replay and download.</p></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel tapes" aria-labelledby="tapeTitle">
+        <div class="panel-head">
+          <h2 class="panel-title" id="tapeTitle">Tape shelf</h2>
+          <span class="panel-note">Recordings last until this page is closed</span>
+        </div>
+        <div class="tape-list" id="tapeList"><div class="empty">Nothing incriminating has been recorded yet.</div></div>
+      </section>
+    </div>
+  </main>
+
+  <section class="walk-scene" aria-label="Walk mode demonstration">
+    <div class="walk-copy">
+      <p>The desk is closed · your mix continues in the Studio</p>
+      <button class="btn" id="returnBtn" type="button">RETURN TO THE STUDIO DESK</button>
+    </div>
+  </section>
+
+  <aside class="mini-player" id="miniPlayer" aria-label="Persistent studio player">
+    <div class="now"><small>Now travelling with you</small><strong id="nowTitle">Bureaucratic Funk</strong></div>
+    <div class="mini-actions">
+      <button class="btn icon" id="miniPlay" type="button" aria-label="Play or pause">▶</button>
+      <button class="btn icon" id="miniRecord" type="button" aria-label="Record"><span class="record-dot" style="margin:0"></span></button>
+    </div>
+    <button class="btn subtle" id="miniReturn" type="button">OPEN DESK</button>
+  </aside>
+
+  <aside class="yt-dock" id="ytDock" aria-label="YouTube source playing while walking">
+    <div class="yt-dock-label"><span>YouTube source · travelling monitor</span><button class="mini" id="ytDockPause" type="button" title="Pause YouTube">❚❚</button></div>
+  </aside>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="welcome">
+    <div class="dialog-body">
+      <p class="eyebrow">The Studio</p>
+      <h2>A small machine for making surprisingly respectable accidents.</h2>
+      <p>Choose an instant composition, alter the illuminated steps, or simply press play and walk away with it. Headphones are advisable; musical dignity is optional.</p>
+      <div class="row">
+        <button class="btn primary" id="beginBtn" type="button">BEGIN WITH BUREAUCRATIC FUNK</button>
+        <button class="btn" id="blankBtn" type="button">START EMPTY</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+  (() => {
+    'use strict';
+
+    const $ = (s, root = document) => root.querySelector(s);
+    const $$ = (s, root = document) => [...root.querySelectorAll(s)];
+    const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+    const choose = a => a[Math.floor(Math.random() * a.length)];
+    const esc = value => String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+
+    const TRACKS = [
+      { id:'beat', name:'BEAT', colour:'#d47c55', sounds:['Deep kick','Soft thump','Short kick'] },
+      { id:'snap', name:'SNAP', colour:'#d9a65d', sounds:['Paper snare','Dry clap','Door knock'] },
+      { id:'ticks', name:'TICKS', colour:'#d5c980', sounds:['Closed metal','Clock teeth','Dust hat'] },
+      { id:'bass', name:'BASS', colour:'#7ea88b', sounds:['Warm square','Soft saw','Rubber bass'] },
+      { id:'tune', name:'TUNE', colour:'#6fa5b2', sounds:['Glass keys','Small bell','Dub chord'] },
+      { id:'air', name:'ATMOSPHERE', colour:'#858fb2', sounds:['Room breath','Tunnel air','Radio dust'] },
+      { id:'vox', name:'VOX MACHINE', colour:'#aa86ad', sounds:['Murmur unit','Synthetic vowel','Question tone'] },
+      { id:'voice', name:'YOUR VOICE', colour:'#d37b91', sounds:['Four slices','Whole phrase','Scatter'] }
+    ];
+
+    const emptyPattern = () => TRACKS.map((t, i) => ({
+      ...t, steps: Array(16).fill(false), accents: Array(16).fill(false), mute:false, solo:false, lock:false, volume: i === 5 ? .44 : .72, sound:0
+    }));
+
+    const patterns = {
+      'Bureaucratic Funk': [
+        '1000100010101000','0000100000101010','1010101010101110','1000001001000010','0010001000101000','1000000010000000','0000100000001000','0000000000000000'
+      ],
+      'Waiting-Room Banger': [
+        '1000100010001010','0000100000100000','1010101010101010','1001000010010010','0010001000000010','1000001000000010','0000000010001000','0000000000000000'
+      ],
+      'Wrong Door Dub': [
+        '1000000010100000','0000100000001000','0010001000100010','1000010000100000','0000100000001000','1000000000000010','0000001000000000','0000000000000000'
+      ],
+      'Penthouse Emergency': [
+        '1010101010101010','0000100000101010','1011111010111110','1000100010001000','0010001000100010','1001000010010000','0001000000010000','0000000000000000'
+      ],
+      'The Lift Is Thinking': [
+        '1000000000001000','0000000010000000','0010001000100010','1000001000000010','0000100001000000','1000000000000000','0000001000000000','0000000000000000'
+      ],
+      'Moderately Illegal Jazz': [
+        '1000010010000010','0000100001001000','0010101000101010','1001000100100100','0010010000100001','1000000010000010','0001000000010000','0000000000000000'
+      ]
+    };
+
+    const state = {
+      tracks: emptyPattern(), preset:'Bureaucratic Funk', bpm:108, swing:8, master:.78, reverb:.22, delay:.14, tone:16000,
+      key:0, scale:'minor', strange:12, playing:false, step:0, nextNoteTime:0, timer:null, lastUiStep:-1,
+      radio:false, ghost:false, panicSteps:0, sampleBuffer:null, reversedBuffer:null,
+      sampleSlots:Array(8).fill(null), selectedSample:-1, voiceAssignments:Array(16).fill(-1), voiceMode:'Normal', recording:false,
+      mediaRecorder:null, chunks:[], tapes:[], bounceTimer:null, micRecorder:null, micStream:null, micChunks:[], yt:null, ytReady:false
+    };
+
+    let ctx, masterIn, highpass, lowpass, masterGain, compressor, analyser, mediaDest, reverbIn, convolver, reverbGain,
+        delayIn, delayNode, delayFeedback, delayGain, noiseBuffer, meterFrame, schedulingVolume=1;
+
+    function setupMeter() {
+      $('#meter').innerHTML = Array.from({length:12}, () => '<i></i>').join('');
+    }
+
+    function makeImpulse(seconds = 2.1, decay = 2.4) {
+      const len = Math.floor(ctx.sampleRate * seconds);
+      const impulse = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (let c=0;c<2;c++) {
+        const data = impulse.getChannelData(c);
+        for (let i=0;i<len;i++) data[i] = (Math.random()*2-1) * Math.pow(1-i/len, decay);
+      }
+      return impulse;
+    }
+
+    function makeNoise() {
+      const len = ctx.sampleRate * 2;
+      const b = ctx.createBuffer(1, len, ctx.sampleRate);
+      const d = b.getChannelData(0);
+      for (let i=0;i<len;i++) d[i] = Math.random()*2-1;
+      return b;
+    }
+
+    async function ensureAudio() {
+      if (!ctx) {
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        masterIn = ctx.createGain();
+        highpass = ctx.createBiquadFilter(); highpass.type='highpass'; highpass.frequency.value=20;
+        lowpass = ctx.createBiquadFilter(); lowpass.type='lowpass'; lowpass.frequency.value=state.tone;
+        masterGain = ctx.createGain(); masterGain.gain.value=state.master;
+        compressor = ctx.createDynamicsCompressor();
+        compressor.threshold.value=-10; compressor.knee.value=12; compressor.ratio.value=6; compressor.attack.value=.003; compressor.release.value=.24;
+        analyser = ctx.createAnalyser(); analyser.fftSize=256; analyser.smoothingTimeConstant=.76;
+        mediaDest = ctx.createMediaStreamDestination();
+        reverbIn = ctx.createGain(); convolver=ctx.createConvolver(); convolver.buffer=makeImpulse(); reverbGain=ctx.createGain(); reverbGain.gain.value=state.reverb;
+        delayIn=ctx.createGain(); delayNode=ctx.createDelay(1.5); delayNode.delayTime.value=.29; delayFeedback=ctx.createGain(); delayFeedback.gain.value=.32; delayGain=ctx.createGain(); delayGain.gain.value=state.delay;
+        masterIn.connect(highpass).connect(lowpass).connect(masterGain).connect(compressor).connect(analyser);
+        analyser.connect(ctx.destination); analyser.connect(mediaDest);
+        reverbIn.connect(convolver).connect(reverbGain).connect(masterIn);
+        delayIn.connect(delayNode).connect(delayGain).connect(masterIn);
+        delayNode.connect(delayFeedback).connect(delayNode);
+        noiseBuffer=makeNoise();
+        animateMeter();
+      }
+      if (ctx.state === 'suspended') await ctx.resume();
+      return ctx;
+    }
+
+    function connectVoice(node, amount=.2) {
+      const dry=ctx.createGain(), pan=ctx.createStereoPanner();dry.gain.value=schedulingVolume;pan.pan.value=(Math.random()-.5)*(state.strange/65);node.connect(dry).connect(pan).connect(masterIn);
+      const rg = ctx.createGain(); rg.gain.value=amount*schedulingVolume*(1+state.strange/180); node.connect(rg).connect(reverbIn);
+      const dg = ctx.createGain(); dg.gain.value=amount*.7*schedulingVolume*(1+state.strange/140); node.connect(dg).connect(delayIn);
+    }
+
+    function envelope(g, time, peak, decay, attack=.004) {
+      g.gain.cancelScheduledValues(time);
+      g.gain.setValueAtTime(.0001,time);
+      g.gain.exponentialRampToValueAtTime(Math.max(.001,peak),time+attack);
+      g.gain.exponentialRampToValueAtTime(.0001,time+decay);
+    }
+
+    function osc(type, freq, time, dur, gain=.2, destination=true) {
+      const o=ctx.createOscillator(), g=ctx.createGain(); o.type=type; o.frequency.setValueAtTime(freq,time); envelope(g,time,gain,dur);
+      o.connect(g); if(destination) connectVoice(g,.12); o.start(time); o.stop(time+dur+.05); return {o,g};
+    }
+
+    function noise(time,dur,gain=.1,filterType='highpass',freq=4000) {
+      const s=ctx.createBufferSource(), f=ctx.createBiquadFilter(), g=ctx.createGain(); s.buffer=noiseBuffer; f.type=filterType; f.frequency.value=freq; envelope(g,time,gain,dur,.002); s.connect(f).connect(g); connectVoice(g,.08); s.start(time); s.stop(time+dur+.04);
+    }
+
+    const scales = {
+      minor:[0,2,3,5,7,8,10], major:[0,2,4,5,7,9,11], dorian:[0,2,3,5,7,9,10], pentatonic:[0,3,5,7,10]
+    };
+    const midi = n => 440*Math.pow(2,(n-69)/12);
+    function noteFor(step, octave=3, offset=0) {
+      const s=scales[state.scale]||scales.minor;
+      const degree=[0,0,2,1,0,3,2,4,0,2,4,3,1,4,5,2][step%16];
+      return midi(12*(octave+1)+state.key+s[degree%s.length]+offset);
+    }
+
+    function playKick(time, variant, accent) {
+      const o=ctx.createOscillator(), g=ctx.createGain(); o.type=variant===1?'triangle':'sine'; o.frequency.setValueAtTime(variant===2?105:145,time); o.frequency.exponentialRampToValueAtTime(42,time+.13); envelope(g,time,(accent?1.12:1)*.65,.35,.002); o.connect(g); connectVoice(g,.05); o.start(time); o.stop(time+.4);
+    }
+    function playSnap(time,variant,accent) {
+      noise(time,variant===2?.08:.16,(accent?1.2:1)*.24,variant===2?'bandpass':'highpass',variant===2?900:1700);
+      if(variant!==0) osc('triangle',variant===2?160:210,time,.09,.09);
+    }
+    function playTick(time,variant,accent) { noise(time,variant===1?.045:.075,(accent?1.35:1)*.095,'highpass',variant===2?6000:8500); }
+    function playBass(time,variant,accent,step) {
+      const o=ctx.createOscillator(), f=ctx.createBiquadFilter(), g=ctx.createGain(); o.type=variant===0?'square':'sawtooth';
+      o.frequency.value=noteFor(step,2,variant===2?-12:0); f.type='lowpass'; f.frequency.setValueAtTime(variant===1?850:560,time); f.Q.value=4; envelope(g,time,(accent?1.16:1)*.25,.34,.008); o.connect(f).connect(g); connectVoice(g,.12); o.start(time); o.stop(time+.4);
+    }
+    function playTune(time,variant,accent,step) {
+      const f=noteFor(step,4,variant===2?0:12);
+      if(variant===2) { [0,3,7].forEach((n,i)=>osc('sine',f*Math.pow(2,n/12),time+i*.008,.52,(accent?1.2:1)*.08)); }
+      else { osc(variant===0?'sine':'triangle',f,time,variant===0?.55:.32,(accent?1.2:1)*.16); if(variant===0) osc('sine',f*2.01,time,.26,.05); }
+    }
+    function playAir(time,variant,accent) {
+      const s=ctx.createBufferSource(), f=ctx.createBiquadFilter(), g=ctx.createGain(); s.buffer=noiseBuffer; f.type='bandpass'; f.frequency.value=[420,780,1850][variant]; f.Q.value=variant===2?5:.7; envelope(g,time,(accent?1.2:1)*.055,variant===2?.28:1.1,.03); s.connect(f).connect(g); connectVoice(g,.35); s.start(time); s.stop(time+1.2);
+    }
+    function playVox(time,variant,accent,step) {
+      const base=noteFor(step,2,variant===2?7:0), o=ctx.createOscillator(), f=ctx.createBiquadFilter(), g=ctx.createGain(), l=ctx.createOscillator(), lg=ctx.createGain();
+      o.type='sawtooth'; o.frequency.value=base; f.type='bandpass'; f.frequency.value=[700,1050,1450][variant]; f.Q.value=7; l.frequency.value=variant===0?5:9; lg.gain.value=variant===2?7:18; l.connect(lg).connect(o.detune); envelope(g,time,(accent?1.2:1)*.14,.27,.015); o.connect(f).connect(g); connectVoice(g,.22); o.start(time); l.start(time); o.stop(time+.34); l.stop(time+.34);
+    }
+
+    function playUserVoice(time,accent,step,variant) {
+      const assigned=state.voiceAssignments[step];
+      const slot=state.sampleSlots[assigned] || state.sampleSlots[state.selectedSample];
+      const buffer=slot ? (state.voiceMode==='Reversed Prophet' ? slot.reversed : slot.buffer) : state.sampleBuffer;
+      if(!buffer) { if(step%4===0) playVox(time,1,accent,step); return; }
+      const slices=variant===1?1:4, sliceDur=buffer.duration/slices, slice=variant===2?Math.floor(Math.random()*slices):Math.floor(step/4)%slices;
+      const playOne=(rate=1,detune=0,vol=.3,offset=slice*sliceDur)=>{
+        const s=ctx.createBufferSource(), f=ctx.createBiquadFilter(), g=ctx.createGain(); s.buffer=buffer; rate*=1+(Math.random()-.5)*state.strange/240; s.playbackRate.value=rate; s.detune.value=detune;
+        f.type='lowpass'; f.frequency.value=state.voiceMode==='Faulty Announcement'?2600:12000; if(state.voiceMode==='Telephone from 1973'){f.type='bandpass';f.frequency.value=1500;f.Q.value=.9;}
+        envelope(g,time,(accent?1.2:1)*vol,Math.min(sliceDur/rate,.85),.006); s.connect(f).connect(g); connectVoice(g,state.voiceMode==='Reversed Prophet'?.5:.2); s.start(time,clamp(offset,0,Math.max(0,buffer.duration-.02)),Math.min(sliceDur,buffer.duration-offset));
+      };
+      const modes={
+        'Normal':()=>playOne(), 'Tiny Authority':()=>playOne(1.48,100,.26), 'Exhausted Giant':()=>playOne(.7,-220,.38),
+        'Faulty Announcement':()=>{playOne(.94,-30,.34); setTimeout(()=>{},0);}, 'Telephone from 1973':()=>playOne(1,0,.34),
+        'Whispering Committee':()=>{playOne(1,-30,.2);playOne(1.02,35,.16,clamp(slice*sliceDur+.02,0,buffer.duration-.02));},
+        'Reversed Prophet':()=>playOne(.86,-80,.32)
+      };
+      (modes[state.voiceMode]||modes.Normal)();
+    }
+
+    function scheduleTrack(trackIndex,time,step) {
+      const t=state.tracks[trackIndex]; if(!t.steps[step]||t.mute) return;
+      const solos=state.tracks.some(x=>x.solo); if(solos&&!t.solo) return;
+      const accent=t.accents[step];
+      const dispatch=[playKick,playSnap,playTick,playBass,playTune,playAir,playVox,playUserVoice][trackIndex];
+      schedulingVolume=t.volume;time=Math.max(ctx.currentTime,time+(Math.random()-.5)*state.strange/4200);
+      if(trackIndex<3) dispatch(time,t.sound,accent);
+      else if(trackIndex<7) dispatch(time,t.sound,accent,step);
+      else dispatch(time,accent,step,t.sound);
+      schedulingVolume=1;
+    }
+
+    function nextStep() {
+      const secondsPerBeat=60/state.bpm;
+      let duration=.25*secondsPerBeat;
+      if(state.step%2===0) duration*=1+state.swing/100; else duration*=1-state.swing/100;
+      if(state.panicSteps>0) { duration*=.48; state.panicSteps--; }
+      state.nextNoteTime+=duration;
+      state.step=(state.step+1)%16;
+    }
+    function scheduler() {
+      if(!ctx||!state.playing) return;
+      while(state.nextNoteTime<ctx.currentTime+.1){
+        for(let i=0;i<state.tracks.length;i++) scheduleTrack(i,state.nextNoteTime,state.step);
+        const uiStep=state.step, wait=Math.max(0,(state.nextNoteTime-ctx.currentTime)*1000);
+        setTimeout(()=>paintCurrent(uiStep),wait);
+        nextStep();
+      }
+    }
+    async function play() {
+      await ensureAudio(); if(state.playing) { pause(); return; }
+      state.playing=true; state.nextNoteTime=ctx.currentTime+.06; state.timer=setInterval(scheduler,25); scheduler(); updateTransport(); toast('The machine has accepted your proposal.');
+    }
+    function pause() { state.playing=false; clearInterval(state.timer); state.timer=null; updateTransport(); }
+    function stop() { pause(); state.step=0; paintCurrent(-1); updateTransport(); }
+    function updateTransport() {
+      $('#playBtn').textContent=state.playing?'❚❚ PAUSE':'▶ PLAY'; $('#miniPlay').textContent=state.playing?'❚❚':'▶';
+      $('#statusLine').textContent=state.playing?`${state.preset} · ${state.bpm} BPM · ${state.recording?'RECORDING':'playing'}`:'Choose a starting mix, alter a few lights, make a noise.';
+    }
+    function paintCurrent(n) {
+      $$('.step.current').forEach(x=>x.classList.remove('current')); if(n<0)return; $$(`.step[data-step="${n}"]`).forEach(x=>x.classList.add('current')); state.lastUiStep=n;
+    }
+
+    function renderSteps() {
+      const sn=$('#stepNumbers'); sn.innerHTML='<span></span>'+Array.from({length:16},(_,i)=>`<span>${i+1}</span>`).join('');
+      const root=$('#tracks'); root.innerHTML='';
+      state.tracks.forEach((t,ti)=>{
+        const row=document.createElement('div'); row.className='track-row'; row.style.setProperty('--track',t.colour);
+        row.innerHTML=`<div class="track-meta"><i class="track-colour"></i><div class="track-name"><strong>${t.name}</strong><select aria-label="${t.name} sound">${t.sounds.map((s,i)=>`<option value="${i}" ${i===t.sound?'selected':''}>${s}</option>`).join('')}</select></div><button class="mini mute ${t.mute?'active':''}" title="Mute">M</button><button class="mini solo ${t.solo?'active':''}" title="Solo">S</button><button class="mini dice ${t.lock?'active':''}" title="Randomise; shift-click to lock">${t.lock?'L':'⚄'}</button></div>`+
+          t.steps.map((on,si)=>{const slot=ti===7?state.voiceAssignments[si]:-1;const code=on&&slot>=0?`<span class="sample-code">${String.fromCharCode(65+slot)}</span>`:'';return `<button class="step ${on?'on':''} ${t.accents[si]?'accent':''}" data-track="${ti}" data-step="${si}" aria-label="${t.name} step ${si+1}${slot>=0?`, sample ${String.fromCharCode(65+slot)}`:''}" aria-pressed="${on}">${code}</button>`;}).join('');
+        $('select',row).addEventListener('change',e=>{t.sound=+e.target.value;saveProject();});
+        $('.mute',row).onclick=()=>{t.mute=!t.mute;renderSteps();saveProject();};
+        $('.solo',row).onclick=()=>{t.solo=!t.solo;renderSteps();saveProject();};
+        $('.dice',row).onclick=e=>{ if(e.shiftKey){t.lock=!t.lock;toast(t.lock?`${t.name} locked.`:`${t.name} unlocked.`);} else randomiseTrack(ti); renderSteps();saveProject(); };
+        $$('.step',row).forEach(b=>{
+          let last=0;
+          b.onclick=()=>{
+            const si=+b.dataset.step,now=performance.now();
+            if(ti===7&&state.selectedSample>=0){
+              if(!t.steps[si]||state.voiceAssignments[si]!==state.selectedSample){t.steps[si]=true;state.voiceAssignments[si]=state.selectedSample;}
+              else if(now-last<330)t.accents[si]=!t.accents[si];
+              else {t.steps[si]=false;t.accents[si]=false;}
+              last=now;renderSteps();
+            } else {
+              if(now-last<330&&t.steps[si])t.accents[si]=!t.accents[si];else{t.steps[si]=!t.steps[si];if(!t.steps[si])t.accents[si]=false;}last=now;b.classList.toggle('on',t.steps[si]);b.classList.toggle('accent',t.accents[si]);b.setAttribute('aria-pressed',t.steps[si]);
+            }
+            saveProject();
+          };
+        });
+        root.append(row);
+      });
+    }
+
+    function loadPreset(name,quiet=false) {
+      const data=patterns[name]; if(!data)return; state.preset=name; const next=emptyPattern();
+      data.forEach((s,i)=>{next[i].steps=[...s].map(c=>c==='1');next[i].accents=next[i].steps.map((on,j)=>on&&(j===0||Math.random()<.13));});
+      if(state.sampleSlots.some(Boolean)){next[7].steps=state.tracks[7].steps.slice();next[7].accents=state.tracks[7].accents.slice();} state.tracks=next; $('#nowTitle').textContent=name;
+      $$('.preset').forEach(x=>x.classList.toggle('active',x.dataset.name===name)); renderSteps();renderTrackMix();saveProject(); if(!quiet)toast(`${name} is now under consideration.`);
+    }
+    function renderPresets(){
+      $('#presetStrip').innerHTML=Object.keys(patterns).map(name=>`<button class="preset" data-name="${name}">${name}</button>`).join('')+'<button class="preset" id="anotherBtn">ANOTHER VERSION</button>';
+      $$('.preset[data-name]').forEach(b=>b.onclick=()=>loadPreset(b.dataset.name));
+      $('#anotherBtn').onclick=()=>{state.tracks.forEach((t,i)=>{if(!t.lock)randomiseTrack(i,false)});renderSteps();saveProject();toast('A related but legally distinct version has appeared.');};
+    }
+    function randomiseTrack(i,announce=true){
+      const t=state.tracks[i];if(t.lock){if(announce)toast(`${t.name} is locked and refuses.`);return;}
+      const densities=[.28,.18,.48,.22,.16,.08,.11,.12], anchors=i===0?[0,4,8,12]:i===1?[4,12]:[];
+      t.steps=t.steps.map((_,s)=>anchors.includes(s)||Math.random()<densities[i]*(s%2?0.75:1.1));t.accents=t.steps.map(on=>on&&Math.random()<.12);t.sound=Math.floor(Math.random()*t.sounds.length);
+      if(i===7&&state.selectedSample>=0)t.steps.forEach((on,s)=>{if(on)state.voiceAssignments[s]=state.selectedSample;});
+      if(announce)toast(`${t.name} has reconsidered its position.`);
+    }
+
+    function setupPresets(){renderPresets();loadPreset(state.preset,true);}
+    function setupVoiceModes(){
+      const modes=['Normal','Tiny Authority','Exhausted Giant','Faulty Announcement','Telephone from 1973','Whispering Committee','Reversed Prophet'];
+      $('#voiceModes').innerHTML=modes.map(m=>`<button class="mode-chip ${m===state.voiceMode?'active':''}" data-mode="${m}">${m}</button>`).join('');
+      $$('.mode-chip').forEach(b=>b.onclick=()=>{state.voiceMode=b.dataset.mode;$$('.mode-chip').forEach(x=>x.classList.toggle('active',x===b));toast(`${state.voiceMode} is ready.`);});
+    }
+    function renderTrackMix(){
+      const root=$('#trackMix');root.innerHTML='';
+      state.tracks.forEach((t,i)=>{const el=document.createElement('div');el.className='control';el.style.borderTopColor=t.colour;el.innerHTML=`<label for="trackVol${i}">${t.name}<span>${Math.round(t.volume*100)}%</span></label><input id="trackVol${i}" type="range" min="0" max="100" value="${Math.round(t.volume*100)}">`;const input=$('input',el),out=$('span',el);input.oninput=e=>{t.volume=+e.target.value/100;out.textContent=`${e.target.value}%`;saveProject();};root.append(el);});
+    }
+
+    function reverseBuffer(buffer){
+      const rev=ctx.createBuffer(buffer.numberOfChannels,buffer.length,buffer.sampleRate);
+      for(let c=0;c<buffer.numberOfChannels;c++){const src=buffer.getChannelData(c),dst=rev.getChannelData(c);for(let i=0,j=src.length-1;i<src.length;i++,j--)dst[i]=src[j];} return rev;
+    }
+    const slotColours=['#d47c55','#d9a65d','#d5c980','#7ea88b','#6fa5b2','#858fb2','#aa86ad','#d37b91'];
+    function nextFreeSlot(){const empty=state.sampleSlots.findIndex(x=>!x);return empty>=0?empty:(state.selectedSample>=0?state.selectedSample:0);}
+    function renderSampleBank(){
+      const root=$('#sampleBank');root.innerHTML='';
+      state.sampleSlots.forEach((slot,i)=>{
+        const el=document.createElement('article');el.className=`sample-slot ${state.selectedSample===i?'armed':''}`;el.style.setProperty('--slot-colour',slotColours[i]);
+        el.innerHTML=slot?`<span class="slot-code">${String.fromCharCode(65+i)}</span><strong title="${esc(slot.name)}">${esc(slot.name)}</strong><small>${slot.duration.toFixed(2)} s · ${esc(slot.source)}</small><div class="slot-actions"><button class="btn arm">${state.selectedSample===i?'ARMED':'ARM'}</button><button class="btn preview">▶</button><button class="btn remove">×</button></div>`:`<span class="slot-code">${String.fromCharCode(65+i)}</span><strong>Empty slot</strong><small>Drop or import a sound</small>`;
+        if(slot){$('.arm',el).onclick=()=>{state.selectedSample=i;state.sampleBuffer=slot.buffer;state.reversedBuffer=slot.reversed;renderSampleBank();toast(`Sample ${String.fromCharCode(65+i)} armed. Place it on YOUR VOICE cells.`);};$('.preview',el).onclick=()=>previewSample(i);$('.remove',el).onclick=()=>removeSample(i);}
+        root.append(el);
+      });
+    }
+    async function previewSample(i){await ensureAudio();const slot=state.sampleSlots[i];if(!slot)return;const s=ctx.createBufferSource(),g=ctx.createGain();s.buffer=slot.buffer;g.gain.value=.55;s.connect(g);connectVoice(g,.12);s.start();s.stop(ctx.currentTime+Math.min(slot.buffer.duration,3));}
+    function removeSample(i){state.sampleSlots[i]=null;state.voiceAssignments=state.voiceAssignments.map(x=>x===i?-1:x);if(state.selectedSample===i){state.selectedSample=state.sampleSlots.findIndex(Boolean);const next=state.sampleSlots[state.selectedSample];state.sampleBuffer=next?.buffer||null;state.reversedBuffer=next?.reversed||null;}renderSampleBank();renderSteps();toast(`Sample ${String.fromCharCode(65+i)} removed from the tray.`);}
+    async function decodeSample(arrayBuffer,name,source='LOCAL FILE'){
+      await ensureAudio();
+      try{
+        const b=await ctx.decodeAudioData(arrayBuffer.slice(0));const i=nextFreeSlot(),clean=(name||`Sample ${String.fromCharCode(65+i)}`).slice(0,80);
+        state.sampleSlots[i]={name:clean,buffer:b,reversed:reverseBuffer(b),duration:b.duration,source};state.selectedSample=i;state.sampleBuffer=b;state.reversedBuffer=state.sampleSlots[i].reversed;
+        if(!state.tracks[7].steps.some(Boolean)){state.tracks[7].steps=[true,false,false,false,true,false,false,false,true,false,false,false,true,false,false,false];state.voiceAssignments=state.tracks[7].steps.map(on=>on?i:-1);}
+        $('#sampleName').textContent=`${state.sampleSlots.filter(Boolean).length} sample${state.sampleSlots.filter(Boolean).length===1?'':'s'} in the tray · ${clean} armed`;renderSampleBank();renderSteps();toast(`Sample ${String.fromCharCode(65+i)} loaded and armed.`);return true;
+      }catch(e){toast(`${name||'That file'} could not be decoded in this browser.`);return false;}
+    }
+    async function importFiles(files){
+      const audio=[...files].filter(f=>f.type.startsWith('audio/')||/\.(wav|mp3|m4a|aac|ogg|webm|flac)$/i.test(f.name)).slice(0,8);
+      if(!audio.length){toast('No supported audio files were found in that drop.');return;}
+      for(const file of audio)await decodeSample(await file.arrayBuffer(),file.name,'LOCAL FILE');
+      toast(`${audio.length} sample${audio.length===1?'':'s'} placed in the tray.`);
+    }
+    async function importSampleUrl(){
+      const input=$('#sampleUrl'),url=input.value.trim();if(!/^https?:\/\//i.test(url)){toast('Paste a full direct https audio link.');return;}
+      const btn=$('#urlImport');btn.disabled=true;btn.textContent='IMPORTING…';
+      try{const res=await fetch(url,{mode:'cors'});if(!res.ok)throw new Error(`HTTP ${res.status}`);const size=+(res.headers.get('content-length')||0);if(size>30*1024*1024)throw new Error('File is over 30 MB');const name=decodeURIComponent(new URL(url).pathname.split('/').pop()||'Web sample');await decodeSample(await res.arrayBuffer(),name,'WEB URL');input.value='';}
+      catch(e){toast('That host blocked direct import. Download the sound there, then drop the file into the tray.');}
+      finally{btn.disabled=false;btn.textContent='IMPORT URL';}
+    }
+
+    async function startMic(){
+      if(state.micRecorder){stopMic();return;}
+      if(!navigator.mediaDevices?.getUserMedia){toast('Microphone recording requires HTTPS or localhost.');return;}
+      try{
+        const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:false}});state.micStream=stream;state.micChunks=[];
+        const mime=['audio/webm;codecs=opus','audio/ogg;codecs=opus','audio/webm'].find(x=>MediaRecorder.isTypeSupported(x));state.micRecorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);
+        state.micRecorder.ondataavailable=e=>{if(e.data.size)state.micChunks.push(e.data)};
+        state.micRecorder.onstop=async()=>{const blob=new Blob(state.micChunks,{type:state.micRecorder?.mimeType||'audio/webm'});stream.getTracks().forEach(t=>t.stop());state.micStream=null;state.micRecorder=null;$('#micBtn').classList.remove('active');$('#micBtn').innerHTML='<span class="record-dot"></span>USE MICROPHONE';await decodeSample(await blob.arrayBuffer(),'New studio phrase','MICROPHONE');};
+        state.micRecorder.start();$('#micBtn').classList.add('active');$('#micBtn').textContent='■ FINISH PHRASE';let left=8;$('#micTime').textContent='00:08';state.micClock=setInterval(()=>{left--;$('#micTime').textContent=`00:0${Math.max(0,left)}`;if(left<=0)stopMic();},1000);
+      }catch(e){toast(e.name==='NotAllowedError'?'Microphone permission was declined.':'The microphone could not be opened.');}
+    }
+    function stopMic(){clearInterval(state.micClock);if(state.micRecorder?.state==='recording')state.micRecorder.stop();$('#micTime').textContent='00:00';}
+
+    function supportedMime(){return ['audio/webm;codecs=opus','audio/ogg;codecs=opus','audio/webm'].find(t=>MediaRecorder.isTypeSupported(t))||'';}
+    async function toggleRecording(autoName=null){
+      await ensureAudio();
+      if(state.recording){stopRecording(autoName);return;}
+      const mime=supportedMime();state.chunks=[];state.mediaRecorder=new MediaRecorder(mediaDest.stream,mime?{mimeType:mime}:undefined);
+      state.mediaRecorder.ondataavailable=e=>{if(e.data.size)state.chunks.push(e.data)};
+      state.mediaRecorder.onstop=()=>finishTape(autoName);
+      state.mediaRecorder.start(250);state.recording=true;$('#recordBtn').classList.add('active','recording');$('#miniRecord').classList.add('active','recording');updateTransport();toast('Recording the desk. Perform irresponsibly.');
+    }
+    function stopRecording(autoName=null){if(!state.recording)return;state.recording=false;clearTimeout(state.bounceTimer);state.bounceTimer=null;state.recordingName=autoName||state.recordingName;if(state.mediaRecorder?.state!=='inactive')state.mediaRecorder.stop();$('#recordBtn').classList.remove('active','recording');$('#miniRecord').classList.remove('active','recording');updateTransport();}
+    function finishTape(autoName){
+      const blob=new Blob(state.chunks,{type:state.mediaRecorder?.mimeType||'audio/webm'});if(blob.size<500){toast('The recording was empty. Play something before trying again.');return;}
+      const title=autoName||state.recordingName||generateTitle(),url=URL.createObjectURL(blob),ext=blob.type.includes('ogg')?'ogg':'webm';state.tapes.unshift({title,url,blob,ext,date:new Date()});state.recordingName=null;renderTapes();toast(`${title} is now on the Tape Shelf.`);
+    }
+    async function bounce(){
+      if(state.recording){toast('Finish the current recording first.');return;}await ensureAudio();if(!state.playing)await play();await toggleRecording();state.recordingName=generateTitle();const ms=(60/state.bpm)*4*2*1000;state.bounceTimer=setTimeout(()=>stopRecording(state.recordingName),ms+180);toast(`Capturing two complete loops · ${Math.round(ms/1000)} seconds.`);
+    }
+    function generateTitle(){return choose(['Untitled Lift Incident','Minutes from the Wrong Meeting','The Corridor Has Opinions','Moderately Urgent Tape','Proposal for a Small Disaster','Mix Rejected by the Committee','Evidence from the Penthouse','A Door Thinking Aloud'])+' '+String(state.tapes.length+1).padStart(2,'0');}
+    function renderTapes(){
+      const root=$('#tapeList');if(!state.tapes.length){root.innerHTML='<div class="empty">Nothing incriminating has been recorded yet.</div>';return;}
+      root.innerHTML='';state.tapes.forEach((t,i)=>{const el=document.createElement('article');el.className='tape';el.innerHTML=`<strong>${t.title}</strong><small>${t.ext.toUpperCase()} · ${(t.blob.size/1024).toFixed(0)} KB</small><div class="row"><button class="btn small tape-play">PLAY</button><a class="btn small" style="display:inline-flex;align-items:center;text-decoration:none" download="${t.title.replace(/[^a-z0-9]+/gi,'-')}.${t.ext}" href="${t.url}">DOWNLOAD</a><button class="btn small tape-delete">×</button></div>`;$('.tape-play',el).onclick=()=>new Audio(t.url).play();$('.tape-delete',el).onclick=()=>{URL.revokeObjectURL(t.url);state.tapes.splice(i,1);renderTapes();};root.append(el);});
+    }
+
+    async function performanceAction(action,button){
+      await ensureAudio();
+      if(action==='worse'){const unlocked=state.tracks.map((t,i)=>!t.lock?i:null).filter(i=>i!==null);if(!unlocked.length){toast('Every track is locked. The mistake has been denied access.');return;}const i=choose(unlocked),s=Math.floor(Math.random()*16);state.tracks[i].steps[s]=true;state.tracks[i].accents[s]=true;renderSteps();toast(`${state.tracks[i].name} has acquired an unnecessary event.`);}
+      if(action==='panic'){state.panicSteps=16;lowpass.frequency.cancelScheduledValues(ctx.currentTime);lowpass.frequency.setValueAtTime(state.tone,ctx.currentTime);lowpass.frequency.exponentialRampToValueAtTime(650,ctx.currentTime+.7);lowpass.frequency.exponentialRampToValueAtTime(state.radio?3000:state.tone,ctx.currentTime+2.2);toast('Panic has been scheduled and contained.');}
+      if(action==='wrong'){[0,6,11].forEach((n,i)=>osc('sawtooth',midi(61+n),ctx.currentTime+i*.025,.75,.11));toast('There. That note was plainly incorrect.');}
+      if(action==='serious'){const root=noteFor(0,3,-12);[0,3,7,12].forEach((n,i)=>osc(i%2?'triangle':'sawtooth',root*Math.pow(2,n/12),ctx.currentTime+i*.035,2.2,.085));reverbGain.gain.setTargetAtTime(.55,ctx.currentTime,.08);setTimeout(()=>reverbGain.gain.setTargetAtTime(state.reverb,ctx.currentTime,.5),2200);toast('The situation now has a budget and a trailer.');}
+      if(action==='radio'){state.radio=!state.radio;highpass.frequency.setTargetAtTime(state.radio?480:20,ctx.currentTime,.04);lowpass.frequency.setTargetAtTime(state.radio?3100:state.tone,ctx.currentTime,.04);button.classList.toggle('active',state.radio);toast(state.radio?'Broadcasting from an affordable location.':'Full bandwidth reluctantly restored.');}
+      if(action==='ghost'){state.ghost=!state.ghost;delayGain.gain.setTargetAtTime(state.ghost?.48:state.delay,ctx.currentTime,.08);reverbGain.gain.setTargetAtTime(state.ghost?.52:state.reverb,ctx.currentTime,.08);button.classList.toggle('active',state.ghost);toast(state.ghost?'The previous version has returned.':'The previous version has left no forwarding address.');}
+      if(action==='argue'){const t=ctx.currentTime;[0,.26,.58,.86,1.24,1.5].forEach((d,i)=>playVox(t+d,i%2, i===4,i*3));toast('A: This is not a rhythm.  B: Then why are you late?');}
+      if(action==='exit'){const t=ctx.currentTime;for(let i=0;i<12;i++)osc(i%2?'square':'triangle',midi(64-i*2),t+i*.07,.28,.08);masterGain.gain.setValueAtTime(state.master,t+.8);masterGain.gain.exponentialRampToValueAtTime(.0001,t+2.1);setTimeout(()=>{stop();masterGain.gain.setValueAtTime(state.master,ctx.currentTime);toast('The band has departed through an unsuitable door.');},2200);}
+    }
+
+    function animateMeter(){
+      if(!analyser)return;const data=new Uint8Array(analyser.frequencyBinCount);analyser.getByteFrequencyData(data);let sum=0;for(let i=0;i<48;i++)sum+=data[i];const level=sum/(48*255);$('#meter').setAttribute('aria-valuenow',String(Math.round(level*100)));const bars=$$('#meter i');bars.forEach((b,i)=>{const on=i/12<level*1.55;b.style.height=on?`${35+Math.random()*60}%`:'20%';b.style.background=i>9?'#b95d4e':i>7?'#c89753':'#5d8d69';b.style.opacity=on?'1':'.28';});meterFrame=requestAnimationFrame(animateMeter);
+    }
+
+    function saveProject(){
+      try{localStorage.setItem('studioDeskV1',JSON.stringify({preset:state.preset,bpm:state.bpm,swing:state.swing,master:state.master,reverb:state.reverb,delay:state.delay,tone:state.tone,key:state.key,scale:state.scale,strange:state.strange,tracks:state.tracks.map(t=>({steps:t.steps,accents:t.accents,mute:t.mute,solo:t.solo,lock:t.lock,volume:t.volume,sound:t.sound}))}));}catch(e){}
+    }
+    function restoreProject(){
+      try{const x=JSON.parse(localStorage.getItem('studioDeskV1'));if(!x||!Array.isArray(x.tracks)||x.tracks.length!==8)return false;Object.assign(state,{preset:x.preset||state.preset,bpm:x.bpm||108,swing:x.swing??8,master:x.master??.78,reverb:x.reverb??.22,delay:x.delay??.14,tone:x.tone||16000,key:x.key||0,scale:x.scale||'minor',strange:x.strange??12});const base=emptyPattern();state.tracks=base.map((t,i)=>Object.assign(t,x.tracks[i]));return true;}catch(e){return false;}
+    }
+
+    function enterWalk(){
+      if(window.parent!==window){
+        window.parent.postMessage({type:'workshop-studio-desk',action:'close'},'*');
+        return;
+      }
+      if(state.yt){$('#ytDock').append($('#ytMonitor'));$('#ytDock').classList.add('active');}
+      document.body.classList.add('walking');
+    }
+    function leaveWalk(){
+      document.body.classList.remove('walking');
+      if($('#ytDock').contains($('#ytMonitor')))$('#ytHome').append($('#ytMonitor'));
+      $('#ytDock').classList.remove('active');
+    }
+
+    function setupControls(){
+      $('#playBtn').onclick=play;$('#miniPlay').onclick=play;$('#stopBtn').onclick=stop;$('#recordBtn').onclick=()=>toggleRecording();$('#miniRecord').onclick=()=>toggleRecording();$('#bounceBtn').onclick=bounce;
+      $('#walkBtn').onclick=enterWalk;$('#returnBtn').onclick=$('#miniReturn').onclick=leaveWalk;
+      $('#sampleInput').onchange=async e=>{await importFiles(e.target.files);e.target.value='';};$('#micBtn').onclick=startMic;$('#urlImport').onclick=importSampleUrl;
+      const drop=$('#dropZone');['dragenter','dragover'].forEach(type=>drop.addEventListener(type,e=>{e.preventDefault();drop.classList.add('dragging');}));['dragleave','drop'].forEach(type=>drop.addEventListener(type,e=>{e.preventDefault();drop.classList.remove('dragging');}));drop.addEventListener('drop',e=>importFiles(e.dataTransfer.files));
+      $('#clearSamples').onclick=()=>{state.sampleSlots=Array(8).fill(null);state.selectedSample=-1;state.sampleBuffer=null;state.reversedBuffer=null;state.voiceAssignments=Array(16).fill(-1);renderSampleBank();renderSteps();$('#sampleName').textContent='Eight sample slots are available.';toast('The sample tray is empty.');};
+      $$('.perf').forEach(b=>b.onclick=()=>performanceAction(b.dataset.action,b));
+      $$('.tab').forEach(tab=>tab.onclick=()=>{$$('.tab').forEach(x=>{x.classList.toggle('active',x===tab);x.setAttribute('aria-selected',x===tab)});$$('.tool-page').forEach(x=>x.classList.toggle('active',x.id===`page-${tab.dataset.page}`));});
+      const bind=(id,key,format,apply)=>{$('#'+id).value=key==='master'?Math.round(state[key]*100):key==='reverb'||key==='delay'?Math.round(state[key]*100):state[key];const run=e=>{let v=+e.target.value;state[key]=key==='master'||key==='reverb'||key==='delay'?v/100:v;$('#'+id+'Out').textContent=format(v);if(apply&&ctx)apply(state[key]);saveProject();};$('#'+id).oninput=run;run({target:$('#'+id)});};
+      bind('bpm','bpm',v=>`${v} BPM`);bind('swing','swing',v=>`${v}%`);bind('master','master',v=>`${v}%`,v=>masterGain.gain.setTargetAtTime(v,ctx.currentTime,.03));bind('reverb','reverb',v=>`${v}%`,v=>reverbGain.gain.setTargetAtTime(v,ctx.currentTime,.05));bind('delay','delay',v=>`${v}%`,v=>delayGain.gain.setTargetAtTime(v,ctx.currentTime,.05));bind('tone','tone',v=>v>14000?'OPEN':`${(v/1000).toFixed(1)} kHz`,v=>{if(!state.radio)lowpass.frequency.setTargetAtTime(v,ctx.currentTime,.04)});
+      $('#keySelect').selectedIndex=state.key;$('#keySelect').onchange=e=>{state.key=e.target.selectedIndex;saveProject();};$('#scaleSelect').value=state.scale;$('#scaleSelect').onchange=e=>{state.scale=e.target.value;saveProject();};
+      $('#strangeRange').value=state.strange;const strange=e=>{state.strange=+e.target.value;$('#strangeValue').textContent=state.strange;$('#strangeDial').style.setProperty('--turn',`${-135+state.strange*2.7}deg`);saveProject();};$('#strangeRange').oninput=strange;strange({target:$('#strangeRange')});
+      $('#beginBtn').onclick=async()=>{$('#welcome').close();loadPreset('Bureaucratic Funk');await play();};$('#blankBtn').onclick=()=>{$('#welcome').close();state.tracks=emptyPattern();state.preset='Empty Desk';$('#nowTitle').textContent='Empty Desk';renderSteps();renderTrackMix();};
+      window.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;if(e.code==='Space'){e.preventDefault();play();}if(e.key.toLowerCase()==='r')toggleRecording();});
+    }
+
+    let toastTimer;function toast(message){const t=$('#toast');t.textContent=message;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2600);}
+
+    function parseYouTubeId(value){
+      try{const u=new URL(value.trim());if(u.hostname==='youtu.be')return u.pathname.slice(1).split('/')[0];if(u.pathname.startsWith('/shorts/'))return u.pathname.split('/')[2];if(u.pathname.startsWith('/embed/'))return u.pathname.split('/')[2];return u.searchParams.get('v');}catch(e){return /^[\w-]{11}$/.test(value.trim())?value.trim():null;}
+    }
+    function loadYTApi(){return new Promise((resolve,reject)=>{if(window.YT?.Player)return resolve();const old=window.onYouTubeIframeAPIReady;window.onYouTubeIframeAPIReady=()=>{old?.();resolve();};const s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';s.onerror=reject;document.head.append(s);setTimeout(()=>window.YT?.Player?resolve():reject(new Error('timeout')),10000);});}
+    async function loadYouTube(){
+      const id=parseYouTubeId($('#ytUrl').value);if(!id){toast('That does not look like a usable YouTube link.');return;}$('#ytLoad').disabled=true;$('#ytLoad').textContent='LOADING…';
+      try{await loadYTApi();if(state.yt){state.yt.loadVideoById(id);state.yt.playVideo();}else{$('#ytMonitor').innerHTML='<div id="ytPlayer"></div>';state.yt=new YT.Player('ytPlayer',{width:'480',height:'270',videoId:id,host:'https://www.youtube-nocookie.com',playerVars:{playsinline:1,controls:1,rel:0},events:{onReady:e=>{state.ytReady=true;e.target.setVolume(+$('#ytVolume').value);e.target.playVideo();$('#ytToggle').disabled=false;},onStateChange:e=>{$('#ytToggle').textContent=e.data===YT.PlayerState.PLAYING?'PAUSE':'PLAY';}}});}toast('YouTube is playing beside the desk.');}
+      catch(e){toast('The YouTube player could not load. Check the connection or hosting origin.');}
+      finally{$('#ytLoad').disabled=false;$('#ytLoad').textContent='LOAD & PLAY';}
+    }
+    function setupYouTube(){
+      const toggle=()=>{if(!state.ytReady)return;const p=state.yt.getPlayerState()===YT.PlayerState.PLAYING;if(p)state.yt.pauseVideo();else state.yt.playVideo();};
+      $('#ytLoad').onclick=loadYouTube;$('#ytToggle').onclick=toggle;$('#ytDockPause').onclick=toggle;$('#ytVolume').oninput=e=>state.ytReady&&state.yt.setVolume(+e.target.value);
+    }
+
+    function init(){
+      setupMeter();const restored=restoreProject();renderPresets();renderSteps();renderSampleBank();setupVoiceModes();renderTrackMix();setupControls();setupYouTube();$('#nowTitle').textContent=state.preset;$$('.preset').forEach(x=>x.classList.toggle('active',x.dataset.name===state.preset));
+      if(!restored&&typeof $('#welcome').showModal==='function')$('#welcome').showModal();
+    }
+    init();
+  })();
+  </script>
+</body>
+</html>
