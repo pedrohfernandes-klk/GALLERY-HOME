@@ -423,32 +423,38 @@ button:focus-visible,input:focus-visible{outline:2px solid rgba(169,76,68,.62);o
   align-items:center;
   justify-content:center;
   padding:clamp(24px,6vw,84px);
-  background:#f2efe7;
+  background:
+    radial-gradient(circle at 78% 18%,rgba(224,178,112,.20),transparent 28%),
+    radial-gradient(circle at 18% 82%,rgba(113,144,132,.17),transparent 31%),
+    linear-gradient(118deg,#f4f0e7 0 54%,#e8e1d4 54% 100%);
   color:#171815;
   contain:strict;
   transition:opacity .18s linear,visibility .18s linear;
 }
 #poster::before,#poster::after,#posterCard::before,#posterCard::after,#posterDoorWrap::before{display:none}
 #posterCard{
-  width:min(1040px,100%);
+  width:min(1240px,100%);
   padding:0;
   border:0;
   background:transparent;
   box-shadow:none;
   overflow:visible;
 }
+#posterCard{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(270px,.65fr);gap:clamp(38px,8vw,120px);align-items:end;text-align:left}
 #posterIntroTopline{margin:0 0 20px;color:#926a42;font-size:10px;letter-spacing:.44em}
-#posterSignature{width:min(176px,34vw);margin:0 auto 26px;opacity:.78;filter:none}
+#posterSignature{width:min(176px,34vw);margin:0 0 28px;opacity:.78;filter:none}
 #posterCard h1{
   color:#161714;
   font-size:clamp(54px,10vw,138px);
   line-height:.84;
   letter-spacing:.12em;
-  text-indent:.12em;
+  text-indent:0;
   text-shadow:none;
 }
-#posterSubtitle{margin-top:20px;color:#6f6b63;font-size:10px;letter-spacing:.28em}
-#posterDoorWrap{margin-top:44px;gap:15px}
+#posterSubtitle{margin-top:22px;color:#6f6b63;font-size:10px;letter-spacing:.28em}
+#posterDoorWrap{margin:0;gap:15px;align-items:stretch}
+#posterWelcome{font:400 clamp(18px,2.1vw,28px)/1.28 ui-serif,Georgia,serif;color:#34322e;margin:0 0 28px;max-width:410px}
+#posterWelcome small{display:block;margin-top:16px;font:700 9px/1.6 ui-sans-serif,system-ui,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#777167}
 #posterDoor{
   width:auto;
   aspect-ratio:auto;
@@ -463,15 +469,33 @@ button:focus-visible,input:focus-visible{outline:2px solid rgba(169,76,68,.62);o
   text-transform:uppercase;
   transition:transform .15s ease,background .15s ease;
 }
+#posterDoor[disabled]{cursor:wait;opacity:.48;transform:none}
 #posterDoor:hover,#posterDoor:focus-visible{transform:translateY(-1px);background:#3a3127}
-#posterOpenHint{color:#777167;font-size:8px;letter-spacing:.24em}
+#posterOpenHint{color:#777167;font-size:8px;line-height:1.6;letter-spacing:.18em;text-transform:uppercase}
+#posterLoadTrack{height:2px;background:rgba(23,24,21,.13);overflow:hidden;margin:20px 0 12px}
+#posterLoadFill{display:block;width:12%;height:100%;background:#926a42;transition:width .3s ease}
+#posterReady{font:800 8px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#777167}
 #poster.opening{opacity:0;visibility:hidden;pointer-events:none}
 @media(max-width:700px){
   #poster{padding:24px}
   #posterCard{padding:0}
+  #posterCard{display:block;text-align:center}
   #posterCard h1{font-size:clamp(48px,15vw,82px);letter-spacing:.09em;text-indent:.09em}
+  #posterSignature{margin-left:auto;margin-right:auto}
+  #posterWelcome{margin:34px auto 24px;font-size:18px}
   #posterDoor{width:auto;min-width:136px}
 }
+
+#travelSequence{position:fixed;inset:0;z-index:11900;display:grid;place-items:center;padding:28px;background:#101310;color:#f3eee3;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s ease,visibility .22s ease}
+#travelSequence.show{opacity:1;visibility:visible;pointer-events:auto}
+.travelCard{width:min(620px,100%)}
+.travelEyebrow{font:800 9px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.28em;text-transform:uppercase;color:#b9a887}
+#travelTitle{margin:17px 0 24px;font:400 clamp(38px,7vw,82px)/.94 ui-serif,Georgia,serif;letter-spacing:.02em}
+.travelLine{height:2px;background:rgba(255,255,255,.13);overflow:hidden}.travelLine span{display:block;width:0;height:100%;background:#e0c68f;transition:width .65s cubic-bezier(.2,.75,.2,1)}
+#travelTip{margin:18px 0 0;max-width:520px;font:500 11px/1.55 ui-sans-serif,system-ui,sans-serif;letter-spacing:.08em;color:#aaa69e}
+
+#performanceBadge{position:fixed;right:18px;bottom:18px;z-index:20;padding:7px 10px;border-radius:999px;background:rgba(15,18,16,.72);color:#ece7dc;font:800 8px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase;opacity:0;transform:translateY(5px);transition:.2s;pointer-events:none}
+#performanceBadge.show{opacity:1;transform:none}
 
 #topbar{
   position:absolute;
@@ -1862,13 +1886,18 @@ body.rpgMode #rpgModeBadge{display:block}
 
   <div id="poster">
     <div id="posterCard">
-      <div id="posterIntroTopline">HrM presents</div>
-      <img id="posterSignature" alt="HrM signature">
-      <h1>THE WORKSHOP</h1>
-      <div id="posterSubtitle">rooms · images · sound · experiments</div>
+      <div>
+        <div id="posterIntroTopline">HrM presents</div>
+        <img id="posterSignature" alt="HrM signature">
+        <h1>THE<br>WORKSHOP</h1>
+        <div id="posterSubtitle">rooms · images · sound · experiments</div>
+      </div>
       <div id="posterDoorWrap">
-        <button id="posterDoor" type="button" aria-label="Enter The Workshop">Enter</button>
-        <div id="posterOpenHint">WASD to move · mouse to look</div>
+        <p id="posterWelcome">A walkable world of art, music and peculiar rooms.<small>Headphones recommended · no account · progress stays in this browser</small></p>
+        <button id="posterDoor" type="button" aria-label="Enter The Workshop" disabled>Preparing world</button>
+        <div id="posterLoadTrack" aria-hidden="true"><span id="posterLoadFill"></span></div>
+        <div id="posterReady">Building rooms and tuning light</div>
+        <div id="posterOpenHint">WASD move · Shift sprint · mouse look · E interact · Esc release</div>
       </div>
     </div>
   </div>
@@ -2005,16 +2034,17 @@ body.rpgMode #rpgModeBadge{display:block}
     </div>
     <p><code>W/S</code> or <code>↑/↓</code>: walk forward / backward. Hold <code>Shift</code> to run.</p>
     <p><code>A/D</code>: left / right strafe.</p>
-    <p><code>←/→</code> or <code>Q/E</code>: turn. Drag the view on touch devices.</p>
+    <p><code>←/→</code>: turn without a mouse. Drag the view on touch devices.</p>
     <p>Click the gallery to capture the mouse. Move mouse to look. Wheel zooms.</p>
-    <p><code>G</code>: Rooms. <code>F</code>: focus nearest work. <code>C</code>: Catalogue. <code>A</code>: Archive. <code>N</code>: Notes. <code>L</code>: brighten room. <code>Esc</code>: release / close.</p>
+    <p><code>E</code>: interact. <code>C</code>: crouch. <code>G</code>: Rooms. <code>F</code>: focus nearest work. <code>K</code>: Catalogue. <code>A</code>: Archive. <code>N</code>: Notes. <code>L</code>: brighten room. <code>Esc</code>: release / close.</p>
+    <p>Gamepad: left stick moves, right stick looks, <code>A</code> interacts, stick/trigger sprints, and <code>Menu</code> opens Rooms.</p>
     <p>Doors behave as portals: aim at a portal and click to pass through. The Experiment Garden now leads down to MANY MAPS, a permanent basement gallery curated by HrM. Projection screens open in a stable player with <code>R</code>.</p>
   </aside>
 
   <div id="hud">
     <div id="lookingAt"></div>
     <div id="depthBar"><div id="depthFill"></div></div>
-    <div id="hint">WASD moves · click doors/screens · G rooms · R projection</div>
+  <div id="hint">WASD move · Shift sprint · E interact · G rooms</div>
   </div>
 
   <div id="hintBanner"></div>
@@ -2037,6 +2067,8 @@ body.rpgMode #rpgModeBadge{display:block}
   <div id="reticle"></div>
   <div id="toast"></div>
   <div id="fadeOverlay"></div>
+  <div id="travelSequence" aria-live="polite"><div class="travelCard"><span class="travelEyebrow">The Workshop · travelling</span><h2 id="travelTitle">Crossing the grounds</h2><div class="travelLine"><span id="travelProgress"></span></div><p id="travelTip">A distant room should feel distant, not slow.</p></div></div>
+  <div id="performanceBadge">Adaptive performance</div>
 
   <div id="playOverlay">
     <div id="playOverlayCard">
@@ -2300,6 +2332,8 @@ const app = $('app');
 const canvas = $('renderCanvas');
 const poster = $('poster');
 const posterDoor = $('posterDoor');
+const posterLoadFill = $('posterLoadFill');
+const posterReady = $('posterReady');
 const toast = $('toast');
 const miniMap = $('miniMap');
 const miniCtx = miniMap.getContext('2d');
@@ -2517,6 +2551,9 @@ let lastMouse = null;
 let velX = 0, velZ = 0;
 let bodyBob = 0, bobPhase = 0, roll = 0;
 let smoothSpeed = 0;
+let activeSeatEyeHeight = null;
+let crouchActive = false;
+let preferredPixelRatio = 1;
 let lookingAt = -1;
 const keys = new Set();
 const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -2531,6 +2568,7 @@ const mobileInput = {
   run:false
 };
 let suppressNextMobileTap = false;
+const gamepadInput={forward:0,strafe:0,sprint:false,lastUse:false,lastMap:false};
 const artworkObjects = [];
 const labelObjects = [];
 const tunnelLength = 112;
@@ -2899,7 +2937,8 @@ function interactionEnabled(item){
 }
 function interactionPrompt(item){
   if(!item) return '';
-  return typeof item.prompt === 'function' ? item.prompt(item) : (item.prompt || item.label || 'Interact');
+  const label=typeof item.prompt === 'function' ? item.prompt(item) : (item.prompt || item.label || 'Interact');
+  return `E · ${label}`;
 }
 function activeInteractables(types=null){
   const wanted = types ? new Set(Array.isArray(types) ? types : [types]) : null;
@@ -3034,6 +3073,17 @@ function lerpAngle(a,b,t){ return a + angleDelta(a,b) * t; }
 function damp(current, target, lambda, dt){
   return current + (target-current) * (1 - Math.exp(-lambda * dt));
 }
+function seatAt(pos,seatYaw,seatPitch=-.03,duration=.72,label='Seat'){
+  activeSeatEyeHeight = Math.max(.82,pos.y-(isHoodRoom(currentRoom)?hoodFloorY(currentRoom):0));
+  crouchActive=false;velX=0;velZ=0;smoothSpeed=0;
+  startCameraTransition(pos,seatYaw,seatPitch,duration);
+  msg(`Seated · ${label} · move to stand`);
+}
+function standUp({quiet=false}={}){
+  if(activeSeatEyeHeight===null&&!crouchActive)return;
+  activeSeatEyeHeight=null;crouchActive=false;
+  if(!quiet)msg('Standing');
+}
 
 function theatreFloorY(z){
   return 0;
@@ -3083,6 +3133,7 @@ function beginPosterOpen(){
     hidePoster();
     poster.classList.remove('opening');
     if(!isCoarsePointer && canvas.requestPointerLock) canvas.requestPointerLock();
+    msg('Explore freely · E interacts · G opens rooms');
     posterOpening = false;
   }, 180);
 }
@@ -4183,6 +4234,7 @@ function init(){
   const memGB = navigator.deviceMemory || 8;
   const dprCap = isCoarsePointer ? (memGB <= 4 ? .88 : 1.0) : (memGB<=4?1.0:1.15);
   const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
+  preferredPixelRatio=dpr;
   renderer = new THREE.WebGLRenderer({canvas, antialias:!isCoarsePointer&&memGB>4, alpha:false, powerPreference:'high-performance'});
   renderer.setPixelRatio(dpr);
   renderer.setSize(innerWidth, innerHeight);
@@ -4240,6 +4292,10 @@ function init(){
   applyRoomLighting();
   selectNearest(true);
   worldReady = true;
+  if(posterLoadFill)posterLoadFill.style.width='100%';
+  if(posterReady)posterReady.textContent='World ready · enter when you are';
+  if(posterDoor){posterDoor.disabled=false;posterDoor.textContent='Enter the Workshop';}
+  document.body.classList.add('world-ready');
   animate();
   msg('Tunnel ready');
   if(/[?&#]selftest/.test(location.href)) setTimeout(runWorkshopSelfTest, 900);
@@ -4253,6 +4309,13 @@ function runWorkshopSelfTest(){
   const check = (ok, name, detail='') => results.push({test:name, ok:!!ok, detail:String(detail)});
   const inScene = (obj) => { let o = obj; while(o){ if(o === scene) return true; o = o.parent; } return false; };
   const knownRooms = new Set(Object.keys(roomLights));
+
+  check(worldReady&&!posterDoor?.disabled,'Opening exposes Enter only after world readiness',posterDoor?.textContent||'missing');
+  check(!!$('travelSequence')&&typeof runTravelSequence==='function','District travel sequence available','Hood transitions are brief and explicit');
+  check(typeof seatAt==='function'&&typeof standUp==='function','Unified seated-view API available','free look + move to stand');
+  check(interactionPrompt({label:'Test'}).startsWith('E ·'),'Unified interaction prompt uses E',interactionPrompt({label:'Test'}));
+  check(typeof updatePerformanceLadder==='function'&&preferredPixelRatio>0,'Adaptive performance ladder available',`preferred DPR ${preferredPixelRatio}`);
+  check(typeof updateGamepad==='function','Gamepad input path available','dual-stick + interact + rooms');
 
   check(!!hoodSky && hoodSky.material?.fog === false, 'Hood sky bypasses global fog', hoodSky?.material?.fog);
   check(!!hoodHorizon && hoodHorizon.material?.fog === false, 'Hood ocean horizon bypasses global fog', hoodHorizon?.material?.fog);
@@ -4374,6 +4437,7 @@ function runWorkshopSelfTest(){
   check(!!$('viewModeBtn') && !!$('mobileViewBtn'), 'RPG view-mode controls present', `desktop ${!!$('viewModeBtn')}, mobile ${!!$('mobileViewBtn')}`);
 
   const failed = results.filter(r=>!r.ok);
+  window.__workshopSelfTest={passed:failed.length===0,total:results.length,failed,results};
   if(console.table) console.table(results.map(r=>({ok:r.ok?'✓':'✗', test:r.test, detail:r.detail})));
   if(failed.length){
     console.warn(`WORKSHOP SELFTEST: ${failed.length} of ${results.length} checks FAILED`, failed);
@@ -6256,9 +6320,8 @@ function buildOutdoorSpace(){
           const slots=Array.from({length:14},(_,i)=>i).filter(i=>i!==6&&i!==7).map(i=>-1.17+i*(2.34/13));
           theta=slots.reduce((best,v)=>Math.abs(v-theta)<Math.abs(best-theta)?v:best,slots[0]);
           const sx=ax+Math.sin(theta)*r, sz=az+Math.cos(theta)*r;
-          seatedAmphView=true; amphSeatEyeY=y+1.02; velX=0; velZ=0; smoothSpeed=0;
-          const faceYaw=Math.atan2(-(ax-sx),-(az-sz)); startCameraTransition(new THREE.Vector3(sx,amphSeatEyeY,sz),faceYaw,-.04,.85);
-          msg(`Seated · tier ${tier+1} · move to stand`);
+          seatedAmphView=true; amphSeatEyeY=y+1.02;
+          const faceYaw=Math.atan2(-(ax-sx),-(az-sz)); seatAt(new THREE.Vector3(sx,amphSeatEyeY,sz),faceYaw,-.04,.85,`amphitheatre tier ${tier+1}`);
         }
       });
     }
@@ -6505,7 +6568,7 @@ function buildHood(){
   const circle=new THREE.Mesh(new THREE.CylinderGeometry(5.4,5.4,.20,56),darkConcrete);circle.position.set(x0,.10,z0+31);scene.add(circle);
   const mic=new THREE.Mesh(new THREE.CylinderGeometry(.04,.055,1.55,12),steel);mic.position.set(x0,1,z0+31);scene.add(mic);
   registerInteractable({type:'freestyle',room:'hood',mesh:circle,label:'Freestyle circle',hintId:'hood-flow',priority:4,hintText:'A public square with no algorithm and excellent acoustics.',prompt:()=>'Ask for a freestyle prompt',onUse:()=>msg(['Describe the ocean without using blue.','Eight bars about a locked door. The door wins.','Rhyme architecture with bad decisions.','Start with: “The gravel remembers…”','Explain rent to a seagull in sixteen bars.','Your first line is evidence. Your last line is an alibi.'][Math.floor(Math.random()*6)])});
-  function sitPoint(room,mesh,label,pos,yaw,pitch=-.03){registerInteractable({type:'seat',room,mesh,label,hintId:'hood-seat',priority:3,hintText:'Sit, look around freely; move to stand.',prompt:()=>`Sit · ${label}`,onUse:()=>{velX=0;velZ=0;smoothSpeed=0;startCameraTransition(pos,yaw,pitch,.78);msg(`Seated · ${label} · move to stand`);}});}
+  function sitPoint(room,mesh,label,pos,yaw,pitch=-.03){registerInteractable({type:'seat',room,mesh,label,hintId:'hood-seat',priority:3,hintText:'Sit, look around freely; move to stand.',prompt:()=>`Sit · ${label}`,onUse:()=>seatAt(pos,yaw,pitch,.78,label)});}
   for(const sx of [-13,0,13]){const bench=new THREE.Mesh(new THREE.BoxGeometry(6.2,.36,1.05),wood);bench.position.set(x0+sx,.58,z0+10);scene.add(bench);sitPoint('hood',bench,'Ocean square',new THREE.Vector3(x0+sx,1.30,z0+10),0);}
 
   // Return portal: broad, luminous and placed clear of every sightline.
@@ -6725,7 +6788,7 @@ function buildHood(){
   seatInstances.userData.hoodCaveSeatCount=100;seatInstances.userData.hoodCaveSeatViews=caveSeatViews;seatInstances.userData.viewerYaw=Math.PI;
   registerInteractable({type:'seat',room:'hood',mesh:seatInstances,label:'Cave seating',hintId:'hood-cave-seat',priority:3,hintText:'Choose any red seat; the view settles at human eye height and remains free to look around.',prompt:()=>'Sit in The Cave',onUse:(item,context)=>{
     const id=Number.isInteger(context?.hit?.instanceId)?context.hit.instanceId:0;
-    const view=caveSeatViews[id]||caveSeatViews[0];velX=0;velZ=0;smoothSpeed=0;startCameraTransition(view.pos,Math.PI,-.04,.62);msg(`Seated · ${view.label} · move to stand`);
+    const view=caveSeatViews[id]||caveSeatViews[0];seatAt(view.pos,Math.PI,-.04,.62,view.label);
   }});
 
   for(const side of [-1,1]){const rearWing=new THREE.Mesh(new THREE.BoxGeometry((W-12)/2,H,.52),brick);rearWing.position.set(wx+side*(6+(W-12)/4),H/2,wz+D/2);scene.add(rearWing);}
@@ -7801,9 +7864,7 @@ function buildTheatre(){
       registerInteractable({type:'seat',room:'theatre',mesh:base,label:`Venue recliner · row ${r+1}`,hintId:'venue-seat',priority:3,
         hintText:'Sit for the screening. Look around freely; move to stand.',prompt:()=>`Sit in Venue · row ${r+1}`,
         onUse:()=>{
-          velX=0; velZ=0; smoothSpeed=0;
-          startCameraTransition(new THREE.Vector3(theatreOrigin.x+x,1.34,rowZ-.06),0,-.035,.78);
-          msg(`Seated in The Venue · row ${r+1} · move to stand`);
+          seatAt(new THREE.Vector3(theatreOrigin.x+x,1.34,rowZ-.06),0,-.035,.78,`The Venue · row ${r+1}`);
         }});
     }
   }
@@ -8374,7 +8435,7 @@ function buildMazeGarden(){
     const sofaA=addSofa(x0-3.0,zFront-6.25,0);
     const sofaB=addSofa(x0+3.0,zFront-6.25,0);
     [[sofaA,x0-3.0],[sofaB,x0+3.0]].forEach(([sofa,sx])=>registerInteractable({type:'seat',room:'maze',mesh:sofa.children[0],label:'Garden projection sofa',hintId:'garden-seat',priority:3,
-      hintText:'Sit for the projection. Look around freely; move to stand.',prompt:()=>'Sit facing the Garden projection',onUse:()=>{velX=0;velZ=0;smoothSpeed=0;startCameraTransition(new THREE.Vector3(sx,1.28,zFront-6.05),0,-.03,.75);msg('Seated in the Experiment Garden · move to stand');}}));
+      hintText:'Sit for the projection. Look around freely; move to stand.',prompt:()=>'Sit facing the Garden projection',onUse:()=>seatAt(new THREE.Vector3(sx,1.28,zFront-6.05),0,-.03,.75,'Experiment Garden projection')}));
     const coffee = new THREE.Mesh(new THREE.BoxGeometry(1.55,.18,.92), timberMat);
     coffee.position.set(x0,.43,zFront-4.75); scene.add(coffee);
     addPlanter(x0-7.1,zFront-4.7,.92,.35);
@@ -9714,7 +9775,7 @@ function buildTunnelPassage(){
     scene.add(g);
     registerInteractable({type:'seat',room:'tunnel',mesh:seat,label:'Waiting-room lounge chair',hintId:'waiting-seat',priority:2,
       hintText:'Sit in the observatory lounge. Move to stand.',prompt:()=>'Sit in the waiting-room lounge',
-      onUse:()=>{ velX=0; velZ=0; smoothSpeed=0; startCameraTransition(new THREE.Vector3(px,1.25,pz),0,-.025,.72); msg('Seated in the observatory lounge · move to stand'); }});
+      onUse:()=>seatAt(new THREE.Vector3(px,1.25,pz),0,-.025,.72,'observatory lounge')});
   }
   waitingChair(x0-3.15,z0+8.4,-.10); waitingChair(x0+3.15,z0+8.4,.10);
   waitingChair(x0-3.15,z0+11.3,-.06); waitingChair(x0+3.15,z0+11.3,.06);
@@ -10124,7 +10185,7 @@ function buildStudio(){
     registerInteractable({type:'seat',room:'studio',mesh:seat,label:'Eames lounge chair',hintId:'studio-seat',priority:3,
       hintText:'Sit for a focused view of the Studio screen. Look around freely; move to stand.',
       prompt:()=>'Sit and watch the Studio screen',
-      onUse:()=>{ seatedStudioView=true; velX=0; velZ=0; smoothSpeed=0; startCameraTransition(new THREE.Vector3(px,1.28,pz-.08),0,-.035,.8); msg('Seated viewing mode · look around freely · move to stand'); }
+      onUse:()=>{ seatedStudioView=true; seatAt(new THREE.Vector3(px,1.28,pz-.08),0,-.035,.8,'Studio listening chair'); }
     });
   }
   eamesLounge(x0-7.0,z0+9,-.18);
@@ -10258,7 +10319,7 @@ function buildStudio(){
   for(let i=0;i<5;i++){const foot=new THREE.Mesh(new THREE.BoxGeometry(.055,.055,.72),chromeMat);foot.position.set(Math.sin(i*Math.PI*2/5)*.26,.08,Math.cos(i*Math.PI*2/5)*.26);foot.rotation.y=i*Math.PI*2/5;opChair.add(foot);}
   registerInteractable({type:'seat',room:'studio',mesh:opSeat,label:'Mixing position',hintId:'studio-mix-seat',priority:5,
     hintText:'Sit at the production console, then open the desk. Move at any time to stand.',prompt:()=>'Sit at the mixing console',
-    onUse:()=>{seatedStudioView=true;velX=0;velZ=0;smoothSpeed=0;startCameraTransition(new THREE.Vector3(x0+hw-3.00,1.34,z0+12.0),-Math.PI/2,-.10,.65);setTimeout(openStudioMaker,700);msg('Studio desk open · move at any time to stand');}});
+    onUse:()=>{seatedStudioView=true;seatAt(new THREE.Vector3(x0+hw-3.00,1.34,z0+12.0),-Math.PI/2,-.10,.65,'Studio console');setTimeout(openStudioMaker,700);}});
   const deskGlow=new THREE.PointLight(0xffdfb5,1.35,9,1.85);deskGlow.position.set(x0+hw-3.0,3.0,z0+12.0);scene.add(deskGlow);regLight('studio',deskGlow);
 
   studioFX = {tiles:null, tileN:0, speakerRings, orbs, ball, tileTimer:0};
@@ -12153,6 +12214,7 @@ function setPlayerLocation(room, pos, newYaw, label, newPitch=0){
   exitScreenControl();
   seatedStudioView = false;
   seatedAmphView = false;
+  standUp({quiet:true});
   if($('playOverlay').classList.contains('show')) closePlayOverlay();
   currentRoom = room;
   if(studioWallIframe && !studioMusicFollow){
@@ -12290,13 +12352,31 @@ function fastTravel(place){
   };
   const target = places[place];
   if(!target){ msg('Room destination missing'); return; }
-  setPlayerLocation(target.room, target.pos, target.yaw, target.label, target.pitch || 0);
+  const crossesDistrict=isHoodRoom(target.room)!==isHoodRoom(currentRoom);
+  if(crossesDistrict){
+    runTravelSequence(target.label,()=>setPlayerLocation(target.room,target.pos,target.yaw,target.label,target.pitch||0),place==='headquarters'?'Ten kilometres pass in a few seconds. The square is ahead.':'Returning across the gravel road to The Workshop.');
+  }else setPlayerLocation(target.room, target.pos, target.yaw, target.label, target.pitch || 0);
+}
+
+let travelSequenceBusy=false;
+function runTravelSequence(title,onArrive,tip='A distant room should feel distant, not slow.'){
+  if(travelSequenceBusy)return;
+  travelSequenceBusy=true;keys.clear();velX=0;velZ=0;smoothSpeed=0;document.exitPointerLock?.();
+  const panel=$('travelSequence'),line=$('travelProgress');
+  $('travelTitle').textContent=title||'Crossing the grounds';$('travelTip').textContent=tip;
+  line.style.transition='none';line.style.width='0';panel.classList.add('show');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{line.style.transition='width .72s cubic-bezier(.2,.75,.2,1)';line.style.width='100%';}));
+  setTimeout(()=>{
+    onArrive();
+    requestAnimationFrame(()=>{panel.classList.remove('show');line.style.width='0';travelSequenceBusy=false;if(!isCoarsePointer)canvas.requestPointerLock?.();});
+  },reducedMotion?40:760);
 }
 
 function travelTo(portal){
   exitScreenControl();
   seatedStudioView = false;
   seatedAmphView = false;
+  standUp({quiet:true});
   const overlay = $('fadeOverlay');
   if(!reducedMotion) animateDoorSlide(portal);
   velX = 0; velZ = 0; smoothSpeed = 0;
@@ -12349,7 +12429,9 @@ function travelTo(portal){
       requestAnimationFrame(()=>requestAnimationFrame(()=>overlay.classList.remove('show')));
     }, reducedMotion ? 0 : 70);
   };
-  setTimeout(jump, reducedMotion ? 0 : 160);
+  const crossesDistrict=isHoodRoom(portal.room)!==isHoodRoom(currentRoom);
+  if(crossesDistrict)runTravelSequence(portal.label||'Crossing the grounds',jump,portal.room==='hood'?'The gravel road runs ten kilometres toward the ocean district.':'The Workshop returns beyond the long road.');
+  else setTimeout(jump, reducedMotion ? 0 : 160);
 }
 
 function resize(){
@@ -12378,6 +12460,22 @@ function enterPointer(){
   exitScreenControl();
   if(!isCoarsePointer && canvas.requestPointerLock) canvas.requestPointerLock();
 }
+function updateGamepad(dt){
+  const gp=navigator.getGamepads?.()[0];
+  if(!gp){gamepadInput.forward=0;gamepadInput.strafe=0;gamepadInput.sprint=false;return;}
+  const dead=v=>Math.abs(v)<.16?0:Math.sign(v)*(Math.abs(v)-.16)/.84;
+  gamepadInput.strafe=dead(gp.axes[0]||0);gamepadInput.forward=-dead(gp.axes[1]||0);gamepadInput.sprint=!!(gp.buttons[10]?.pressed||gp.buttons[7]?.value>.55);
+  const lookX=dead(gp.axes[2]||0),lookY=dead(gp.axes[3]||0);
+  if(!anyUiPanelOpen()&&!screenControlMode){
+    yaw-=lookX*2.35*dt;
+    if(rpgMode)rpgOrbitPitch=clamp(rpgOrbitPitch+lookY*1.65*dt,.18,.88);
+    else pitch=clamp(pitch-lookY*1.65*dt,-1.15,1.05);
+  }
+  const use=!!gp.buttons[0]?.pressed,map=!!gp.buttons[9]?.pressed;
+  if(use&&!gamepadInput.lastUse)interactAtCenter({requestLock:false});
+  if(map&&!gamepadInput.lastMap)toggleRoomsPanel();
+  gamepadInput.lastUse=use;gamepadInput.lastMap=map;
+}
 function interactAtCenter({requestLock=true, types=null}={}){
   if(screenControlMode) return false;
   if(suppressNextMobileTap){ suppressNextMobileTap = false; return false; }
@@ -12398,7 +12496,10 @@ function interactAtCenter({requestLock=true, types=null}={}){
   }
   return false;
 }
-canvas.addEventListener('click', e=>interactAtCenter({requestLock:!isCoarsePointer}));
+canvas.addEventListener('click', ()=>{
+  if(!isCoarsePointer&&document.pointerLockElement!==canvas){canvas.requestPointerLock?.();return;}
+  interactAtCenter({requestLock:false});
+});
 document.addEventListener('pointerlockchange', ()=>{
   const hint = $('hint');
   if(document.pointerLockElement === canvas){
@@ -12409,12 +12510,12 @@ document.addEventListener('pointerlockchange', ()=>{
   }
 });
 document.addEventListener('mousemove', e=>{
-  if(document.pointerLockElement === canvas && !reducedMotion){
+  if(document.pointerLockElement === canvas){
     yaw -= e.movementX * .0030;
     if(rpgMode) rpgOrbitPitch=clamp(rpgOrbitPitch+e.movementY*.0030,.18,.88);
     else {pitch -= e.movementY * .0030;pitch = clamp(pitch, -1.15, 1.05);}
     updateCameraRotation();
-  }else if(mouseDown && lastMouse && !reducedMotion){
+  }else if(mouseDown && lastMouse){
     yaw -= (e.clientX - lastMouse.x) * .0052;
     if(rpgMode) rpgOrbitPitch=clamp(rpgOrbitPitch+(e.clientY-lastMouse.y)*.0052,.18,.88);
     else {pitch -= (e.clientY - lastMouse.y) * .0052;pitch = clamp(pitch, -1.15, 1.05);}
@@ -12576,9 +12677,11 @@ window.addEventListener('keydown', e=>{
     if(researchPanel && researchPanel.classList.contains('open')){ closeResearchPanel(); return; }
     catalogue.classList.remove('open'); closeArchive(); closeNotes(); closeResearchPanel(); helpPanel.classList.remove('open'); fastMapPanel.classList.remove('open');
   }
-  if(k==='enter' && !typingTarget){ e.preventDefault(); interactAtCenter({requestLock:false}); }
+  if(k==='enter' && !typingTarget&&!e.repeat){ e.preventDefault(); interactAtCenter({requestLock:false}); }
+  if(k==='e' && !typingTarget&&!e.repeat){ e.preventDefault(); interactAtCenter({requestLock:false}); }
+  if(k==='c' && !typingTarget&&!e.repeat){crouchActive=!crouchActive;activeSeatEyeHeight=null;msg(crouchActive?'Crouched':'Standing');}
   if(k==='f') focusNearest();
-  if(k==='c') catalogue.classList.toggle('open');
+  if(k==='k') catalogue.classList.toggle('open');
   if(k==='a') openArchive('rooms');
   if(k==='g') toggleRoomsPanel();
   if(k==='n') openNotes();
@@ -12647,7 +12750,7 @@ function updateMovement(dt){
   if(cameraTransition.active){ updateCameraTransition(dt); return; }
   const movePos=getVisitorPosition();
 
-  const sprinting = keys.has('shift') || (isCoarsePointer && mobileInput.run);
+  const sprinting = keys.has('shift') || (isCoarsePointer && mobileInput.run) || gamepadInput.sprint;
   const walkSpeed = currentRoom === 'maze' ? 4.45 : (currentRoom === 'maps' ? 6.25 : 5.8);
   const runSpeed = currentRoom === 'maze' ? 6.5 : (currentRoom === 'maps' ? 10.5 : 9.8);
   const maxSpeed = sprinting ? runSpeed : walkSpeed;
@@ -12664,7 +12767,9 @@ function updateMovement(dt){
     const ml = Math.hypot(forward, strafe);
     if(ml > 1){ forward /= ml; strafe /= ml; }
   }
-  const turn = (keys.has('arrowleft') || keys.has('q') ? 1 : 0) - (keys.has('arrowright') || keys.has('e') ? 1 : 0);
+  forward+=gamepadInput.forward;strafe+=gamepadInput.strafe;
+  const inputLength=Math.hypot(forward,strafe);if(inputLength>1){forward/=inputLength;strafe/=inputLength;}
+  const turn = (keys.has('arrowleft') ? 1 : 0) - (keys.has('arrowright') ? 1 : 0);
   if(turn && document.pointerLockElement !== canvas){
     yaw += turn * (sprinting ? 2.55 : 1.75) * dt;
     updateCameraRotation();
@@ -12674,6 +12779,7 @@ function updateMovement(dt){
   const moving = Math.abs(forward) + Math.abs(strafe) > 0;
   if(moving && seatedStudioView) seatedStudioView = false;
   if(moving && seatedAmphView) seatedAmphView = false;
+  if(moving&&activeSeatEyeHeight!==null)standUp({quiet:true});
 
   if(currentRoom==='gallery' && autoTour && !moving){
     targetX = 0;
@@ -12761,7 +12867,7 @@ function updateMovement(dt){
     camera.fov = fov;
   }
 
-  const viewHeight = (currentRoom === 'studio' && seatedStudioView) ? 1.28 : (currentRoom==='outdoor'&&seatedAmphView) ? amphSeatEyeY : cameraHeight;
+  const viewHeight = activeSeatEyeHeight ?? (crouchActive?1.48:cameraHeight);
   movePos.y = (currentRoom === 'theatre' ? theatreFloorY(movePos.z) : isHoodRoom(currentRoom) ? hoodFloorY(currentRoom) : 0) + viewHeight + bodyBob;
   if(rpgMode) updateRpgAvatar(dt,speed);
 }
@@ -12967,29 +13073,39 @@ function drawMap(){
 
 // React within 1.6 seconds, before a low-framerate room feels stuck. The old
 // four-second / 42 ms threshold waited through several seconds of poor input.
-let perfAccum = 0, perfFrames = 0, perfSteps = 0;
+let perfAccum = 0, perfFrames = 0, perfSteps = 0, perfGoodWindows=0;
 function updatePerformanceLadder(dt){
-  if(perfSteps >= 4) return;
   perfAccum += dt; perfFrames++;
   if(perfAccum < 1.6) return;
   const avg = perfAccum / perfFrames;
   perfAccum = 0; perfFrames = 0;
-  if(avg > 0.026){
+  if(avg > 0.026&&perfSteps<4){
     perfSteps++;
     const pr = Math.max(.72, renderer.getPixelRatio() * .84);
     renderer.setPixelRatio(pr);
     renderer.setSize(innerWidth, innerHeight);
     if(cssRenderer) cssRenderer.setSize(innerWidth, innerHeight);
-    msg('Performance mode: resolution eased');
+    perfGoodWindows=0;
+    const badge=$('performanceBadge');badge.textContent=`Adaptive performance · ${Math.round(1/avg)} fps`;badge.classList.add('show');clearTimeout(updatePerformanceLadder.badgeTimer);updatePerformanceLadder.badgeTimer=setTimeout(()=>badge.classList.remove('show'),1800);
+  }else if(avg<.018&&renderer.getPixelRatio()<preferredPixelRatio-.04){
+    perfGoodWindows++;
+    if(perfGoodWindows>=5){
+      perfGoodWindows=0;perfSteps=Math.max(0,perfSteps-1);
+      renderer.setPixelRatio(Math.min(preferredPixelRatio,renderer.getPixelRatio()*1.08));renderer.setSize(innerWidth,innerHeight);
+    }
+  }else{
+    perfGoodWindows=0;
   }
 }
 
+let lookRayAccum=0,mediaAccum=0,mapAccum=0;
 function animate(){
   requestAnimationFrame(animate);
   const dt = Math.min(.05, clock.getDelta());
   const t = clock.elapsedTime;
   if(pageVisible){
     if(isCoarsePointer) syncMobileUiVisibility();
+    updateGamepad(dt);
     updatePerformanceLadder(dt);
     if(cameraTransition.active){
       updateCameraTransition(dt);
@@ -12997,12 +13113,13 @@ function animate(){
       updateMovement(dt);
       updateCameraRotation();
     }
-    updateLookRay();
+    lookRayAccum+=dt;mediaAccum+=dt;mapAccum+=dt;
+    if(lookRayAccum>=1/30){updateLookRay();lookRayAccum=0;}
     updateHallWindow(dt);
-    if(currentRoom === 'gallery'){
+    if(currentRoom === 'gallery'&&lookRayAccum===0){
       selectNearest(true);
     }
-    updateArchitecturalWindowMedia();
+    if(mediaAccum>=.12){updateArchitecturalWindowMedia();mediaAccum=0;}
     if(sparkGlitchLights && sparkGlitchLights.length){
       sparkGlitchLights.forEach((g,i)=>{
         const active = currentRoom === 'spark' ? 1 : 0.45;
@@ -13057,8 +13174,8 @@ function animate(){
       tunnelTorchFX.glows.material.opacity = .58 + .18*Math.sin(t*7.1 + 1.3);
     }
     updateWorld(dt,t);
-    if(currentRoom === 'gallery'){
-      drawMap();
+    if(currentRoom === 'gallery'&&mapAccum>=1/15){
+      drawMap();mapAccum=0;
     }
     renderer.render(scene,camera);
     if(cssRenderer){
