@@ -3578,12 +3578,10 @@ function createArchitecturalWindow(opts){
     kind='window', handleColor=0xb99561, handleY=null,
     light=null, openIntensity=null, closedIntensity=null,
     onToggle=null,
-    // Reveal/sill/inner-frame default to a cream-stone family that reads
-    // correctly against every existing room's own light/warm wall tone. A
-    // room with a dark wall (e.g. Spark Tools Labs' near-black walls) needs
-    // these overridden, or the window reads as a bright stone frame pasted
-    // onto black rather than a real opening cut into the wall.
-    revealColor=0xeadfce, frameLightColor=0xf5efe4, sillColor=0xd4b996
+    // Site-wide window language: warm masonry reveals and dark bronze inner
+    // frames. Pale side bands made the openings read like framed pictures;
+    // these quieter values make every view feel cut into the architecture.
+    revealColor=0x75695b, frameLightColor=0x302d29, sillColor=0x806e54
   } = opts;
 
   if(!['front','back','left','right'].includes(wall)){
@@ -3595,7 +3593,7 @@ function createArchitecturalWindow(opts){
 
   const isDoor = kind === 'door' || kind === 'gardenDoor';
 
-  const trimMat = new THREE.MeshStandardMaterial({color:0xcab18d, roughness:.72, metalness:.04});
+  const trimMat = new THREE.MeshStandardMaterial({color:0x685b4d, roughness:.78, metalness:.06});
   const paleStoneMat = new THREE.MeshStandardMaterial({color:revealColor, roughness:.90, metalness:0});
   const frameMat = new THREE.MeshStandardMaterial({color:0x211a16, roughness:.64, metalness:.12});
   const lightFrameMat = new THREE.MeshStandardMaterial({color:frameLightColor, roughness:.56, metalness:.02});
@@ -5398,7 +5396,7 @@ function buildNightRoom(){
     wall:'right', room:'night', toggleable:true,
     label:'Sunset Lounge harbour window', title:'Harbour View',
     roomX:x0, roomHalfWidth:hw, roomBackZ:z0, roomFrontZ:z1,
-    z:z0 + depth*.30, w:5.8, hgt:6.9, sillY:0.92,
+    z:z0 + depth*.30, w:7.2, hgt:7.35, sillY:0.70,
     imageSrc:MEDIA.nightRoomSideDoor,
     verticalMullionFractions:[0], horizontalMullionOffsets:[-0.16]
   });
@@ -8345,21 +8343,23 @@ function buildMazeGarden(){
     g.position.set(cx,0,cz); g.rotation.y = rot; scene.add(g); return g;
   }
 
-  // Front buffer: a proper gallery projection wall, not a faux seascape
-  // window. The sofas face it and remain clear of both exhibition walls.
+  // Front buffer: the former TV/projection assembly is removed completely.
+  // 21513 is now a silent moving architectural view, set into the wall with
+  // deep reveals, glazing bars and a broad stone sill.
   {
     const light = new THREE.PointLight(0xe8f4ff, 1.45, 15, 1.75);
     light.position.set(x0,4.0,zFront-4.8); scene.add(light); regLight('maze', light);
-    const screenW=9.6, screenH=5.40, screenY=4.58;
-    const surround=new THREE.Mesh(new THREE.BoxGeometry(screenW+.74,screenH+.72,.26),new THREE.MeshStandardMaterial({color:0x191a1d,roughness:.44,metalness:.28}));
-    surround.position.set(x0,screenY,zFront-.19); scene.add(surround);
-    const screenMesh=new THREE.Mesh(new THREE.PlaneGeometry(screenW,screenH),new THREE.MeshBasicMaterial({color:0x050609,side:THREE.DoubleSide}));
-    screenMesh.position.set(x0,screenY,zFront-.35); screenMesh.rotation.y=Math.PI; scene.add(screenMesh);
-    const live=createPassiveWallIframe(CHANNEL_URLS.saywhat,'Experiment Garden projection wall',screenW,screenH);
-    live.position.set(x0,screenY,zFront-.38); live.rotation.y=Math.PI; scene.add(live);
-    gardenWallIframe=live.userData.iframe;
-    gardenWallScreen={mesh:screenMesh,css:live,title:'EXPERIMENT GARDEN PROJECTION',room:'maze',action:'garden',activeRadius:8};
-    registerScreen(gardenWallScreen);
+    createArchitecturalWindow({
+      roomX:x0,roomHalfWidth:gw/2,roomBackZ:zBack,roomFrontZ:zFront,
+      wall:'front',room:'maze',toggleable:true,title:'Moving Garden I',label:'Moving Garden I',
+      w:11.55,hgt:6.50,sillY:.82,
+      videoSrc:'assets/video/experimental-garden-window-21513.mp4',
+      revealDepth:.82,renderOrder:44,
+      verticalMullionFractions:[],horizontalMullionOffsets:[],
+      revealColor:0x655d53,frameLightColor:0x242321,sillColor:0x75654f,
+      light,openIntensity:1.45,closedIntensity:.18,
+      shadeColor:0xe9e1d5,shadeOpacity:.985
+    });
 
     const sofaA=addSofa(x0-3.0,zFront-6.25,0);
     const sofaB=addSofa(x0+3.0,zFront-6.25,0);
@@ -8378,7 +8378,9 @@ function buildMazeGarden(){
       hintText:'An in-memory studio for painterly drawing and collage.',prompt:()=>'Open painting & collage desk',onUse:openGardenMaker});
   }
 
-  // Back buffer: canonical architectural landscape window.
+  // Back buffer: 21511 replaces the old still landscape in the existing
+  // opening. The dimensions and furniture remain, preserving the established
+  // room composition while the view itself becomes alive.
   {
     const light = new THREE.PointLight(0xffd7a6, 1.28, 15, 1.8);
     light.position.set(x0,3.9,zBack+5.4); scene.add(light); regLight('maze', light);
@@ -8395,10 +8397,11 @@ function buildMazeGarden(){
       // a genuinely larger size — room height (gh=10.2) has plenty of spare
       // headroom above this even with the sill raised.
       label:'Garden landscape window', title:'Landscape',
-      w:9.34, hgt:7.0, sillY:3.7,
-      imageSrc:MEDIA.gardenLandscape,
+      w:12.0, hgt:6.75, sillY:1.25,
+      videoSrc:'assets/video/experimental-garden-window-21511.mp4',
       revealDepth:.62, renderOrder:42,
       verticalMullionFractions:[], horizontalMullionOffsets:[],
+      revealColor:0x655d53,frameLightColor:0x242321,sillColor:0x75654f,
       light, openIntensity:1.28, closedIntensity:.16,
       shadeColor:0xf3eadc, shadeOpacity:.98
     });
@@ -9193,7 +9196,7 @@ function buildSparkToolsLab(){
     // barely half the frame showed the image, chopped further by two
     // mullions. Narrowed to the photo's own proportions, mullions dropped.
     label:'Spark Tools Labs centre window', title:'Night Promenade',
-    w:7.5, hgt:5.6, sillY:2.0,
+    w:10.0, hgt:7.5, sillY:.95,
     imageSrc:MEDIA.sparkLabNightWindow,
     revealDepth:.90, renderOrder:46,
     verticalMullionFractions:[], horizontalMullionOffsets:[],
@@ -9933,8 +9936,8 @@ function buildStudio(){
   const cabMat    = new THREE.MeshStandardMaterial({color:0x0f0d13, roughness:.5, metalness:.16});
   const coneMat   = new THREE.MeshStandardMaterial({color:0x26242e, roughness:.44, metalness:.24});
   const brassMat  = new THREE.MeshStandardMaterial({color:0xba8b4c, roughness:.34, metalness:.72});
-  const velvetMat = new THREE.MeshStandardMaterial({color:0x5a2036, roughness:.93, metalness:0});
-  const velvetDk  = new THREE.MeshStandardMaterial({color:0x3c1626, roughness:.95, metalness:0});
+  const velvetMat = new THREE.MeshStandardMaterial({color:0xb77960, roughness:.88, metalness:0});
+  const velvetDk  = new THREE.MeshStandardMaterial({color:0x8f5849, roughness:.92, metalness:0});
   const chromeMat = new THREE.MeshStandardMaterial({color:0xc7ccd6, roughness:.18, metalness:.9});
 
   // Shell
@@ -10103,10 +10106,10 @@ function buildStudio(){
   booth(x0-hw+1.15, midZ+2.2, Math.PI/2);
   cocktail(x0-hw+2.9, midZ-2.0); cocktail(x0-hw+2.9, midZ+2.2);
 
-  // ===== Back-of-club lounge: a proper sectional you settle into, facing the
-  // video wall across the sunken dancefloor. Split around the return door so
-  // the doorway stays walkable. (Batch 160 — the club previously had only wall
-  // booths; this is the comfortable "sit and watch the wall" seating.) =====
+  // The former rear sectional crossed both return-door approaches. The two
+  // white Eames chairs below are now the principal listening seats; wall
+  // booths provide secondary seating without turning circulation into an
+  // obstacle course.
   const loungeMat = new THREE.MeshStandardMaterial({color:0x3a2740, roughness:.90, metalness:.02});
   const loungeCush = new THREE.MeshStandardMaterial({color:0x6d4a6b, roughness:.88, metalness:.02});
   const loungeTrim = new THREE.MeshStandardMaterial({color:0x120d16, roughness:.6, metalness:.18});
@@ -10135,24 +10138,11 @@ function buildStudio(){
     }
     const cx=new THREE.Mesh(new THREE.SphereGeometry(.05,8,8),new THREE.MeshBasicMaterial({color:0xffc873,toneMapped:false})); cx.position.set(px,.55,pz); scene.add(cx);
   }
-  // rug tying the back lounge together
-  const loungeRug = new THREE.Mesh(new THREE.PlaneGeometry(14.0,3.6),
-    new THREE.MeshStandardMaterial({color:0x1a1220, roughness:.9, metalness:.02}));
-  loungeRug.rotation.x=-Math.PI/2; loungeRug.position.set(x0,.02,z0+21.9); scene.add(loungeRug);
-  const rugEdge = new THREE.Mesh(new THREE.PlaneGeometry(14.0,3.6),
-    new THREE.MeshBasicMaterial({color:0x9d6de2, transparent:true, opacity:.10, depthWrite:false}));
-  rugEdge.rotation.x=-Math.PI/2; rugEdge.position.set(x0,.03,z0+21.9); scene.add(rugEdge);
-
-  // Left lounge (L-shape) clear of the centred return door.
-  clubSofa(x0-4.35, z0+22.55, Math.PI,   4.6);
-  clubSofa(x0-6.75, z0+21.0, Math.PI/2, 2.9);
-  loungeTable(x0-4.2, z0+21.1);
-  // Right lounge, mirrored, clear of both door and bar.
-  clubSofa(x0+4.35, z0+22.55, Math.PI,   3.2);
-  loungeTable(x0+4.3, z0+21.1);
-
-  const loungeLamp1 = new THREE.PointLight(0xffbfe6,.85,7.0,1.85); loungeLamp1.position.set(x0-4.4,2.2,z0+21.6); scene.add(loungeLamp1); regLight('studio', loungeLamp1);
-  const loungeLamp2 = new THREE.PointLight(0xbfe0ff,.70,6.5,1.9); loungeLamp2.position.set(x0+4.4,2.2,z0+21.6); scene.add(loungeLamp2); regLight('studio', loungeLamp2);
+  // A shallow runner visually marks the clear return route and prevents new
+  // furniture from drifting back into either doorway in later decor passes.
+  const returnRunner = new THREE.Mesh(new THREE.PlaneGeometry(7.2,4.2),
+    new THREE.MeshStandardMaterial({color:0xd8cbb7,roughness:.96,metalness:0}));
+  returnRunner.rotation.x=-Math.PI/2;returnRunner.position.set(x0,.022,z0+21.8);scene.add(returnRunner);
 
   // ===== Dedicated listening bay: two Eames-inspired lounge chairs and ottomans.
   // Was z0+18.55 — 18+ metres from the screen, past the entire dancefloor and
@@ -10221,11 +10211,11 @@ function buildStudio(){
   const AGE_OF_ADZ_SRC = 'assets/new/age-of-adz.webp';
   const studioWallWorks = [
     {src:STUDIO_DECOR_SRCS[2],title:'Sgt. Pepper',width:3.55,height:3.19,x:x0-hw+.16,y:3.65,z:z0+6.2,rotationY: Math.PI/2},
-    {src:STUDIO_DECOR_SRCS[4],title:'Pink Floyd at Pompeii',width:1.75,height:2.55,x:x0-hw+.16,y:3.55,z:z0+12.0,rotationY: Math.PI/2},
+    {src:STUDIO_DECOR_SRCS[4],title:'Pink Floyd at Pompeii',width:1.75,height:2.55,x:x0-hw+.16,y:3.55,z:z0+11.7,rotationY: Math.PI/2},
+    {src:STUDIO_DECOR_SRCS[7],title:'Flower Boy',width:2.08,height:2.08,x:x0-hw+.16,y:3.58,z:z0+14.15,rotationY: Math.PI/2},
     {src:STUDIO_TAYK_SRC,title:'Tay-K',width:1.78,height:2.18,x:x0-hw+.16,y:3.62,z:z0+16.4,rotationY: Math.PI/2},
     {src:STUDIO_DECOR_SRCS[8],title:'Currents',width:1.92,height:1.92,x:x0-hw+.16,y:3.60,z:z0+19.0,rotationY: Math.PI/2},
     {src:STUDIO_DECOR_SRCS[6],title:'In Utero',width:2.35,height:2.35,x:x0+hw-.16,y:3.60,z:z0+6.0,rotationY:-Math.PI/2},
-    {src:STUDIO_DECOR_SRCS[7],title:'Flower Boy',width:2.55,height:2.55,x:x0+hw-.16,y:3.60,z:z0+11.3,rotationY:-Math.PI/2},
     {src:STUDIO_MURDER_BALLADS_SRC,title:'Murder Ballads',width:2.30,height:2.30,x:x0+hw-.16,y:3.60,z:z0+16.2,rotationY:-Math.PI/2},
     {src:AGE_OF_ADZ_SRC,title:'The Age of Adz',width:2.35,height:2.35,x:x0+hw-.16,y:3.60,z:z0+19.0,rotationY:-Math.PI/2}
   ];
@@ -10278,25 +10268,47 @@ function buildStudio(){
     targetYaw:-Math.PI/2, slideAxis:tunnelReturn.openAxis, slideDist:2.6
   });
 
-  // ===== Mixing desk: a working sound-making station, the Studio's answer to
-  // the Experiment Garden's painting/collage desk. Same pattern — a physical
-  // prop with a sign the visitor clicks, opening a dependency-free full-screen
-  // tool (openStudioMaker, below) — applied to sound instead of images. =====
-  const deskMat=new THREE.MeshStandardMaterial({color:0x1c1820,roughness:.5,metalness:.22});
-  const deskTop=new THREE.Mesh(new THREE.BoxGeometry(2.6,.10,1.15),deskMat);
-  deskTop.position.set(x0+7,.92,z0+17); scene.add(deskTop);
-  for(const dx of [-1.1,1.1]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.12,.9,.9),cabMat);leg.position.set(x0+7+dx,.46,z0+17);scene.add(leg);}
-  for(let i=0;i<8;i++){const fader=new THREE.Mesh(new THREE.BoxGeometry(.10,.05,.42),chromeMat);fader.position.set(x0+7-1.05+i*.30,.985,z0+16.85);scene.add(fader);}
-  for(let i=0;i<4;i++){const knob=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.09,16),brassMat);knob.rotation.x=Math.PI/2;knob.position.set(x0+7-.66+i*.44,.985,z0+17.28);scene.add(knob);}
-  for(const dx of [-1.35,1.35]){
-    const mon=new THREE.Mesh(new THREE.BoxGeometry(.42,.62,.42),cabMat); mon.position.set(x0+7+dx,1.23,z0+16.75); scene.add(mon);
-    const cone=new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,.05,20),coneMat); cone.rotation.x=Math.PI/2; cone.position.set(x0+7+dx,1.23,z0+16.53); scene.add(cone);
+  // ===== Right-wall production console =====
+  // Six metres of believable hardware form a proper working bay: recessed
+  // desk, raised meter bridge, near-field monitors and one clear operator
+  // position. Its long axis follows the wall, leaving the room centre open.
+  const deskMat=new THREE.MeshStandardMaterial({color:0x34383a,roughness:.42,metalness:.34});
+  const deskInset=new THREE.MeshStandardMaterial({color:0x17191a,roughness:.56,metalness:.18});
+  const deskLeather=new THREE.MeshStandardMaterial({color:0xe5ded2,roughness:.68,metalness:0});
+  const consoleGroup=new THREE.Group();
+  consoleGroup.position.set(x0+hw-1.08,0,z0+11.25);consoleGroup.rotation.y=Math.PI/2;scene.add(consoleGroup);
+  const consoleBase=new THREE.Mesh(new THREE.BoxGeometry(6.0,.68,1.72),deskMat);consoleBase.position.set(0,.47,0);consoleGroup.add(consoleBase);
+  const consoleTop=new THREE.Mesh(new THREE.BoxGeometry(6.18,.12,1.90),chromeMat);consoleTop.position.set(0,.88,0);consoleGroup.add(consoleTop);
+  const controlBed=new THREE.Mesh(new THREE.BoxGeometry(5.25,.12,1.18),deskInset);controlBed.position.set(0,1.00,-.03);controlBed.rotation.x=-.08;consoleGroup.add(controlBed);
+  const meterBridge=new THREE.Mesh(new THREE.BoxGeometry(4.9,.78,.34),deskMat);meterBridge.position.set(0,1.36,-.62);meterBridge.rotation.x=-.10;consoleGroup.add(meterBridge);
+  for(let i=0;i<12;i++){
+    const x=-2.36+i*.43;
+    const strip=new THREE.Mesh(new THREE.BoxGeometry(.31,.018,.78),new THREE.MeshStandardMaterial({color:i%3===0?0x38494e:0x2b2e30,roughness:.54,metalness:.22}));strip.position.set(x,1.075,-.02);strip.rotation.x=-.08;consoleGroup.add(strip);
+    const fader=new THREE.Mesh(new THREE.BoxGeometry(.16,.055,.20),chromeMat);fader.position.set(x,1.14,.05+(i%4)*.12);fader.rotation.x=-.08;consoleGroup.add(fader);
+    for(let k=0;k<3;k++){const knob=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.045,12),k===0?brassMat:chromeMat);knob.rotation.x=Math.PI/2;knob.position.set(x,1.16,-.26-k*.15);consoleGroup.add(knob);}
+    const led=new THREE.Mesh(new THREE.BoxGeometry(.19,.20,.018),new THREE.MeshBasicMaterial({color:i%4===0?0xe9a25d:0x72a889,toneMapped:false}));led.position.set(x,1.48,-.805);led.rotation.x=-.10;consoleGroup.add(led);
   }
-  const deskGlow=new THREE.PointLight(0x9d6de2,1.1,7,1.9); deskGlow.position.set(x0+7,1.9,z0+17); scene.add(deskGlow); regLight('studio',deskGlow);
-  const deskSign=new THREE.Mesh(new THREE.PlaneGeometry(1.5,.9),new THREE.MeshBasicMaterial({map:makeSignTexture('MIX','loop · record · save'),toneMapped:false}));
-  deskSign.position.set(x0+7,1.55,z0+16.42); deskSign.rotation.x=-.34; scene.add(deskSign);
-  registerInteractable({type:'maker',room:'studio',mesh:deskSign,label:'Studio mixing desk',hintId:'studio-maker',priority:5,
-    hintText:'A working step sequencer — build a loop, then record it as a clip.',prompt:()=>'Open the mixing desk',onUse:openStudioMaker});
+  for(const sx of [-2.82,2.82]){
+    const mon=new THREE.Mesh(new THREE.BoxGeometry(.72,1.02,.60),deskInset);mon.position.set(sx,1.72,-.52);consoleGroup.add(mon);
+    const bass=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.05,24),coneMat);bass.rotation.x=Math.PI/2;bass.position.set(sx,1.58,-.84);consoleGroup.add(bass);
+    const tweeter=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.04,18),brassMat);tweeter.rotation.x=Math.PI/2;tweeter.position.set(sx,1.89,-.84);consoleGroup.add(tweeter);
+  }
+  const deskDisplay=new THREE.Mesh(new THREE.PlaneGeometry(2.35,.78),new THREE.MeshBasicMaterial({map:makeSignTexture('STUDIO DESK','PLAY · SAMPLE · MIX · RECORD'),toneMapped:false}));
+  deskDisplay.position.set(0,1.62,-.82);deskDisplay.rotation.x=-.10;consoleGroup.add(deskDisplay);
+  registerInteractable({type:'maker',room:'studio',mesh:deskDisplay,label:'Studio mixing desk',hintId:'studio-maker',priority:6,
+    hintText:'A complete eight-track desk: instant patterns, samples, microphone, YouTube reference, effects and recording.',prompt:()=>'Use the Studio mixing desk',onUse:openStudioMaker});
+
+  // Pale operator chair: visible against the dark floor and aligned squarely
+  // with the console. Sitting never traps the player; any movement stands up.
+  const opChair=new THREE.Group();opChair.position.set(x0+hw-3.05,0,z0+11.25);opChair.rotation.y=-Math.PI/2;scene.add(opChair);
+  const opSeat=new THREE.Mesh(new THREE.BoxGeometry(1.15,.22,1.08),deskLeather);opSeat.position.y=.72;opChair.add(opSeat);
+  const opBack=new THREE.Mesh(new THREE.BoxGeometry(1.18,1.25,.18),deskLeather);opBack.position.set(0,1.30,.48);opBack.rotation.x=-.12;opChair.add(opBack);
+  const opStem=new THREE.Mesh(new THREE.CylinderGeometry(.08,.10,.58,16),chromeMat);opStem.position.y=.35;opChair.add(opStem);
+  for(let i=0;i<5;i++){const foot=new THREE.Mesh(new THREE.BoxGeometry(.055,.055,.72),chromeMat);foot.position.set(Math.sin(i*Math.PI*2/5)*.26,.08,Math.cos(i*Math.PI*2/5)*.26);foot.rotation.y=i*Math.PI*2/5;opChair.add(foot);}
+  registerInteractable({type:'seat',room:'studio',mesh:opSeat,label:'Mixing position',hintId:'studio-mix-seat',priority:5,
+    hintText:'Sit at the production console, then open the desk. Move at any time to stand.',prompt:()=>'Sit at the mixing console',
+    onUse:()=>{seatedStudioView=true;velX=0;velZ=0;smoothSpeed=0;startCameraTransition(new THREE.Vector3(x0+hw-3.00,1.34,z0+11.25),-Math.PI/2,-.10,.65);msg('Seated at the Studio console · Enter opens the desk · move to stand');}});
+  const deskGlow=new THREE.PointLight(0xffdfb5,1.35,9,1.85);deskGlow.position.set(x0+hw-3.0,3.0,z0+11.25);scene.add(deskGlow);regLight('studio',deskGlow);
 
   studioFX = {tiles:null, tileN:0, speakerRings, orbs, ball, tileTimer:0};
 }
@@ -11841,117 +11853,28 @@ function openGardenMaker(){
   }
   panel.style.display='grid';
 }
-// Small, dependency-free sound-making desk for The Studio — same pattern as
-// openGardenMaker (a full-screen in-memory tool, nothing persisted until the
-// visitor explicitly exports), applied to a 16-step sequencer instead of a
-// canvas. Recording uses MediaRecorder against a MediaStreamDestination fed
-// by the same master gain everything is heard through, so the exported clip
-// is exactly what was audible, not a separate offline render.
+// The full Studio instrument lives in its own lightweight document. It stays
+// mounted when closed so an active loop can accompany the visitor around the
+// Workshop; reopening the desk restores the exact working state.
 function openStudioMaker(){
   if(document.pointerLockElement) document.exitPointerLock();
   let panel=$('studioMakerPanel');
   if(!panel){
-    panel=document.createElement('div'); panel.id='studioMakerPanel';
-    panel.style.cssText='position:fixed;inset:0;z-index:12000;background:rgba(10,7,14,.95);display:grid;grid-template-rows:auto 1fr;padding:18px;gap:12px;color:#f1e8ff;font:13px Arial,sans-serif';
-    panel.innerHTML=`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="font:26px Georgia,serif;margin-right:12px">STUDIO MIXING DESK</b><label>wave <select><option value="sine">sine</option><option value="triangle" selected>triangle</option><option value="square">square</option><option value="sawtooth">saw</option></select></label><label>tempo <input type="range" min="60" max="200" value="112"> <span data-out="tempo">112</span> bpm</label><label>volume <input type="range" min="0" max="100" value="70"></label><button data-act="play">PLAY</button><button data-act="clear">CLEAR</button><button data-act="record">&#9679; RECORD</button><button data-act="close" style="margin-left:auto">CLOSE</button><span>Click cells to build a loop, press play. Record captures what you hear as a downloadable clip.</span></div><div style="min-height:0;display:grid;place-items:center"><div id="studioMakerGrid" style="display:grid;gap:4px;background:#1a1424;padding:14px;border-radius:8px;box-shadow:0 16px 60px #000"></div></div>`;
+    panel=document.createElement('section'); panel.id='studioMakerPanel';
+    panel.setAttribute('aria-label','Studio mixing desk');
+    panel.style.cssText='position:fixed;inset:0;z-index:12000;background:#bbb5aa;display:none;padding:10px';
+    panel.innerHTML='<iframe title="Studio Mixing Desk" src="assets/apps/studio-mixing-desk.html" allow="microphone; autoplay; fullscreen" style="display:block;width:100%;height:100%;border:0;border-radius:10px;background:#202324;box-shadow:0 20px 80px rgba(0,0,0,.42)"></iframe><button type="button" data-close style="position:fixed;right:22px;top:22px;z-index:2;border:1px solid #d6cdbc;border-radius:999px;background:#f4f1e9;color:#171717;padding:9px 14px;font:700 11px Arial;letter-spacing:.08em;cursor:pointer">RETURN TO STUDIO</button>';
     document.body.appendChild(panel);
-    panel.querySelectorAll('button').forEach(b=>b.style.cssText='border:1px solid #9d6de2;background:#211b30;color:#f1e8ff;padding:8px 11px;border-radius:3px;cursor:pointer');
-
-    const NOTES=[523.25,466.16,392.00,349.23,293.66,261.63];
-    const STEPS=16;
-    const grid=panel.querySelector('#studioMakerGrid');
-    grid.style.gridTemplateColumns=`repeat(${STEPS},22px)`;
-    const cells=[];
-    NOTES.forEach((freq,row)=>{
-      for(let col=0;col<STEPS;col++){
-        const cell=document.createElement('div');
-        cell.style.cssText='width:22px;height:22px;border-radius:3px;background:#2b2340;cursor:pointer;border:1px solid #3a2f52;transition:outline .05s';
-        cell.dataset.on='0';
-        cell.onclick=()=>{const on=cell.dataset.on==='1';cell.dataset.on=on?'0':'1';cell.style.background=on?'#2b2340':'#c76bff';};
-        grid.appendChild(cell);
-        cells.push({cell,row,col,freq});
-      }
-    });
-
-    let audioCtx=null, master=null, dest=null, recorder=null, chunks=[];
-    let playing=false, timer=null, step=0;
-    const waveSel=panel.querySelector('select');
-    const ranges=panel.querySelectorAll('input[type=range]');
-    const tempoInp=ranges[0], volInp=ranges[1];
-    const tempoOut=panel.querySelector('[data-out=tempo]');
-    tempoInp.oninput=()=>{tempoOut.textContent=tempoInp.value;};
-
-    function ensureAudio(){
-      if(audioCtx) return;
-      audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-      master=audioCtx.createGain(); master.gain.value=(+volInp.value)/100;
-      master.connect(audioCtx.destination);
-      dest=audioCtx.createMediaStreamDestination();
-      master.connect(dest);
-    }
-    volInp.oninput=()=>{if(master) master.gain.value=(+volInp.value)/100;};
-
-    function pluck(freq){
-      if(!audioCtx) return;
-      const osc=audioCtx.createOscillator(), g=audioCtx.createGain();
-      osc.type=waveSel.value; osc.frequency.value=freq;
-      g.gain.setValueAtTime(0,audioCtx.currentTime);
-      g.gain.linearRampToValueAtTime(.5,audioCtx.currentTime+.01);
-      g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.32);
-      osc.connect(g); g.connect(master);
-      osc.start(); osc.stop(audioCtx.currentTime+.34);
-    }
-
-    function advance(){
-      cells.filter(c=>c.col===step && c.cell.dataset.on==='1').forEach(c=>pluck(c.freq));
-      cells.forEach(c=>{c.cell.style.outline = c.col===step ? '2px solid #f1e8ff' : 'none';});
-      step=(step+1)%STEPS;
-    }
-
-    function setPlaying(on){
-      playing=on;
-      const btn=panel.querySelector('[data-act=play]');
-      if(on){
-        ensureAudio();
-        btn.textContent='STOP';
-        const loop=()=>{advance();timer=setTimeout(loop,60000/(+tempoInp.value)/4);};
-        loop();
-      }else{
-        btn.textContent='PLAY';
-        clearTimeout(timer);
-        cells.forEach(c=>{c.cell.style.outline='none';});
-      }
-    }
-
-    panel.onclick=e=>{
-      const b=e.target.closest('button'); if(!b) return;
-      const a=b.dataset.act;
-      if(a==='close'){ setPlaying(false); if(recorder && recorder.state==='recording') recorder.stop(); panel.style.display='none'; return; }
-      if(a==='play'){ setPlaying(!playing); return; }
-      if(a==='clear'){ cells.forEach(c=>{c.cell.dataset.on='0';c.cell.style.background='#2b2340';}); return; }
-      if(a==='record'){
-        ensureAudio();
-        if(!recorder || recorder.state==='inactive'){
-          chunks=[];
-          recorder=new MediaRecorder(dest.stream);
-          recorder.ondataavailable=ev=>chunks.push(ev.data);
-          recorder.onstop=()=>{
-            const blob=new Blob(chunks,{type:'audio/webm'});
-            const link=document.createElement('a'); link.download='hrm-studio-loop.webm'; link.href=URL.createObjectURL(blob); link.click();
-          };
-          recorder.start();
-          b.innerHTML='&#9632; STOP REC'; b.style.background='#c72b2b';
-          if(!playing) setPlaying(true);
-        }else{
-          recorder.stop();
-          b.innerHTML='&#9679; RECORD'; b.style.background='#211b30';
-        }
-        return;
-      }
-    };
+    panel.querySelector('[data-close]').onclick=()=>{panel.style.display='none';};
   }
-  panel.style.display='grid';
+  panel.style.display='block';
 }
+window.addEventListener('message',e=>{
+  if(e.data?.type==='workshop-studio-desk'&&e.data.action==='close'){
+    const panel=$('studioMakerPanel');if(panel)panel.style.display='none';
+    msg('The Studio mix continues while you explore');
+  }
+});
 function updateStudioNowPlaying(show=true){
   const bar=$('studioNowPlaying');
   const title=$('studioNowTitle');
