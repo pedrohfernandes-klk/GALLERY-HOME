@@ -3435,7 +3435,13 @@ function createArchitecturalWindow(opts){
     shadeColor=0x050505, shadeOpacity=.97,
     kind='window', handleColor=0xb99561, handleY=null,
     light=null, openIntensity=null, closedIntensity=null,
-    onToggle=null
+    onToggle=null,
+    // Reveal/sill/inner-frame default to a cream-stone family that reads
+    // correctly against every existing room's own light/warm wall tone. A
+    // room with a dark wall (e.g. Spark Tools Labs' near-black walls) needs
+    // these overridden, or the window reads as a bright stone frame pasted
+    // onto black rather than a real opening cut into the wall.
+    revealColor=0xeadfce, frameLightColor=0xf5efe4, sillColor=0xd4b996
   } = opts;
 
   if(!['front','back','left','right'].includes(wall)){
@@ -3448,10 +3454,10 @@ function createArchitecturalWindow(opts){
   const isDoor = kind === 'door' || kind === 'gardenDoor';
 
   const trimMat = new THREE.MeshStandardMaterial({color:0xcab18d, roughness:.72, metalness:.04});
-  const paleStoneMat = new THREE.MeshStandardMaterial({color:0xeadfce, roughness:.90, metalness:0});
+  const paleStoneMat = new THREE.MeshStandardMaterial({color:revealColor, roughness:.90, metalness:0});
   const frameMat = new THREE.MeshStandardMaterial({color:0x211a16, roughness:.64, metalness:.12});
-  const lightFrameMat = new THREE.MeshStandardMaterial({color:0xf5efe4, roughness:.56, metalness:.02});
-  const sillMat = new THREE.MeshStandardMaterial({color:0xd4b996, roughness:.56, metalness:.02});
+  const lightFrameMat = new THREE.MeshStandardMaterial({color:frameLightColor, roughness:.56, metalness:.02});
+  const sillMat = new THREE.MeshStandardMaterial({color:sillColor, roughness:.56, metalness:.02});
   const handleMat = new THREE.MeshStandardMaterial({color:handleColor, roughness:.32, metalness:.68});
   const recessMat = new THREE.MeshStandardMaterial({color:0x14110f, roughness:.92, metalness:.02});
 
@@ -8900,7 +8906,13 @@ function buildSparkToolsLab(){
     w:7.5, hgt:5.6, sillY:2.0,
     imageSrc:MEDIA.sparkLabNightWindow,
     revealDepth:.90, renderOrder:46,
-    verticalMullionFractions:[], horizontalMullionOffsets:[]
+    verticalMullionFractions:[], horizontalMullionOffsets:[],
+    // Default reveal/sill/frame are a cream-stone family that reads as a
+    // bright frame pasted onto this room's near-black wall (0x1c1220). Dark
+    // plum stone + a cool slate-blue inner frame instead, keeping the same
+    // material roles/roughness but in tones that actually belong to this
+    // room's own retro-arcade palette (matches its cyan edge lighting).
+    revealColor:0x3a2a3f, frameLightColor:0x6b7a8a, sillColor:0x241a24
   });
 
   // Refined signage around the new window, keeping the arcade identity.
