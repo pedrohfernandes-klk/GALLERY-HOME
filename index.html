@@ -6453,7 +6453,14 @@ function buildHood(){
     const n=Math.ceil(len/2.2);for(let i=0;i<=n;i++){const post=new THREE.Mesh(new THREE.BoxGeometry(.065,1.02,.065),steel);if(axis==='x')post.position.x=-len/2+i*len/n;else post.position.z=-len/2+i*len/n;post.position.y=.51;rail.add(post);}
   }
   [11.2].forEach((y,idx)=>{
-    const backDeck=new THREE.Mesh(new THREE.BoxGeometry(W-1,.20,11),darkConcrete);backDeck.position.set(wx,y,wz+D/2-5.8);scene.add(backDeck);
+    // Depth trimmed from 11 to 8.2 (front edge unchanged, only the rear edge
+    // pulled in) — at the old depth this deck's y-slab (11.1-11.3) sliced
+    // straight through the top of the monumental CADAVRE EXPAT II now mounted
+    // on the rear wall at z≈wz+33.08 (11.2 tall, reaching y=12.25). The
+    // mezzanine's own room clamp (hoodFloorBounds, room 'hood-m1') is already
+    // a rectangle far larger than this literal deck geometry, so shortening
+    // it doesn't remove any walkable area a visitor could previously stand on.
+    const backDeck=new THREE.Mesh(new THREE.BoxGeometry(W-1,.20,8.2),darkConcrete);backDeck.position.set(wx,y,wz+D/2-7.2);scene.add(backDeck);
     for(const side of [-1,1]){const sideDeck=new THREE.Mesh(new THREE.BoxGeometry(12,.20,D-12),darkConcrete);sideDeck.position.set(wx+side*(W/2-6.2),y,wz-3);scene.add(sideDeck);guardRail(wx+side*(W/2-12.1),y+.1,wz-3,D-12,'z');}
     guardRail(wx,y+.1,wz+D/2-11.25,W-24,'x');
     const levelSign=new THREE.Mesh(new THREE.PlaneGeometry(5.4,.72),new THREE.MeshBasicMaterial({map:makeSignTexture('THE MEZZANINE','library · overlook · future programme'),transparent:true}));levelSign.position.set(wx-24,y+2.4,wz+D/2-.30);levelSign.rotation.y=Math.PI;scene.add(levelSign);
@@ -6482,32 +6489,37 @@ function buildHood(){
   const artBench=new THREE.Mesh(new THREE.BoxGeometry(5.4,.34,1.05),wood);artBench.position.set(wx-25,.55,wz-12);artBench.rotation.y=Math.PI/2;scene.add(artBench);sitPoint('hood',artBench,'Cadavre Expat IV',new THREE.Vector3(wx-25,1.28,wz-12),-Math.PI/2,-.02);
 
   // The complete Cadavre Expat sequence now belongs to Headquarters. All four
-  // works are monumental (11.2 m wide, matching IV): I/II/III were previously
-  // a modest opposing-wall trio, now enlarged to the same scale as IV.
-  // Aspect ratios are preserved exactly (each width/height pair is the
-  // original pairing scaled uniformly), so nothing is stretched or cropped —
-  // see makeFittedCanvasTexture's contain-fit behaviour inside addFramedWallArt.
+  // works are monumental (11.2 m wide, matching IV). Aspect ratios are
+  // preserved exactly (each width/height pair is the original pairing scaled
+  // uniformly), so nothing is stretched or cropped — see
+  // makeFittedCanvasTexture's contain-fit behaviour inside addFramedWallArt.
   //
-  // The tower directly above this wall (see "Tower shell" below) plants two
-  // of its four full-height support columns at x=wx+35.15 — effectively on
-  // this wall's face — at z=wz-1.6 and z=wz+19.6. An earlier pass spaced I/II/
-  // III without accounting for those columns, so the monumental II and III
-  // ended up with a support column driven straight through the canvas. Each
-  // piece is now placed to sit cleanly in one of the three gaps the columns
-  // leave along the wall (north of the first column, between the two, and
-  // south of the second), rather than moving the columns themselves — they
-  // carry the tower above and aren't decorative.
-  const cadavreHallWorks=[
-    {src:CADAVRE_EXPAT_SRC,title:'CADAVRE EXPAT I',subtitle:'HrM · handmade mixed media collage',w:11.2,h:11.2*(4.9/7.4),z:wz-26},
-    {src:CADAVRE_EXPAT_II_SRC,title:'CADAVRE EXPAT II',subtitle:'HrM · impasto, glue, oil and acrylic echo',w:11.2,h:11.2*(6.1/6.1),z:wz-13},
-    {src:CADAVRE_EXPAT_III_SRC,title:'CADAVRE EXPAT III',subtitle:'HrM · reclaimed cardboard and fading impressions',w:11.2,h:11.2*(5.5/7.6),z:wz+9}
+  // I/II/III used to share the east wall, which also carries two of the
+  // tower's four full-height support columns (x=wx+35.15, at z=wz-1.6 and
+  // z=wz+19.6 — effectively on the wall's own face) and sits right beside the
+  // glass lift shaft (see liftShaft() below). Squeezing three monumental
+  // pieces into that one crowded wall kept producing new collisions each
+  // time the spacing was adjusted. Redistributed across genuinely different
+  // walls instead: I keeps the east wall (clear of both columns), II and III
+  // move to the two rear-wall segments flanking the garden threshold —
+  // spacious, unused, and nowhere near the tower core or the lift.
+  addFramedWallArt({src:CADAVRE_EXPAT_SRC,title:'CADAVRE EXPAT I',subtitle:'HrM · handmade mixed media collage',width:11.2,height:11.2*(4.9/7.4),x:wx+W/2-.92,y:11.2*(4.9/7.4)/2+1.05,z:wz-26,rotationY:-Math.PI/2,frameColor:0x201c18,matteColor:0xd5c7b0,showLabel:true});
+  {
+    const h1=11.2*(4.9/7.4);
+    const backing=new THREE.Mesh(new THREE.BoxGeometry(.32,h1+1.8,11.2+1.6),new THREE.MeshStandardMaterial({color:0xefe8dc,roughness:.88,metalness:.01}));backing.position.set(wx+W/2-.72,h1/2+1.02,wz-26);scene.add(backing);
+    for(const dz of [-4.2,4.2]){const spot=new THREE.SpotLight(0xffe2bc,3.1,20,.40,.60,1.5);spot.position.set(wx+24,8.4,wz-26+dz);spot.target.position.set(wx+W/2-.9,h1/2+1.1,wz-26);scene.add(spot,spot.target);regLight('hood',spot);}
+    const bench=new THREE.Mesh(new THREE.BoxGeometry(5.4,.34,1.05),wood);bench.position.set(wx+23,.55,wz-26);bench.rotation.y=Math.PI/2;scene.add(bench);sitPoint('hood',bench,'CADAVRE EXPAT I',new THREE.Vector3(wx+23,1.28,wz-26),-Math.PI/2,-.02);
+  }
+  const rearCadavreWorks=[
+    {src:CADAVRE_EXPAT_II_SRC,title:'CADAVRE EXPAT II',subtitle:'HrM · impasto, glue, oil and acrylic echo',w:11.2,h:11.2*(6.1/6.1),x:wx-21},
+    {src:CADAVRE_EXPAT_III_SRC,title:'CADAVRE EXPAT III',subtitle:'HrM · reclaimed cardboard and fading impressions',w:11.2,h:11.2*(5.5/7.6),x:wx+21}
   ];
-  cadavreHallWorks.forEach((a,i)=>{
-    const backing=new THREE.Mesh(new THREE.BoxGeometry(.32,a.h+1.8,a.w+1.6),new THREE.MeshStandardMaterial({color:0xefe8dc,roughness:.88,metalness:.01}));backing.position.set(wx+W/2-.72,a.h/2+1.02,a.z);scene.add(backing);
-    addFramedWallArt({src:a.src,title:a.title,subtitle:a.subtitle,width:a.w,height:a.h,x:wx+W/2-.92,y:a.h/2+1.05,z:a.z,rotationY:-Math.PI/2,frameColor:0x201c18,matteColor:0xd5c7b0,showLabel:true});
-    for(const dz of [-4.2,4.2]){const spot=new THREE.SpotLight(0xffe2bc,3.1,20,.40,.60,1.5);spot.position.set(wx+24,8.4,a.z+dz);spot.target.position.set(wx+W/2-.9,a.h/2+1.1,a.z);scene.add(spot,spot.target);regLight('hood',spot);}
+  rearCadavreWorks.forEach(a=>{
+    const backing=new THREE.Mesh(new THREE.BoxGeometry(a.w+1.6,a.h+1.8,.32),new THREE.MeshStandardMaterial({color:0xefe8dc,roughness:.88,metalness:.01}));backing.position.set(a.x,a.h/2+1.02,wz+D/2-.72);scene.add(backing);
+    addFramedWallArt({src:a.src,title:a.title,subtitle:a.subtitle,width:a.w,height:a.h,x:a.x,y:a.h/2+1.05,z:wz+D/2-.92,rotationY:Math.PI,frameColor:0x201c18,matteColor:0xd5c7b0,showLabel:true});
+    for(const dx of [-4.2,4.2]){const spot=new THREE.SpotLight(0xffe2bc,3.1,20,.40,.60,1.5);spot.position.set(a.x+dx,8.4,wz+D/2-24);spot.target.position.set(a.x,a.h/2+1.1,wz+D/2-.9);scene.add(spot,spot.target);regLight('hood',spot);}
+    const bench=new THREE.Mesh(new THREE.BoxGeometry(5.4,.34,1.05),wood);bench.position.set(a.x,.55,wz+D/2-12);scene.add(bench);sitPoint('hood',bench,a.title,new THREE.Vector3(a.x,1.28,wz+D/2-12),0,-.02);
   });
-  cadavreHallWorks.forEach(a=>{const b=new THREE.Mesh(new THREE.BoxGeometry(5.4,.34,1.05),wood);b.position.set(wx+23,.55,a.z);b.rotation.y=Math.PI/2;scene.add(b);sitPoint('hood',b,a.title,new THREE.Vector3(wx+23,1.28,a.z),-Math.PI/2,-.02);});
 
   // A sunken concrete ramp, in the same south-of-the-second-column gap as the
   // Cadavre Expat III clearance above, reads as a real descent rather than
@@ -6593,11 +6605,15 @@ function buildHood(){
   buildDecoHome(HOOD_MAIN_FLOORS.find(f=>f.id==='hood-a5'),px,pz,true,true);
   HOOD_PRIVATE_FLOORS.filter(f=>/^hood-ph/.test(f.id)).forEach(f=>buildDecoHome(f,px,pz,true,true));
 
+  // Glass shaft walls dropped: a 59.7 m-tall full-height glass box (spanning
+  // basement to well past the mezzanine) sitting right beside the ground-
+  // floor Cadavre Expat sequence read as a huge, unexplained window floating
+  // in front of the art from any nearby viewing position. The corner rails
+  // still read clearly as a lift shaft/cage without a solid glass wall
+  // crossing every sightline near it.
   function liftShaft(x,z,yMin,yMax,privateLift=false){
     const shaft=new THREE.Group();shaft.position.set(x,yMin,z);scene.add(shaft);const height=yMax-yMin;
     for(const sx of [-1,1])for(const sz of [-1,1]){const rail=new THREE.Mesh(new THREE.BoxGeometry(.16,height,.16),privateLift?brass:steel);rail.position.set(sx*2.24,height/2,sz*1.86);shaft.add(rail);}
-    const rearGlass=new THREE.Mesh(new THREE.PlaneGeometry(4.35,height),glass);rearGlass.position.set(0,height/2,1.90);rearGlass.rotation.y=Math.PI;shaft.add(rearGlass);
-    for(const sx of [-1,1]){const sideGlass=new THREE.Mesh(new THREE.PlaneGeometry(3.72,height),glass);sideGlass.position.set(sx*2.20,height/2,0);sideGlass.rotation.y=sx>0?-Math.PI/2:Math.PI/2;shaft.add(sideGlass);}
   }
   liftShaft(lx,lz,-6.8,52.9,false);
   liftShaft(plx,plz,49,80.4,true);
