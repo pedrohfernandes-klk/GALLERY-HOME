@@ -4197,6 +4197,23 @@ function runWorkshopSelfTest(){
   check(!!hoodSky && hoodSky.material?.fog === false, 'Hood sky bypasses global fog', hoodSky?.material?.fog);
   check(!!hoodHorizon && hoodHorizon.material?.fog === false, 'Hood ocean horizon bypasses global fog', hoodHorizon?.material?.fog);
   check(!!hoodCaveWallScreen && screens.includes(hoodCaveWallScreen), 'Hood wide projection registered', hoodCaveWallScreen?.title || 'missing');
+  {
+    const caveSeats=[],caveEntrances=[],monumentalWorks=[];
+    scene.traverse(obj=>{
+      if(obj.userData?.hoodCaveSeat)caveSeats.push(obj);
+      if(obj.userData?.hoodCaveEntrance)caveEntrances.push(obj);
+      if(obj.userData?.monumentalHoodArt)monumentalWorks.push(obj);
+    });
+    check(caveEntrances.length===1,'Hood Cave has one legible entrance',`${caveEntrances.length} entrance markers`);
+    check(caveSeats.length===100,'Hood Cave seating count','100 seats expected · '+caveSeats.length+' found');
+    check(caveSeats.every(s=>s.userData.viewerYaw===Math.PI),'Hood Cave seats face the screen','all seated cameras look north');
+    if(hoodCaveWallScreen?.mesh){
+      const screenZ=hoodCaveWallScreen.mesh.getWorldPosition(new THREE.Vector3()).z;
+      check(caveSeats.every(s=>s.getWorldPosition(new THREE.Vector3()).z<screenZ),'Hood Cave screen is beyond every seat',`screen z ${screenZ.toFixed(2)}`);
+    }
+    check(monumentalWorks.length===4,'Hood hall monumental art sequence',`${monumentalWorks.length} upper-wall works`);
+    check(monumentalWorks.every(w=>w.position.y>17),'Hood hall art clears furniture and mezzanine rails','all centres above 17 m');
+  }
 
   check(portals.length >= 8, 'portals registered', `${portals.length} portals`);
   portals.forEach(p=>{
@@ -6515,8 +6532,11 @@ function buildHood(){
   const mistGlow=new THREE.PointLight(0xbfe3ea,1.6,22,1.8);mistGlow.position.set(veX,1.6,cliffZ-7.0);scene.add(mistGlow);regLight('hood',mistGlow);
   const crestGlow=new THREE.PointLight(0xffe3b0,1.2,18,1.7);crestGlow.position.set(veX,19.5,cliffZ-2.0);scene.add(crestGlow);regLight('hood',crestGlow);
 
-  // A lit side passage makes the entrance believable without punching a fake
-  // door through the water. Ten rising rows follow the geology of the slope.
+  // The Cave is entered from the rear of the auditorium, not from beside the
+  // screen. A lit stone walk now runs directly from the grand-hall opening to
+  // an unmistakable east-facing portal. This keeps the arrival sequence
+  // legible from Headquarters and gives the first view a proper theatre
+  // composition: backs of seats, then stage and screen beyond.
   const caveZ=cliffZ+32,caveW=42,caveD=38;
   const caveFloorTex=makeStoneTexture('#272522','rgba(70,64,58,.16)','rgba(15,13,11,.14)');caveFloorTex.repeat.set(caveW/6,caveD/6);
   const caveFloor=new THREE.Mesh(new THREE.PlaneGeometry(caveW,caveD),new THREE.MeshStandardMaterial({map:caveFloorTex,roughness:.96}));caveFloor.rotation.x=-Math.PI/2;caveFloor.position.set(veX,.12,caveZ);scene.add(caveFloor);
@@ -6524,41 +6544,76 @@ function buildHood(){
   const caveCeil=new THREE.Mesh(new THREE.PlaneGeometry(caveW,caveD),new THREE.MeshStandardMaterial({map:caveCeilTex,roughness:1,side:THREE.DoubleSide}));caveCeil.rotation.x=Math.PI/2;caveCeil.position.set(veX,12.8,caveZ);scene.add(caveCeil);
   const caveRockTex=makeStoneTexture('#4b443d','rgba(96,86,72,.16)','rgba(30,26,20,.14)');caveRockTex.repeat.set(2,2);
   const caveRockMat=new THREE.MeshStandardMaterial({map:caveRockTex,roughness:1,metalness:0});
-  for(let i=0;i<56;i++){const side=i%2?-1:1,rock=new THREE.Mesh(new THREE.DodecahedronGeometry(2.1+(i%5)*.38,1),caveRockMat);rock.scale.set(1.1,1.45+(i%3)*.12,1.35);rock.position.set(veX+side*(caveW/2-.8+(i%3)*.35),2.1+(i%4)*2.25,caveZ-caveD/2+1+(i%28)*(caveD-2)/27);rock.rotation.set(i*.17,i*.31,i*.11);scene.add(rock);}
-  // Curved entrance passage at the waterfall's eastern shoulder — the side
-  // that already faces back toward the hall.
-  const passage=new THREE.Mesh(new THREE.PlaneGeometry(6,31),limestone);passage.rotation.x=-Math.PI/2;passage.position.set(veX+17,.17,cliffZ+12);scene.add(passage);
-  for(let i=0;i<6;i++){const arch=new THREE.Mesh(new THREE.TorusGeometry(3.0,.32,10,28,Math.PI),caveRockMat);arch.position.set(veX+17,3.0,cliffZ+1+i*5.2);arch.rotation.x=Math.PI/2;scene.add(arch);}
-  const caveTitle=new THREE.Mesh(new THREE.PlaneGeometry(7.8,.95),new THREE.MeshBasicMaterial({map:makeSignTexture('THE CAVE','100-seat headquarters studio'),transparent:true,toneMapped:false}));caveTitle.position.set(veX+16.98,5.2,cliffZ+.1);caveTitle.rotation.y=Math.PI;scene.add(caveTitle);
+  const caveEntryX=veX+caveW/2-.42;
+  const caveEntryZ=caveZ-caveD/2+3.0;
+  // Leave an actual opening in the east rock wall. Previously the passage
+  // sign sat in front of a continuous stack of boulders, so the Cave read as
+  // scenery rather than a destination with a usable entrance.
+  for(let i=0;i<56;i++){
+    const side=i%2?-1:1;
+    const rockZ=caveZ-caveD/2+1+(i%28)*(caveD-2)/27;
+    if(side>0&&Math.abs(rockZ-caveEntryZ)<4.25)continue;
+    const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(2.1+(i%5)*.38,1),caveRockMat);
+    rock.scale.set(1.1,1.45+(i%3)*.12,1.35);
+    rock.position.set(veX+side*(caveW/2-.8+(i%3)*.35),2.1+(i%4)*2.25,rockZ);
+    rock.rotation.set(i*.17,i*.31,i*.11);scene.add(rock);
+  }
+  {
+    const ax=wx-W/2-1.1,az=caveGapZ,bx=caveEntryX+2.2,bz=caveEntryZ;
+    const dx=bx-ax,dz=bz-az,len=Math.hypot(dx,dz);
+    const approach=new THREE.Mesh(new THREE.BoxGeometry(4.8,.18,len),limestone);
+    approach.position.set((ax+bx)/2,.14,(az+bz)/2);
+    approach.rotation.y=Math.atan2(dx,dz);
+    approach.userData.hoodCaveApproach=true;
+    scene.add(approach);
+    for(const side of [-1,1]){
+      const rail=new THREE.Mesh(new THREE.BoxGeometry(.16,.72,len),brass);
+      rail.position.set((ax+bx)/2+side*Math.cos(approach.rotation.y)*2.46,.48,(az+bz)/2-side*Math.sin(approach.rotation.y)*2.46);
+      rail.rotation.y=approach.rotation.y;
+      scene.add(rail);
+    }
+  }
+  const caveDoorMat=new THREE.MeshStandardMaterial({color:0x0b0d0e,roughness:.44,metalness:.48});
+  const caveDoor=new THREE.Mesh(new THREE.PlaneGeometry(6.1,4.75),caveDoorMat);
+  caveDoor.position.set(caveEntryX+.08,2.52,caveEntryZ);caveDoor.rotation.y=Math.PI/2;caveDoor.userData.hoodCaveEntrance=true;scene.add(caveDoor);
+  for(const dz of [-3.28,3.28]){const jamb=new THREE.Mesh(new THREE.BoxGeometry(.74,5.45,.58),brass);jamb.position.set(caveEntryX+.12,2.72,caveEntryZ+dz);scene.add(jamb);}
+  const entryBeam=new THREE.Mesh(new THREE.BoxGeometry(.74,.62,7.14),brass);entryBeam.position.set(caveEntryX+.12,5.16,caveEntryZ);scene.add(entryBeam);
+  const entryCanopyCave=new THREE.Mesh(new THREE.BoxGeometry(4.8,.24,8.2),steel);entryCanopyCave.position.set(caveEntryX+2.15,5.86,caveEntryZ);scene.add(entryCanopyCave);
+  const caveTitle=new THREE.Mesh(new THREE.PlaneGeometry(7.8,.95),new THREE.MeshBasicMaterial({map:makeSignTexture('THE CAVE','100 seats · screenings · live projection'),transparent:true,toneMapped:false,side:THREE.DoubleSide}));caveTitle.position.set(caveEntryX+.51,6.42,caveEntryZ);caveTitle.rotation.y=Math.PI/2;scene.add(caveTitle);
+  for(const dz of [-2.55,2.55]){const lamp=new THREE.PointLight(0xffc47d,1.55,11,1.75);lamp.position.set(caveEntryX+2.5,3.45,caveEntryZ+dz);scene.add(lamp);regLight('hood',lamp);}
 
   // The stage is architectural: blackened steel proscenium, generous live
   // screen and a shallow apron for talks, screenings and future performances.
-  const caveStageZ=caveZ-caveD/2+3.0;
-  const caveStage=new THREE.Mesh(new THREE.BoxGeometry(25,.58,5.8),new THREE.MeshStandardMaterial({color:0x17191a,roughness:.52,metalness:.35}));caveStage.position.set(veX,.34,caveStageZ+1.4);scene.add(caveStage);
-  for(const sx of [-1,1]){const jamb=new THREE.Mesh(new THREE.BoxGeometry(.65,9.2,.65),steel);jamb.position.set(veX+sx*13.2,5.7,caveStageZ-.8);scene.add(jamb);}for(const yy of [1.1,10.3]){const beam=new THREE.Mesh(new THREE.BoxGeometry(27,.65,.65),steel);beam.position.set(veX,yy,caveStageZ-.8);scene.add(beam);}
-  const caveRecess=new THREE.Mesh(new THREE.BoxGeometry(25.7,7.9,.82),new THREE.MeshStandardMaterial({color:0x080909,roughness:.85}));caveRecess.position.set(veX,5.7,caveStageZ-.62);scene.add(caveRecess);
-  const caveScreenSurface=new THREE.Mesh(new THREE.PlaneGeometry(24.8,7.2),new THREE.MeshBasicMaterial({color:0x050606,toneMapped:false,side:THREE.DoubleSide}));caveScreenSurface.position.set(veX,5.7,caveStageZ-.17);scene.add(caveScreenSurface);
-  const caveLive=createPassiveWallIframe(CHANNEL_URLS.saywhat,'Headquarters Cave wide projection',24.8,7.2);caveLive.position.set(veX,5.7,caveStageZ-.15);scene.add(caveLive);
+  const caveStageZ=caveZ+caveD/2-3.0;
+  const caveStage=new THREE.Mesh(new THREE.BoxGeometry(25,.58,5.8),new THREE.MeshStandardMaterial({color:0x17191a,roughness:.52,metalness:.35}));caveStage.position.set(veX,.34,caveStageZ-1.4);scene.add(caveStage);
+  for(const sx of [-1,1]){const jamb=new THREE.Mesh(new THREE.BoxGeometry(.65,9.2,.65),steel);jamb.position.set(veX+sx*13.2,5.7,caveStageZ+.8);scene.add(jamb);}for(const yy of [1.1,10.3]){const beam=new THREE.Mesh(new THREE.BoxGeometry(27,.65,.65),steel);beam.position.set(veX,yy,caveStageZ+.8);scene.add(beam);}
+  const caveRecess=new THREE.Mesh(new THREE.BoxGeometry(25.7,7.9,.82),new THREE.MeshStandardMaterial({color:0x080909,roughness:.85}));caveRecess.position.set(veX,5.7,caveStageZ+.62);scene.add(caveRecess);
+  const caveScreenSurface=new THREE.Mesh(new THREE.PlaneGeometry(24.8,7.2),new THREE.MeshBasicMaterial({color:0x050606,toneMapped:false,side:THREE.DoubleSide}));caveScreenSurface.position.set(veX,5.7,caveStageZ+.17);caveScreenSurface.rotation.y=Math.PI;caveScreenSurface.userData.hoodCaveScreen=true;scene.add(caveScreenSurface);
+  const caveLive=createPassiveWallIframe(CHANNEL_URLS.saywhat,'Headquarters Cave wide projection',24.8,7.2);caveLive.position.set(veX,5.7,caveStageZ+.15);caveLive.rotation.y=Math.PI;scene.add(caveLive);
   hoodCaveWallScreen=registerScreen({
     mesh:caveScreenSurface,css:caveLive,url:CHANNEL_URLS.saywhat,
     title:'THE CAVE · wide projection',room:'hood',activeRadius:38
   });
-  const caveGlow=new THREE.PointLight(0xb8d9e7,2.3,30,1.55);caveGlow.position.set(veX,7.8,caveStageZ+4.5);scene.add(caveGlow);regLight('hood',caveGlow);
+  const caveGlow=new THREE.PointLight(0xb8d9e7,2.3,30,1.55);caveGlow.position.set(veX,7.8,caveStageZ-4.5);scene.add(caveGlow);regLight('hood',caveGlow);
 
   const caveSeatMat=new THREE.MeshStandardMaterial({color:0x6d302d,roughness:.72});
   const caveSeatWood=new THREE.MeshStandardMaterial({color:0x6b4931,roughness:.76});
   for(let row=0;row<10;row++){
-    const y=.48+row*.34,z=caveStageZ+6.0+row*2.45,curve=1+row*.018;
+    const y=.48+row*.34,z=caveStageZ-6.0-row*2.45,curve=1+row*.012;
     const tier=new THREE.Mesh(new THREE.BoxGeometry(30,.28,2.18),new THREE.MeshStandardMaterial({color:row%2?0x595149:0x635b52,roughness:1}));tier.position.set(veX,y-.34,z);scene.add(tier);
     for(let col=0;col<10;col++){
-      const x=veX+(col-4.5)*2.62*curve;
+      // Five seats per side leave a generous centre aisle. The former
+      // ten-seat slab had no readable circulation and made the chairs look
+      // like external objects dropped across the cave.
+      const lane=col<5?col-5.15:col-3.85;
+      const x=veX+lane*2.45*curve;
       const chair=new THREE.Group();chair.position.set(x,y,z);scene.add(chair);
-      const seat=new THREE.Mesh(new THREE.BoxGeometry(1.55,.32,1.02),caveSeatMat);seat.position.y=.28;chair.add(seat);
-      const back=new THREE.Mesh(new THREE.BoxGeometry(1.55,1.22,.26),caveSeatMat);back.position.set(0,.84,.39);back.rotation.x=-.10;chair.add(back);
+      const seat=new THREE.Mesh(new THREE.BoxGeometry(1.55,.32,1.02),caveSeatMat);seat.position.y=.28;seat.userData.hoodCaveSeat=true;seat.userData.viewerYaw=Math.PI;chair.add(seat);
+      const back=new THREE.Mesh(new THREE.BoxGeometry(1.55,1.22,.26),caveSeatMat);back.position.set(0,.84,-.39);back.rotation.x=.10;chair.add(back);
       const armL=new THREE.Mesh(new THREE.BoxGeometry(.12,.48,1.0),caveSeatWood),armR=armL.clone();armL.position.set(-.82,.48,0);armR.position.set(.82,.48,0);chair.add(armL,armR);
-      sitPoint('hood',seat,`Cave · row ${row+1}, seat ${col+1}`,new THREE.Vector3(x,y+1.05,z),0,-.04);
+      sitPoint('hood',seat,`Cave · row ${row+1}, seat ${col+1}`,new THREE.Vector3(x,y+1.48,z),Math.PI,-.04);
     }
-    const aisle=new THREE.PointLight(0xffb76e,.32,5,1.8);aisle.position.set(veX-15.1,y+.16,z);scene.add(aisle);regLight('hood',aisle);
+    for(const sx of [-1,1]){const aisle=new THREE.PointLight(0xffb76e,.26,4.5,1.8);aisle.position.set(veX+sx*15.1,y+.16,z);scene.add(aisle);regLight('hood',aisle);}
   }
 
   for(const side of [-1,1]){const rearWing=new THREE.Mesh(new THREE.BoxGeometry((W-12)/2,H,.52),brick);rearWing.position.set(wx+side*(6+(W-12)/4),H/2,wz+D/2);scene.add(rearWing);}
@@ -6608,7 +6663,9 @@ function buildHood(){
   const loungeSofaMat=new THREE.MeshStandardMaterial({color:0xb9b8b1,roughness:.74});
   for(const sx of [-1,1]){const g=new THREE.Group();g.position.set(wx-5+sx*5.3,0,wz+8);g.rotation.y=sx*Math.PI/2;scene.add(g);const s=new THREE.Mesh(new THREE.BoxGeometry(4.1,.48,1.25),loungeSofaMat);s.position.y=.52;g.add(s);const b=new THREE.Mesh(new THREE.BoxGeometry(4.1,1.16,.27),loungeSofaMat);b.position.set(0,1.14,.48);g.add(b);sitPoint('hood',s,'Headquarters lounge',new THREE.Vector3(g.position.x,1.28,g.position.z),sx>0?-Math.PI/2:Math.PI/2);}
   const loungeTable=new THREE.Mesh(new THREE.BoxGeometry(4.6,.28,2.0),wood);loungeTable.position.set(wx-5,.52,wz+8);scene.add(loungeTable);
-  for(const dz of [-22,22]){const tallWin=new THREE.Mesh(new THREE.PlaneGeometry(15,8.8),glass);tallWin.position.set(wx-17,8.2,wz+dz);tallWin.rotation.y=Math.PI/2;scene.add(tallWin);for(const zbar of [-7.6,0,7.6]){const mullion=new THREE.Mesh(new THREE.BoxGeometry(.16,9.3,.12),steel);mullion.position.set(wx-17.10,8.2,wz+dz+zbar);scene.add(mullion);}for(const yy of [3.65,8.2,12.75]){const rail=new THREE.Mesh(new THREE.BoxGeometry(.16,.12,15.4),steel);rail.position.set(wx-17.10,yy,wz+dz);scene.add(rail);}}
+  // The two freestanding glass grids previously suspended in the hall have
+  // been removed. They had no wall, exterior or structural opening behind
+  // them and repeatedly cut across the monumental art sightlines.
   // Grand hall marble axis and Cadavre Expat IV installation.
   const hallRunner=new THREE.Mesh(new THREE.PlaneGeometry(8,48),new THREE.MeshStandardMaterial({color:0x243337,roughness:.54,metalness:.12}));hallRunner.rotation.x=-Math.PI/2;hallRunner.position.set(wx,.205,wz-4);scene.add(hallRunner);
   // Continuous ceiling light rafts pull the eye through the hall while low
@@ -6619,64 +6676,33 @@ function buildHood(){
   }
   const gardenThreshold=new THREE.Mesh(new THREE.PlaneGeometry(8,28),limestone);gardenThreshold.rotation.x=-Math.PI/2;gardenThreshold.position.set(wx,.19,wz+45);scene.add(gardenThreshold);
   const gardenSign=new THREE.Mesh(new THREE.PlaneGeometry(8.5,.9),new THREE.MeshBasicMaterial({map:makeSignTexture('THE FORMAL GARDEN','lakes · pavilions · waterfall'),transparent:true}));gardenSign.position.set(wx,8.15,wz+D/2-.30);scene.add(gardenSign);
-  // Backdrop/edge heights trimmed from 11.6/11.9 to 9.4/9.2 — at the old
-  // height both pierced the west mezzanine sideDeck's y=11.1-11.3 slab (this
-  // predates the whole column/lift-shaft collision saga and was never
-  // checked against the mezzanine at all). Centred the same as before, just
-  // shorter, with a clear margin below the deck rather than grazing it.
-  const artBackdrop=new THREE.Mesh(new THREE.BoxGeometry(.34,9.4,17.4),new THREE.MeshStandardMaterial({color:0x171a1b,roughness:.73,metalness:.12}));artBackdrop.position.set(wx-W/2+.72,5.9,wz-12);scene.add(artBackdrop);
-  for(const dz of [-8.25,8.25]){const edge=new THREE.Mesh(new THREE.BoxGeometry(.48,9.2,.13),brass);edge.position.set(wx-W/2+.50,5.95,wz-12+dz);scene.add(edge);}
-  addFramedWallArt({src:CADAVRE_EXPAT_IV_SRC,title:'CADAVRE EXPAT IV',subtitle:'HrM · reclaimed cardboard, oil, acrylic, glue and digital echo',width:11.2,height:7.0,x:wx-W/2+.92,y:5.65,z:wz-12,rotationY:Math.PI/2,frameColor:0x171818,matteColor:0x43382c,showLabel:true});
-  for(const dz of [-3.5,3.5]){const spot=new THREE.SpotLight(0xffdfb1,3.2,16,.43,.65,1.45);spot.position.set(wx-24,7.8,wz-12+dz);spot.target.position.set(wx-W/2+.9,4.1,wz-12);scene.add(spot,spot.target);regLight('hood',spot);}
-  const artBench=new THREE.Mesh(new THREE.BoxGeometry(5.4,.34,1.05),wood);artBench.position.set(wx-25,.55,wz-12);artBench.rotation.y=Math.PI/2;scene.add(artBench);sitPoint('hood',artBench,'Cadavre Expat IV',new THREE.Vector3(wx-25,1.28,wz-12),-Math.PI/2,-.02);
-
-  // The complete Cadavre Expat sequence now belongs to Headquarters. All four
-  // works are monumental (11.2 m wide, matching IV). Aspect ratios are
-  // preserved exactly (each width/height pair is the original pairing scaled
-  // uniformly), so nothing is stretched or cropped — see
-  // makeFittedCanvasTexture's contain-fit behaviour inside addFramedWallArt.
-  //
-  // I/II/III used to share the east wall, which also carries two of the
-  // tower's four full-height support columns (x=wx+35.15, at z=wz-1.6 and
-  // z=wz+19.6 — effectively on the wall's own face) and sits right beside the
-  // glass lift shaft (see liftShaft() below). Squeezing three monumental
-  // pieces into that one crowded wall kept producing new collisions each
-  // time the spacing was adjusted. Redistributed across genuinely different
-  // walls instead: I keeps the east wall (clear of both columns), II and III
-  // move to the two rear-wall segments flanking the garden threshold —
-  // spacious, unused, and nowhere near the tower core or the lift.
-  addFramedWallArt({src:CADAVRE_EXPAT_SRC,title:'CADAVRE EXPAT I',subtitle:'HrM · handmade mixed media collage',width:11.2,height:11.2*(4.9/7.4),x:wx+W/2-.92,y:11.2*(4.9/7.4)/2+1.05,z:wz-26,rotationY:-Math.PI/2,frameColor:0x201c18,matteColor:0xd5c7b0,showLabel:true});
-  {
-    const h1=11.2*(4.9/7.4);
-    const backing=new THREE.Mesh(new THREE.BoxGeometry(.32,h1+1.8,11.2+1.6),new THREE.MeshStandardMaterial({color:0xefe8dc,roughness:.88,metalness:.01}));backing.position.set(wx+W/2-.72,h1/2+1.02,wz-26);scene.add(backing);
-    // Brass edge accents, matching CADAVRE EXPAT IV's grand-anchor treatment
-    // (previously only IV had this — added here for visual parity across
-    // all four monumental pieces). Height kept well under the mezzanine's
-    // y=11.1 sideDeck band; this wall has no sideDeck nearby regardless
-    // (both mezzanine decks sit further west/south), but sized safely on
-    // principle so a future mezzanine change can't silently reintroduce IV's
-    // exact bug here too.
-    for(const dz of [-5.95,5.95]){const edge=new THREE.Mesh(new THREE.BoxGeometry(.48,9.4,.13),brass);edge.position.set(wx+W/2-.50,h1/2+1.05,wz-26+dz);scene.add(edge);}
-    for(const dz of [-4.2,4.2]){const spot=new THREE.SpotLight(0xffe2bc,3.1,20,.40,.60,1.5);spot.position.set(wx+24,8.4,wz-26+dz);spot.target.position.set(wx+W/2-.9,h1/2+1.1,wz-26);scene.add(spot,spot.target);regLight('hood',spot);}
-    const bench=new THREE.Mesh(new THREE.BoxGeometry(5.4,.34,1.05),wood);bench.position.set(wx+23,.55,wz-26);bench.rotation.y=Math.PI/2;scene.add(bench);sitPoint('hood',bench,'CADAVRE EXPAT I',new THREE.Vector3(wx+23,1.28,wz-26),-Math.PI/2,-.02);
+  // Four walls, four works. The complete Cadavre Expat sequence now occupies
+  // the uninterrupted upper-wall band above the mezzanine. At ground level
+  // the old frames competed with furniture, lift hardware and guard rails;
+  // here every lower edge clears the mezzanine and every work is visible from
+  // the central axis. Aspect ratios remain exact and the restrained dark
+  // mounts read as architecture rather than oversized picture frames.
+  function installMonumentalCadavre(a){
+    const mount=new THREE.Group();mount.position.set(a.x,a.y,a.z);mount.rotation.y=a.r;mount.userData.monumentalHoodArt=true;scene.add(mount);
+    const backing=new THREE.Mesh(new THREE.BoxGeometry(a.w+1.35,a.h+1.35,.24),new THREE.MeshStandardMaterial({color:0x171a1b,roughness:.78,metalness:.10}));backing.position.z=-.11;mount.add(backing);
+    for(const sx of [-1,1]){const edge=new THREE.Mesh(new THREE.BoxGeometry(.15,a.h+1.72,.34),brass);edge.position.set(sx*(a.w/2+.76),0,-.01);mount.add(edge);}
+    addFramedWallArt({src:a.src,title:a.title,subtitle:a.subtitle,width:a.w,height:a.h,x:a.x,y:a.y,z:a.z,rotationY:a.r,frameColor:0x171818,matteColor:0xd8d0c2,showLabel:true,labelScale:1.15});
+    const front=new THREE.Vector3(Math.sin(a.r),0,Math.cos(a.r));
+    const lateral=new THREE.Vector3(Math.cos(a.r),0,-Math.sin(a.r));
+    for(const side of [-1,1]){
+      const spot=new THREE.SpotLight(0xffe2bc,4.1,28,.36,.58,1.45);
+      spot.position.set(a.x+front.x*10+lateral.x*a.w*.29,Math.min(H-1.4,a.y+4.2),a.z+front.z*10+lateral.z*a.w*.29);
+      spot.target.position.set(a.x,a.y,a.z);scene.add(spot,spot.target);regLight('hood',spot);
+    }
+    const bench=new THREE.Mesh(new THREE.BoxGeometry(5.6,.34,1.08),wood);bench.position.set(a.bx,.55,a.bz);bench.rotation.y=a.br||0;scene.add(bench);
+    sitPoint('hood',bench,a.title,new THREE.Vector3(a.bx,1.30,a.bz),a.yaw,.55);
   }
-  const rearCadavreWorks=[
-    {src:CADAVRE_EXPAT_II_SRC,title:'CADAVRE EXPAT II',subtitle:'HrM · impasto, glue, oil and acrylic echo',w:11.2,h:11.2*(6.1/6.1),x:wx-21,edgeH:8.0},
-    {src:CADAVRE_EXPAT_III_SRC,title:'CADAVRE EXPAT III',subtitle:'HrM · reclaimed cardboard and fading impressions',w:11.2,h:11.2*(5.5/7.6),x:wx+21,edgeH:9.4}
-  ];
-  rearCadavreWorks.forEach(a=>{
-    const backing=new THREE.Mesh(new THREE.BoxGeometry(a.w+1.6,a.h+1.8,.32),new THREE.MeshStandardMaterial({color:0xefe8dc,roughness:.88,metalness:.01}));backing.position.set(a.x,a.h/2+1.02,wz+D/2-.72);scene.add(backing);
-    addFramedWallArt({src:a.src,title:a.title,subtitle:a.subtitle,width:a.w,height:a.h,x:a.x,y:a.h/2+1.05,z:wz+D/2-.92,rotationY:Math.PI,frameColor:0x201c18,matteColor:0xd5c7b0,showLabel:true});
-    // Brass edge accents matching IV's treatment. II is the tallest piece
-    // (11.2 m square) so its edges use a shorter height (8.0, not the 9.4
-    // used elsewhere) — this rear wall has no mezzanine deck within 8 units
-    // of it (backDeck's z-range stops well short, see the ramp comment
-    // above), but each edge height is still picked to individually clear
-    // the mezzanine's y=11.1 band with margin, not just rely on that.
-    for(const dx of [-5.95,5.95]){const edge=new THREE.Mesh(new THREE.BoxGeometry(.13,a.edgeH,.48),brass);edge.position.set(a.x+dx,a.h/2+1.05,wz+D/2-.50);scene.add(edge);}
-    for(const dx of [-4.2,4.2]){const spot=new THREE.SpotLight(0xffe2bc,3.1,20,.40,.60,1.5);spot.position.set(a.x+dx,8.4,wz+D/2-24);spot.target.position.set(a.x,a.h/2+1.1,wz+D/2-.9);scene.add(spot,spot.target);regLight('hood',spot);}
-    const bench=new THREE.Mesh(new THREE.BoxGeometry(5.4,.34,1.05),wood);bench.position.set(a.x,.55,wz+D/2-12);scene.add(bench);sitPoint('hood',bench,a.title,new THREE.Vector3(a.x,1.28,wz+D/2-12),0,-.02);
-  });
+  [
+    {src:CADAVRE_EXPAT_IV_SRC,title:'CADAVRE EXPAT IV',subtitle:'HrM · reclaimed cardboard, oil, acrylic, glue and digital echo',w:15.4,h:15.4*(992/1586),x:wx-W/2+.92,y:18.2,z:wz-10,r:Math.PI/2,bx:wx-17,bz:wz-10,br:Math.PI/2,yaw:Math.PI/2},
+    {src:CADAVRE_EXPAT_SRC,title:'CADAVRE EXPAT I',subtitle:'HrM · handmade mixed media collage',w:15.4,h:15.4*(4.9/7.4),x:wx+W/2-.92,y:18.2,z:wz-18,r:-Math.PI/2,bx:wx+17,bz:wz-18,br:Math.PI/2,yaw:-Math.PI/2},
+    {src:CADAVRE_EXPAT_II_SRC,title:'CADAVRE EXPAT II',subtitle:'HrM · impasto, glue, oil and acrylic echo',w:13.6,h:13.6,x:wx,y:18.45,z:wz+D/2-.92,r:Math.PI,bx:wx-10.5,bz:wz+17,br:0,yaw:Math.PI},
+    {src:CADAVRE_EXPAT_III_SRC,title:'CADAVRE EXPAT III',subtitle:'HrM · reclaimed cardboard and fading impressions',w:15.4,h:15.4*(5.5/7.6),x:wx,y:18.2,z:wz-D/2+.92,r:0,bx:wx+10.5,bz:wz-17,br:0,yaw:0}
+  ].forEach(installMonumentalCadavre);
 
   // A sunken concrete ramp, in the same south-of-the-second-column gap as the
   // Cadavre Expat III clearance above, reads as a real descent rather than
