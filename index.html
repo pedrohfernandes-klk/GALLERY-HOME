@@ -2404,10 +2404,11 @@ function markRpgAvatar(object){
 // shadow on the floor (rpgAvatarShadow, updated in updateRpgAvatar)
 // reinforces the same idea from below.
 let rpgAvatarShadow=null;
+let rpgReactionTime=0;
 function makeShadeMaterial(){
   return new THREE.ShaderMaterial({
     transparent:true, depthWrite:false, toneMapped:false, side:THREE.DoubleSide,
-    uniforms:{ uColor:{value:new THREE.Color(0x07080a)}, uOpacity:{value:.72} },
+    uniforms:{uColor:{value:new THREE.Color(0x07090c)},uOpacity:{value:.72},uTime:{value:0},uLight:{value:.35},uSound:{value:0}},
     vertexShader:`
       varying vec3 vNormalV; varying vec3 vViewPos;
       void main(){
@@ -2417,13 +2418,18 @@ function makeShadeMaterial(){
         gl_Position = projectionMatrix * mvPos;
       }`,
     fragmentShader:`
-      uniform vec3 uColor; uniform float uOpacity;
+      uniform vec3 uColor; uniform float uOpacity; uniform float uTime; uniform float uLight; uniform float uSound;
       varying vec3 vNormalV; varying vec3 vViewPos;
       void main(){
         vec3 viewDir = normalize(-vViewPos);
         float rim = 1.0 - abs(dot(viewDir, normalize(vNormalV)));
-        float a = mix(uOpacity, uOpacity*0.32, pow(rim, 1.6));
-        gl_FragColor = vec4(uColor, a);
+        float a = mix(uOpacity, uOpacity*0.24, pow(rim, 1.55));
+        vec2 cell=floor(gl_FragCoord.xy/3.0);
+        float d=fract(sin(dot(cell,vec2(12.9898,78.233)))*43758.5453);
+        float shimmer=(.5+.5*sin(uTime*2.4+cell.y*.17))*uSound*.10;
+        a*=step(.15+rim*.12-shimmer,d+a*.66);
+        vec3 ink=mix(uColor,vec3(.11,.18,.22),rim*(.20+uLight*.30));
+        gl_FragColor = vec4(ink,a);
       }`
   });
 }
@@ -2432,6 +2438,7 @@ function buildRpgAvatar(){
   root.name='Workshop RPG visitor';
   const shade=makeShadeMaterial();
   const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.30,.56,6,12),shade);torso.position.y=1.26;root.add(torso);
+  const chest=new THREE.Mesh(new THREE.CapsuleGeometry(.34,.24,6,12),shade);chest.rotation.z=Math.PI/2;chest.position.y=1.52;root.add(chest);
   const head=new THREE.Mesh(new THREE.SphereGeometry(.25,18,14),shade);head.scale.set(.84,1.08,.86);head.position.y=1.97;root.add(head);
   const neck=new THREE.Mesh(new THREE.CylinderGeometry(.085,.105,.18,10),shade);neck.position.y=1.72;root.add(neck);
   const makeLimb=(x,y,length,radius)=>{const pivot=new THREE.Group();pivot.position.set(x,y,0);const mesh=new THREE.Mesh(new THREE.CapsuleGeometry(radius,length,5,9),shade);mesh.position.y=-(length/2+radius*.55);pivot.add(mesh);root.add(pivot);return pivot;};
@@ -2439,11 +2446,14 @@ function buildRpgAvatar(){
   rpgAvatarParts.rightLeg=makeLimb(.16,.86,.60,.10);
   rpgAvatarParts.leftArm=makeLimb(-.38,1.52,.48,.085);
   rpgAvatarParts.rightArm=makeLimb(.38,1.52,.48,.085);
+  for(const x of [-.16,.16]){const foot=new THREE.Mesh(new THREE.BoxGeometry(.19,.12,.33),shade);foot.position.set(x,.16,-.075);root.add(foot);}
   root.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;o.frustumCulled=true;}});
   markRpgAvatar(root);
   root.visible=false;
   scene.add(root);
   rpgAvatar=root;
+  root.userData.shadeMaterial=shade;
+  root.userData.head=head;
 
   const shadowC=document.createElement('canvas');shadowC.width=128;shadowC.height=128;
   {
@@ -2473,6 +2483,7 @@ function updateRpgAvatar(dt=0,speed=0){
   if(rpgAvatarShadow) rpgAvatarShadow.visible=rpgMode;
   if(!rpgMode) return;
   const floor=visitorFloorY(rpgPlayerPosition);
+  rpgReactionTime+=dt;
   rpgAvatar.position.set(rpgPlayerPosition.x,floor,rpgPlayerPosition.z);
   if(rpgAvatarShadow) rpgAvatarShadow.position.set(rpgPlayerPosition.x,floor+.012,rpgPlayerPosition.z);
   const moving=speed>.08;
@@ -2484,6 +2495,15 @@ function updateRpgAvatar(dt=0,speed=0){
   rpgAvatarParts.rightLeg.rotation.x=-swing;
   rpgAvatarParts.leftArm.rotation.x=-swing*.58;
   rpgAvatarParts.rightArm.rotation.x=swing*.58;
+  const shade=rpgAvatar.userData.shadeMaterial;
+  if(shade?.uniforms){
+    shade.uniforms.uTime.value=rpgReactionTime;
+    shade.uniforms.uLight.value=(LIGHT_LEVELS[lightLevelIndex]?.mult||1)/1.5;
+    shade.uniforms.uSound.value=studioPlaybackRequested&&!studioMuted?1:0;
+  }
+  const reaction=studioPlaybackRequested&&!studioMuted&&!reducedMotion?Math.sin(rpgReactionTime*2.15)*.012:0;
+  rpgAvatar.scale.set(1-reaction*.25,1+reaction,1-reaction*.25);
+  if(rpgAvatar.userData.head)rpgAvatar.userData.head.rotation.z=Math.sin(rpgReactionTime*.72)*(.018+.018*(lightLevelIndex>0));
 }
 function updateRpgCamera(dt=.016,snap=false){
   if(!rpgMode || !camera) return;
@@ -2518,7 +2538,7 @@ function syncViewModeUi(){
   if(desktop){desktop.classList.toggle('active',rpgMode);desktop.setAttribute('aria-pressed',String(rpgMode));desktop.textContent=rpgMode?'First person':'RPG';}
   if(mobile){mobile.classList.toggle('active',rpgMode);mobile.setAttribute('aria-pressed',String(rpgMode));mobile.textContent=rpgMode?'First':'View';}
   const hint=$('hint');
-  if(hint) hint.textContent=rpgMode?'RPG view · WASD moves · mouse orbits · wheel adjusts distance · V first person':'WASD moves · click doors/screens · G rooms · V RPG view';
+  if(hint) hint.textContent=rpgMode?'RPG shade · WASD moves · mouse orbits 360° · wheel adjusts distance · V first person':'WASD moves · click doors/screens · G rooms · V RPG view';
 }
 function setRpgMode(next,{silent=false}={}){
   next=!!next;
@@ -2649,16 +2669,16 @@ const studioOrigin = new THREE.Vector3(-1220, 0, -1080);
 const studioHalfWidth = 10.0;   // 20 m wide
 const studioDepth = 24;         // expanded listening room with a dedicated seated viewing bay
 const studioHeight = 7.8;
-// Headquarters remains reached physically through the Grove road, but it is
-// also exposed in the navigator after discovery so the growing district stays
-// legible rather than becoming a hidden second application.
-const hoodOrigin = new THREE.Vector3(1880,0,-1540);
+// Headquarters is a continuous northern extension of the Grove.  The road is
+// deliberately short in rendered space (a long landscape journey compressed
+// into a walkable museum site) so no portal or loading jump breaks orientation.
+const hoodOrigin = new THREE.Vector3(-1220,0,-658.4);
 const hoodHalfWidth = 115;
 const hoodDepth = 370;
-// A real arrival forecourt, clear of the return portal. From here the visitor
-// faces east across the freestyle square toward the projects and warehouse.
-const hoodArrivalPos = new THREE.Vector3(hoodOrigin.x-49,cameraHeight,hoodOrigin.z+29);
-const hoodArrivalYaw = -Math.PI/2;
+// A real arrival forecourt at the end of the shared gravel threshold. From
+// here the visitor faces into the freestyle square, projects and warehouse.
+const hoodArrivalPos = new THREE.Vector3(hoodOrigin.x-48,cameraHeight,hoodOrigin.z+5.2);
+const hoodArrivalYaw = Math.PI;
 
 // THE HOOD is one continuous district at ground level, with genuinely stacked
 // warehouse/tower floors above and a basement below.  The lift changes room
@@ -2693,6 +2713,8 @@ let hoodLiftAutoKey = '';
 let hoodSky = null;
 let hoodHorizon = null;
 let hoodCaveWallScreen = null;
+let hoodCaveWallIframe = null;
+let hoodCaveCurrentChannel = 'youtube';
 
 const SESIMBRA_VIEW_SRC = "assets/extracted/sesimbra-view.webp";
 const GARDEN_LANDSCAPE_SRC = "assets/extracted/garden-landscape.webp";
@@ -4330,7 +4352,7 @@ function runWorkshopSelfTest(){
     const caveSeatCount=caveSeatBatches.reduce((n,o)=>n+(o.userData.hoodCaveSeatCount||0),0);
     const caveSeatViews=caveSeatBatches.flatMap(o=>o.userData.hoodCaveSeatViews||[]);
     check(caveEntrances.length===1,'Hood Cave has one legible entrance',`${caveEntrances.length} entrance markers`);
-    check(caveSeatCount===100,'Hood Cave seating count','100 seats expected · '+caveSeatCount+' found');
+    check(caveSeatCount===150,'Hood Cave seating count','150 seats expected · '+caveSeatCount+' found');
     check(caveSeatBatches.every(s=>s.userData.viewerYaw===Math.PI),'Hood Cave seats face the screen','all seated cameras look north');
     if(hoodCaveWallScreen?.mesh){
       const screenZ=hoodCaveWallScreen.mesh.getWorldPosition(new THREE.Vector3()).z;
@@ -6348,34 +6370,25 @@ function buildOutdoorSpace(){
     const screenW=11.8,screenH=6.15,screenY=4.0,screenZ=az-5.98;
     const screenFrame=new THREE.Mesh(new THREE.BoxGeometry(screenW+.72,screenH+.72,.34),stageDark); screenFrame.position.set(ax,screenY,screenZ-.14); scene.add(screenFrame);
     const screenBacking=new THREE.Mesh(new THREE.PlaneGeometry(screenW,screenH),new THREE.MeshBasicMaterial({color:0x030305})); screenBacking.position.set(ax,screenY,screenZ+.04); scene.add(screenBacking);
-    const live=createPassiveWallIframe(CHANNEL_URLS.saywhat,'Grove Amphitheatre projection wall',screenW,screenH); live.position.set(ax,screenY,screenZ+.07); scene.add(live);
+    const live=createPassiveWallIframe(STUDIO_DEFAULT_EMBED,'Grove Amphitheatre projection wall',screenW,screenH); live.position.set(ax,screenY,screenZ+.07); scene.add(live);
     amphWallIframe=live.userData.iframe;
-    amphWallScreen={mesh:screenBacking,css:live,title:'GROVE AMPHITHEATRE',room:'outdoor',action:'amph',activeRadius:31};
+    amphWallScreen={mesh:screenBacking,css:live,url:STUDIO_DEFAULT_EMBED,title:'GROVE AMPHITHEATRE · YouTube',room:'outdoor',action:'amph',activeRadius:31};
     registerScreen(amphWallScreen);
     const screenGlow=new THREE.PointLight(0xb8d8ff,1.7,28,1.75); screenGlow.position.set(ax,4.2,az+1.8); scene.add(screenGlow); regLight('outdoor',screenGlow);
     for(const sx of [-5.8,5.8]){ const stageLight=new THREE.SpotLight(0xffd7a2,2.4,28,.42,.55,1.5); stageLight.position.set(ax+sx,7.4,az-2); stageLight.target.position.set(ax,1.0,az); scene.add(stageLight,stageLight.target); regLight('outdoor',stageLight); }
   }
 
-  // Monumental Headquarters portal. It replaces the underscaled vehicle and
-  // keeps the long route as a clean spatial transition rather than a prop.
+  // Open road to Headquarters.  The paired piers are a wayfinding threshold,
+  // not a portal: gravel, planting and sky continue visibly into the Hood.
   {
-    const rx=x0-48, rz=z0+31;
-    const approach=new THREE.Mesh(new THREE.PlaneGeometry(9,29),gravelMat);approach.rotation.x=-Math.PI/2;approach.rotation.z=Math.PI/2;approach.position.set(x0-34,.05,rz);scene.add(approach);
-    const portal=new THREE.Group();portal.position.set(rx,0,rz);portal.rotation.y=Math.PI/2;scene.add(portal);
+    const rx=x0-48, rz=z0+outdoorDepth-.35;
+    const approach=new THREE.Mesh(new THREE.PlaneGeometry(8.4,18),gravelMat);approach.rotation.x=-Math.PI/2;approach.position.set(rx,.055,rz+7.5);scene.add(approach);
+    const portal=new THREE.Group();portal.position.set(rx,0,rz);scene.add(portal);
     const portalStone=new THREE.MeshStandardMaterial({color:0xb9b09f,roughness:.72,metalness:.05});
-    const portalDark=new THREE.MeshStandardMaterial({color:0x191d20,roughness:.35,metalness:.62});
-    for(const sx of [-1,1]){const pier=new THREE.Mesh(new THREE.BoxGeometry(1.05,6.8,1.35),portalStone);pier.position.set(sx*4.25,3.4,0);portal.add(pier);}
-    const lintel=new THREE.Mesh(new THREE.BoxGeometry(9.55,1.05,1.35),portalStone);lintel.position.set(0,6.28,0);portal.add(lintel);
-    const reveal=new THREE.Mesh(new THREE.BoxGeometry(8.1,5.45,.42),portalDark);reveal.position.set(0,3.05,.12);portal.add(reveal);
-    const field=new THREE.Mesh(new THREE.PlaneGeometry(7.65,5.08),new THREE.MeshBasicMaterial({color:0xc6e8f2,transparent:true,opacity:.42,toneMapped:false,side:THREE.DoubleSide}));field.position.set(0,3.05,-.12);portal.add(field);
-    const threshold=new THREE.Mesh(new THREE.BoxGeometry(9.4,.18,4.2),portalStone);threshold.position.set(0,.09,0);portal.add(threshold);
-    const sign=new THREE.Mesh(new THREE.PlaneGeometry(7.6,.88),new THREE.MeshBasicMaterial({map:makeSignTexture('HEADQUARTERS','the Hood · portal passage'),transparent:true}));sign.position.set(0,7.28,.74);portal.add(sign);
-    const portalLight=new THREE.PointLight(0xd7f2ff,2.8,18,1.5);portalLight.position.set(0,3.2,1.6);portal.add(portalLight);regLight('outdoor',portalLight);
-    registerPortal({
-      mesh:field, room:'hood', fromRoom:'outdoor', label:'Headquarters',
-      targetPos:hoodArrivalPos.clone(),
-      targetYaw:hoodArrivalYaw
-    });
+    for(const sx of [-1,1]){const pier=new THREE.Mesh(new THREE.BoxGeometry(.72,5.7,.92),portalStone);pier.position.set(sx*4.55,2.85,0);portal.add(pier);}
+    const lintel=new THREE.Mesh(new THREE.BoxGeometry(9.82,.58,.92),portalStone);lintel.position.set(0,5.42,0);portal.add(lintel);
+    const sign=new THREE.Mesh(new THREE.PlaneGeometry(6.7,.70),new THREE.MeshBasicMaterial({map:makeSignTexture('THE HOOD','gravel road · continue north'),transparent:true}));sign.position.set(0,6.25,.50);portal.add(sign);
+    for(const sx of [-1,1]){const light=new THREE.PointLight(0xffdfae,1.2,10,1.8);light.position.set(sx*4.25,2.6,.8);portal.add(light);regLight('outdoor',light);}
   }
 
   const hemi = new THREE.HemisphereLight(0xf5fbff,0x71884c,1.62); scene.add(hemi); regLight('outdoor', hemi);
@@ -6571,22 +6584,15 @@ function buildHood(){
   function sitPoint(room,mesh,label,pos,yaw,pitch=-.03){registerInteractable({type:'seat',room,mesh,label,hintId:'hood-seat',priority:3,hintText:'Sit, look around freely; move to stand.',prompt:()=>`Sit · ${label}`,onUse:()=>seatAt(pos,yaw,pitch,.78,label)});}
   for(const sx of [-13,0,13]){const bench=new THREE.Mesh(new THREE.BoxGeometry(6.2,.36,1.05),wood);bench.position.set(x0+sx,.58,z0+10);scene.add(bench);sitPoint('hood',bench,'Ocean square',new THREE.Vector3(x0+sx,1.30,z0+10),0);}
 
-  // Return portal: broad, luminous and placed clear of every sightline.
+  // The same road remains visible on the Hood side.  A modest stone marker
+  // confirms direction without pretending that the two gardens are separate
+  // worlds.
   {
-    const px0=x0-72,pz0=z0+72,portal=new THREE.Group();portal.position.set(px0,0,pz0);portal.rotation.y=Math.PI/2;scene.add(portal);
+    const px0=x0-48,pz0=z0+5.5,portal=new THREE.Group();portal.position.set(px0,0,pz0);scene.add(portal);
     const pStone=new THREE.MeshStandardMaterial({color:0xb9ad98,roughness:.76,metalness:.04});
-    const pMetal=new THREE.MeshStandardMaterial({color:0x20262a,roughness:.32,metalness:.68});
-    for(const sx of [-1,1]){const pier=new THREE.Mesh(new THREE.BoxGeometry(1.10,7.1,1.5),pStone);pier.position.set(sx*4.4,3.55,0);portal.add(pier);}
-    const top=new THREE.Mesh(new THREE.BoxGeometry(9.9,1.12,1.5),pStone);top.position.set(0,6.55,0);portal.add(top);
-    const recess=new THREE.Mesh(new THREE.BoxGeometry(8.25,5.65,.48),pMetal);recess.position.set(0,3.18,.12);portal.add(recess);
-    const field=new THREE.Mesh(new THREE.PlaneGeometry(7.8,5.25),new THREE.MeshBasicMaterial({color:0xf4e0b6,transparent:true,opacity:.38,toneMapped:false,side:THREE.DoubleSide}));field.position.set(0,3.18,-.15);portal.add(field);
-    const label=new THREE.Mesh(new THREE.PlaneGeometry(7.8,.86),new THREE.MeshBasicMaterial({map:makeSignTexture('THE GROVE','return portal'),transparent:true}));label.position.set(0,7.55,.82);portal.add(label);
-    const glow=new THREE.PointLight(0xffe0ad,2.8,19,1.55);glow.position.set(0,3.2,1.8);portal.add(glow);regLight('hood',glow);
-    registerPortal({
-      mesh:field, room:'outdoor', fromRoom:'hood', label:'The Grove',
-      targetPos:new THREE.Vector3(outdoorOrigin.x-48, cameraHeight, outdoorOrigin.z+30),
-      targetYaw:-Math.PI/2
-    });
+    const road=new THREE.Mesh(new THREE.PlaneGeometry(8.4,15),gravel);road.rotation.x=-Math.PI/2;road.position.set(0,.06,-4.5);portal.add(road);
+    for(const sx of [-1,1]){const marker=new THREE.Mesh(new THREE.BoxGeometry(.55,3.4,.72),pStone);marker.position.set(sx*4.45,1.7,0);portal.add(marker);}
+    const label=new THREE.Mesh(new THREE.PlaneGeometry(5.8,.68),new THREE.MeshBasicMaterial({map:makeSignTexture('THE GROVE','walk south'),transparent:true}));label.position.set(0,3.85,.42);portal.add(label);
   }
 
   // Warehouse and tower geometry: a restored brick-and-black-steel shell with
@@ -6612,9 +6618,9 @@ function buildHood(){
   {const north=new THREE.Mesh(new THREE.BoxGeometry(.52,H,(caveGapZ-caveGapHalf)-(wz-D/2)),brick);north.position.set(wx-W/2,H/2,(wz-D/2+caveGapZ-caveGapHalf)/2);scene.add(north);
    const south=new THREE.Mesh(new THREE.BoxGeometry(.52,H,wz+D/2-(caveGapZ+caveGapHalf)),brick);south.position.set(wx-W/2,H/2,(caveGapZ+caveGapHalf+wz+D/2)/2);scene.add(south);
    const caveLintel=new THREE.Mesh(new THREE.BoxGeometry(.52,H-6.5,caveGapHalf*2),brick);caveLintel.position.set(wx-W/2,(H+6.5)/2,caveGapZ);scene.add(caveLintel);
-   const caveDoorSign=new THREE.Mesh(new THREE.PlaneGeometry(6.4,.85),new THREE.MeshBasicMaterial({map:makeSignTexture('THE CAVE','venue · 100 seats'),transparent:true}));caveDoorSign.position.set(wx-W/2+.30,7.6,caveGapZ);caveDoorSign.rotation.y=Math.PI/2;scene.add(caveDoorSign);}
+   const caveDoorSign=new THREE.Mesh(new THREE.PlaneGeometry(6.4,.85),new THREE.MeshBasicMaterial({map:makeSignTexture('THE CAVE','cinema · 150 seats'),transparent:true}));caveDoorSign.position.set(wx-W/2+.30,7.6,caveGapZ);caveDoorSign.rotation.y=Math.PI/2;scene.add(caveDoorSign);}
 
-  // THE CAVE — a 100-seat studio amphitheatre carved behind a waterfall,
+  // THE CAVE — a 150-seat studio amphitheatre carved behind a waterfall,
   // moved from its original spot at the far end of the 120 m formal garden
   // (a 300+ m walk, hidden past a waterfall) to directly beside the grand
   // hall's own west wall. It reads immediately on exiting through the gap
@@ -6690,17 +6696,22 @@ function buildHood(){
   const caveFloor=new THREE.Mesh(new THREE.PlaneGeometry(caveW,caveD),new THREE.MeshStandardMaterial({map:caveFloorTex,roughness:.96}));caveFloor.rotation.x=-Math.PI/2;caveFloor.position.set(veX,.12,caveZ);scene.add(caveFloor);
   const caveCeilTex=makeStoneTexture('#1b1a18','rgba(55,50,45,.14)','rgba(8,7,6,.12)');caveCeilTex.repeat.set(caveW/6,caveD/6);
   const caveCeil=new THREE.Mesh(new THREE.PlaneGeometry(caveW,caveD),new THREE.MeshStandardMaterial({map:caveCeilTex,roughness:1,side:THREE.DoubleSide}));caveCeil.rotation.x=Math.PI/2;caveCeil.position.set(veX,12.8,caveZ);scene.add(caveCeil);
+  // Low planted berms conceal the auditorium shell from the garden and tuck
+  // it beneath the warehouse's west retaining edge: architecture discovered
+  // by descending, not a freestanding black box dropped outdoors.
+  const caveBermMat=new THREE.MeshStandardMaterial({color:0x44583b,roughness:1});
+  for(const sx of [-1,1]){const berm=new THREE.Mesh(new THREE.DodecahedronGeometry(1,1),caveBermMat);berm.position.set(veX+sx*22.5,10.8,caveZ);berm.scale.set(8.2,4.2,18.8);scene.add(berm);}
   const caveRockTex=makeStoneTexture('#4b443d','rgba(96,86,72,.16)','rgba(30,26,20,.14)');caveRockTex.repeat.set(2,2);
   const caveRockMat=new THREE.MeshStandardMaterial({map:caveRockTex,roughness:1,metalness:0});
-  const caveEntryX=veX+caveW/2-.42;
-  const caveEntryZ=caveZ-caveD/2+3.0;
+  const caveEntryX=veX;
+  const caveEntryZ=caveZ-caveD/2+.18;
   // One instanced geological wall replaces dozens of independent boulder draw
   // calls. The east-side opening remains genuinely clear for the entrance.
   const caveRockData=[];
   for(let i=0;i<56;i++){
     const side=i%2?-1:1;
     const rockZ=caveZ-caveD/2+1+(i%28)*(caveD-2)/27;
-    if(side>0&&Math.abs(rockZ-caveEntryZ)<4.25)continue;
+    if(Math.abs(rockZ-caveEntryZ)<2.9&&i<10)continue;
     const size=2.1+(i%5)*.38;
     caveRockData.push({
       p:new THREE.Vector3(veX+side*(caveW/2-.8+(i%3)*.35),2.1+(i%4)*2.25,rockZ),
@@ -6720,7 +6731,7 @@ function buildHood(){
     for(const sx of [-1,1]){const pier=new THREE.Mesh(new THREE.BoxGeometry(.55,3.5,.55),caveRibMat);pier.position.set(veX+sx*17.35,1.78,rz);scene.add(pier);}
   }
   {
-    const ax=wx-W/2-1.1,az=caveGapZ,bx=caveEntryX+2.2,bz=caveEntryZ;
+    const ax=wx-W/2-1.1,az=caveGapZ,bx=caveEntryX,bz=caveEntryZ-2.4;
     const dx=bx-ax,dz=bz-az,len=Math.hypot(dx,dz);
     const approach=new THREE.Mesh(new THREE.BoxGeometry(4.8,.18,len),limestone);
     approach.position.set((ax+bx)/2,.14,(az+bz)/2);
@@ -6736,12 +6747,16 @@ function buildHood(){
   }
   const caveDoorMat=new THREE.MeshStandardMaterial({color:0x0b0d0e,roughness:.44,metalness:.48});
   const caveDoor=new THREE.Mesh(new THREE.PlaneGeometry(6.1,4.75),caveDoorMat);
-  caveDoor.position.set(caveEntryX+.08,2.52,caveEntryZ);caveDoor.rotation.y=Math.PI/2;caveDoor.userData.hoodCaveEntrance=true;scene.add(caveDoor);
-  for(const dz of [-3.28,3.28]){const jamb=new THREE.Mesh(new THREE.BoxGeometry(.74,5.45,.58),brass);jamb.position.set(caveEntryX+.12,2.72,caveEntryZ+dz);scene.add(jamb);}
-  const entryBeam=new THREE.Mesh(new THREE.BoxGeometry(.74,.62,7.14),brass);entryBeam.position.set(caveEntryX+.12,5.16,caveEntryZ);scene.add(entryBeam);
-  const entryCanopyCave=new THREE.Mesh(new THREE.BoxGeometry(4.8,.24,8.2),steel);entryCanopyCave.position.set(caveEntryX+2.15,5.86,caveEntryZ);scene.add(entryCanopyCave);
-  const caveTitle=new THREE.Mesh(new THREE.PlaneGeometry(7.8,.95),new THREE.MeshBasicMaterial({map:makeSignTexture('THE CAVE','100 seats · screenings · live projection'),transparent:true,toneMapped:false,side:THREE.DoubleSide}));caveTitle.position.set(caveEntryX+.51,6.42,caveEntryZ);caveTitle.rotation.y=Math.PI/2;scene.add(caveTitle);
-  for(const dz of [-2.55,2.55]){const lamp=new THREE.PointLight(0xffc47d,1.55,11,1.75);lamp.position.set(caveEntryX+2.5,3.45,caveEntryZ+dz);scene.add(lamp);regLight('hood',lamp);}
+  caveDoor.position.set(caveEntryX,4.65,caveEntryZ-.08);caveDoor.userData.hoodCaveEntrance=true;scene.add(caveDoor);
+  for(const sx of [-3.28,3.28]){const jamb=new THREE.Mesh(new THREE.BoxGeometry(.58,7.5,.74),brass);jamb.position.set(caveEntryX+sx,3.75,caveEntryZ);scene.add(jamb);}
+  const entryBeam=new THREE.Mesh(new THREE.BoxGeometry(7.14,.62,.74),brass);entryBeam.position.set(caveEntryX,7.18,caveEntryZ);scene.add(entryBeam);
+  const entryCanopyCave=new THREE.Mesh(new THREE.BoxGeometry(8.2,.24,4.8),steel);entryCanopyCave.position.set(caveEntryX,7.85,caveEntryZ-2.15);scene.add(entryCanopyCave);
+  const caveTitle=new THREE.Mesh(new THREE.PlaneGeometry(7.8,.95),new THREE.MeshBasicMaterial({map:makeSignTexture('THE CAVE','150 seats · enter above · live projection'),transparent:true,toneMapped:false,side:THREE.DoubleSide}));caveTitle.position.set(caveEntryX,8.48,caveEntryZ-.40);scene.add(caveTitle);
+  for(const sx of [-2.55,2.55]){const lamp=new THREE.PointLight(0xffc47d,1.35,11,1.75);lamp.position.set(caveEntryX+sx,5.0,caveEntryZ-2.1);scene.add(lamp);regLight('hood',lamp);}
+  // A high rear belvedere gives the first view of the complete auditorium.
+  const upperLanding=new THREE.Mesh(new THREE.BoxGeometry(11.8,.30,4.5),limestone);upperLanding.position.set(caveEntryX,3.55,caveEntryZ+2.15);scene.add(upperLanding);
+  for(let i=0;i<10;i++){const step=new THREE.Mesh(new THREE.BoxGeometry(5.4,.24,1.05),limestone);step.position.set(caveEntryX,3.30-i*.30,caveEntryZ+4.2+i*.82);scene.add(step);}
+  registerInteractable({type:'door',room:'hood',mesh:caveDoor,label:'The Cave upper entrance',hintId:'hood-cave-entry',priority:5,hintText:'Enter above the auditorium; the screen remains visible throughout the descent.',prompt:()=>'Enter The Cave from the upper gallery',onUse:()=>{const p=new THREE.Vector3(caveEntryX,4.75,caveEntryZ+3.2);seatAt(p,Math.PI,-.12,.72,'Cave upper gallery');}});
 
   // The stage is architectural: blackened steel proscenium, generous live
   // screen and a shallow apron for talks, screenings and future performances.
@@ -6753,10 +6768,11 @@ function buildHood(){
   for(const sx of [-1,1]){const curtain=new THREE.Mesh(new THREE.BoxGeometry(1.65,8.25,.48),caveCurtainMat);curtain.position.set(veX+sx*12.0,5.55,caveStageZ+.08);scene.add(curtain);}
   const caveValance=new THREE.Mesh(new THREE.BoxGeometry(25.6,.82,.48),caveCurtainMat);caveValance.position.set(veX,9.72,caveStageZ+.08);scene.add(caveValance);
   const caveScreenSurface=new THREE.Mesh(new THREE.PlaneGeometry(24.8,7.2),new THREE.MeshBasicMaterial({color:0x050606,toneMapped:false,side:THREE.DoubleSide}));caveScreenSurface.position.set(veX,5.7,caveStageZ+.17);caveScreenSurface.rotation.y=Math.PI;caveScreenSurface.userData.hoodCaveScreen=true;scene.add(caveScreenSurface);
-  const caveLive=createPassiveWallIframe(CHANNEL_URLS.saywhat,'Headquarters Cave wide projection',24.8,7.2);caveLive.position.set(veX,5.7,caveStageZ+.15);caveLive.rotation.y=Math.PI;scene.add(caveLive);
+  const caveLive=createPassiveWallIframe(STUDIO_DEFAULT_EMBED,'Headquarters Cave wide projection',24.8,7.2);caveLive.position.set(veX,5.7,caveStageZ+.15);caveLive.rotation.y=Math.PI;scene.add(caveLive);
+  hoodCaveWallIframe=caveLive.userData.iframe;
   hoodCaveWallScreen=registerScreen({
-    mesh:caveScreenSurface,css:caveLive,url:CHANNEL_URLS.saywhat,
-    title:'THE CAVE · wide projection',room:'hood',activeRadius:38
+    mesh:caveScreenSurface,css:caveLive,url:STUDIO_DEFAULT_EMBED,
+    title:'THE CAVE · YouTube cinema',room:'hood',action:'cave',activeRadius:38
   });
   const caveGlow=new THREE.PointLight(0xb8d9e7,2.3,30,1.55);caveGlow.position.set(veX,7.8,caveStageZ-4.5);scene.add(caveGlow);regLight('hood',caveGlow);
 
@@ -6764,18 +6780,19 @@ function buildHood(){
   const caveSeatWood=new THREE.MeshStandardMaterial({color:0x765238,roughness:.78});
   const caveTierMats=[new THREE.MeshStandardMaterial({color:0x635b52,roughness:1}),new THREE.MeshStandardMaterial({color:0x595149,roughness:1})];
   const caveSeatViews=[];
-  const seatInstances=new THREE.InstancedMesh(new THREE.BoxGeometry(1.55,.32,1.02),caveSeatMat,100);
-  const backInstances=new THREE.InstancedMesh(new THREE.BoxGeometry(1.55,1.22,.26),caveSeatMat,100);
-  const armInstances=new THREE.InstancedMesh(new THREE.BoxGeometry(.12,.48,1.0),caveSeatWood,200);
+  const seatInstances=new THREE.InstancedMesh(new THREE.BoxGeometry(1.28,.32,1.02),caveSeatMat,150);
+  const backInstances=new THREE.InstancedMesh(new THREE.BoxGeometry(1.28,1.22,.26),caveSeatMat,150);
+  const armInstances=new THREE.InstancedMesh(new THREE.BoxGeometry(.10,.48,1.0),caveSeatWood,300);
   const aisleInstances=new THREE.InstancedMesh(new THREE.BoxGeometry(.16,.05,.42),new THREE.MeshBasicMaterial({color:0xf0b96f,toneMapped:false}),20);
   const unitScale=new THREE.Vector3(1,1,1),unitQ=new THREE.Quaternion(),backQ=new THREE.Quaternion().setFromEuler(new THREE.Euler(.10,0,0));
   let caveSeatIndex=0,armIndex=0,aisleIndex=0;
   for(let row=0;row<10;row++){
     const y=.48+row*.34,z=caveStageZ-6.0-row*2.45,curve=1+row*.012;
     const tier=new THREE.Mesh(new THREE.BoxGeometry(30,.28,2.18),caveTierMats[row%2]);tier.position.set(veX,y-.34,z);scene.add(tier);
-    for(let col=0;col<10;col++){
-      const lane=col<5?col-5.15:col-3.85;
-      const x=veX+lane*2.45*curve;
+    for(let col=0;col<15;col++){
+      const aisleGap=col<5?-1.05:col>9?1.05:0;
+      const lane=(col-7)*1.47+aisleGap;
+      const x=veX+lane*curve;
       seatInstances.setMatrixAt(caveSeatIndex,new THREE.Matrix4().compose(new THREE.Vector3(x,y+.28,z),unitQ,unitScale));
       backInstances.setMatrixAt(caveSeatIndex,new THREE.Matrix4().compose(new THREE.Vector3(x,y+.84,z-.39),backQ,unitScale));
       for(const ax of [-.82,.82])armInstances.setMatrixAt(armIndex++,new THREE.Matrix4().compose(new THREE.Vector3(x+ax,y+.48,z),unitQ,unitScale));
@@ -6785,7 +6802,7 @@ function buildHood(){
     for(const sx of [-1,1])aisleInstances.setMatrixAt(aisleIndex++,new THREE.Matrix4().compose(new THREE.Vector3(veX+sx*15.1,y+.03,z),unitQ,unitScale));
   }
   [seatInstances,backInstances,armInstances,aisleInstances].forEach(m=>{m.instanceMatrix.setUsage(THREE.StaticDrawUsage);m.instanceMatrix.needsUpdate=true;m.computeBoundingSphere();scene.add(m);});
-  seatInstances.userData.hoodCaveSeatCount=100;seatInstances.userData.hoodCaveSeatViews=caveSeatViews;seatInstances.userData.viewerYaw=Math.PI;
+  seatInstances.userData.hoodCaveSeatCount=150;seatInstances.userData.hoodCaveSeatViews=caveSeatViews;seatInstances.userData.viewerYaw=Math.PI;
   registerInteractable({type:'seat',room:'hood',mesh:seatInstances,label:'Cave seating',hintId:'hood-cave-seat',priority:3,hintText:'Choose any red seat; the view settles at human eye height and remains free to look around.',prompt:()=>'Sit in The Cave',onUse:(item,context)=>{
     const id=Number.isInteger(context?.hit?.instanceId)?context.hit.instanceId:0;
     const view=caveSeatViews[id]||caveSeatViews[0];seatAt(view.pos,Math.PI,-.04,.62,view.label);
@@ -9459,7 +9476,7 @@ function buildSparkToolsLab(){
 }
 
 let thinkingWallIframe = null;
-let thinkingCurrentChannel = 'saywhat';
+let thinkingCurrentChannel = 'youtube';
 
 // Channel viewing screens (batch 134): large-but-not-huge standing screens in
 // the Thinking Room, the Experiment Garden and The Venue. ENTER opens the
@@ -9498,7 +9515,7 @@ function addChannelTV(px, pz, rotY, room, opts={}){
   screenMesh.position.set(0, cy, .09); g.add(screenMesh);
   const led=new THREE.Mesh(new THREE.SphereGeometry(.026,10,8),new THREE.MeshBasicMaterial({color:0x84d89d}));
   led.position.set(bw*.42,cy-bh/2+.052,.112); g.add(led);
-  const live=createPassiveWallIframe('https://pedrohfernandes-klk.github.io/SayWhat/','Thinking Room television',sw,sh);
+  const live=createPassiveWallIframe(STUDIO_DEFAULT_EMBED,'Thinking Room television',sw,sh);
   live.position.set(0,cy,.112); g.add(live);
   scene.add(g);
   thinkingWallIframe=live.userData.iframe;
@@ -9882,10 +9899,10 @@ let venueWallScreen = null;
 let venueCurrentChannel = 'saywhat';
 let amphWallIframe = null;
 let amphWallScreen = null;
-let amphCurrentChannel = 'saywhat';
+let amphCurrentChannel = 'youtube';
 let gardenWallIframe = null;
 let gardenWallScreen = null;
-let gardenCurrentChannel = 'saywhat';
+let gardenCurrentChannel = 'youtube';
 let studioPlaybackRequested = true;
 let studioMuted = true;
 let studioCurrentLabel = 'Lofi stream';
@@ -11624,8 +11641,8 @@ function updateRoomUI(){
     if(currentRoom==='hood'){
       $('workTitle').textContent = 'THE HOOD / GROUND ZERO';
       $('workCollection').textContent = 'Ocean district · restored warehouse · formal garden';
-      $('workMeta').textContent = 'Headquarters portal · grand hall · lifts · Art Deco tower · formal garden';
-      $('workText').textContent = 'A separate ocean-facing district reached through the monumental Headquarters portal. Ground Zero joins the freestyle square and restored warehouse to a complete Cadavre Expat hall, working lifts, large Art Deco residences and a formal garden with lakes, woodland rooms and a cliff waterfall.';
+      $('workMeta').textContent = 'walkable gravel road · grand hall · lifts · Art Deco tower · formal garden';
+      $('workText').textContent = 'A continuous ocean-facing extension of the Grove. Follow the gravel road without a portal: Ground Zero joins the freestyle square and restored warehouse to the Cadavre Expat hall, working lifts, Art Deco residences, formal garden and the semi-buried 150-seat Cave cinema.';
       ariaStatus.textContent = 'The Hood, Ground Zero. Ocean square, restored warehouse, lift tower and formal garden.';
     }else{
       $('workTitle').textContent = floor.label.toUpperCase();
@@ -11778,7 +11795,7 @@ function enterWallScreenControl(screen){
 
 function openWallControls(screen){
   if(!screen) return;
-  const place = screen.room === 'theatre' ? 'venue' : 'studio';
+  const place = screen.room === 'theatre' ? 'venue' : screen.room === 'hood' ? 'headquarters' : 'studio';
   if(currentRoom !== screen.room){
     fastTravel(place);
     setTimeout(()=>enterWallScreenControl(screen),900);
@@ -11800,7 +11817,7 @@ function toggleNearestScreenControl(){
   const aimed = getCenterInteractable({types:'screen'});
   const screenInteraction = aimed?.interactable || getNearestInteractable({types:'screen'});
   const screen = screenInteraction?.source || null;
-  if(screen && ['studio','venue','amph','garden'].includes(screen.action)){
+  if(screen && ['studio','venue','amph','garden','cave'].includes(screen.action)){
     enterWallScreenControl(screen);
   }else if(screenInteraction){
     useInteractable(screenInteraction,{source:aimed?'centre-shortcut':'nearest-shortcut'});
@@ -11975,6 +11992,17 @@ function openPlayOverlay(screen){
     $('playOverlay').classList.add('show');
     return;
   }
+  if(screen.action === 'cave'){
+    overlayMode='cave';
+    $('playOverlayCard').classList.add('studioMode');
+    $('playTitle').textContent='THE CAVE · cinema remote';
+    $('playOpenLink').href=hoodCaveCurrentChannel==='youtube'?'https://www.youtube.com':CHANNEL_URLS[hoodCaveCurrentChannel];
+    $('channelBar').classList.add('show');
+    $('studioBar').classList.toggle('show',hoodCaveCurrentChannel==='youtube');
+    setChannelActive(hoodCaveCurrentChannel);
+    $('playOverlay').classList.add('show');
+    return;
+  }
   if(screen.action === 'thinking-tv'){
     overlayMode = 'thinking-tv';
     $('playOverlayCard').classList.add('studioMode');
@@ -12054,16 +12082,16 @@ function loadStudioVideo(){
     else if(raw.trim()){$('studioInput').value='';$('studioInput').placeholder='Use a YouTube link, public web URL, or HTML source';}
     return;
   }
-  if(overlayMode === 'venue' || overlayMode === 'amph'){
+  if(overlayMode === 'venue' || overlayMode === 'amph' || overlayMode === 'cave'){
     const url = studioEmbedFrom(raw,false);
-    const targetIframe=overlayMode==='amph'?amphWallIframe:venueWallIframe;
+    const targetIframe=overlayMode==='amph'?amphWallIframe:overlayMode==='cave'?hoodCaveWallIframe:venueWallIframe;
     if(url && targetIframe){
       targetIframe.src = url;
-      if(overlayMode==='amph') amphCurrentChannel='youtube'; else venueCurrentChannel = 'youtube';
+      if(overlayMode==='amph') amphCurrentChannel='youtube'; else if(overlayMode==='cave') hoodCaveCurrentChannel='youtube'; else venueCurrentChannel = 'youtube';
       setChannelActive('youtube');
       $('playOpenLink').href = 'https://www.youtube.com';
-      try{ localStorage.setItem('workshopVenueYouTubeSourceV1',raw.trim()); }catch(e){}
-      msg(`YouTube projected on ${overlayMode==='amph'?'the Grove Amphitheatre':'The Venue large screen'}`);
+      try{ localStorage.setItem(overlayMode==='cave'?'workshopCaveYouTubeSourceV1':'workshopVenueYouTubeSourceV1',raw.trim()); }catch(e){}
+      msg(`YouTube projected on ${overlayMode==='amph'?'the Grove Amphitheatre':overlayMode==='cave'?'The Cave cinema':'The Venue large screen'}`);
     }else if(raw.trim()){
       $('studioInput').value = '';
       $('studioInput').placeholder = "Couldn't read that YouTube link";
@@ -12097,7 +12125,7 @@ function loadStudioVideo(){
 }
 $('studioLoadBtn').onclick = loadStudioVideo;
 $('studioControlBtn').onclick = ()=>{
-  const screen = overlayMode === 'venue' ? venueWallScreen : overlayMode==='amph' ? amphWallScreen : overlayMode==='garden'?gardenWallScreen:studioWallScreen;
+  const screen = overlayMode === 'venue' ? venueWallScreen : overlayMode==='amph' ? amphWallScreen : overlayMode==='cave'?hoodCaveWallScreen:overlayMode==='garden'?gardenWallScreen:studioWallScreen;
   openWallControls(screen);
 };
 $('studioNowControls').onclick = ()=>openWallControls(studioWallScreen);
@@ -12176,6 +12204,17 @@ document.querySelectorAll('.channelBtn').forEach(btn=>{
       }
       msg(`${ch === 'youtube' ? 'YouTube' : ch.toUpperCase()} on The Venue large screen`);
       return;
+    }
+    if(overlayMode === 'cave'){
+      hoodCaveCurrentChannel=ch;
+      $('studioBar').classList.toggle('show',ch==='youtube');
+      let url=CHANNEL_URLS[ch];
+      if(ch==='youtube'){
+        let raw='';try{raw=localStorage.getItem('workshopCaveYouTubeSourceV1')||localStorage.getItem('workshopStudioSourceV1')||'';}catch(e){}
+        url=(raw&&studioEmbedFrom(raw,false))||STUDIO_DEFAULT_EMBED;if(raw)$('studioInput').value=raw;
+      }
+      if(hoodCaveWallIframe)hoodCaveWallIframe.src=url;
+      msg(`${ch==='youtube'?'YouTube':ch.toUpperCase()} on The Cave cinema`);return;
     }
     if(overlayMode === 'garden'){
       gardenCurrentChannel=ch;
@@ -12810,6 +12849,15 @@ function updateMovement(dt){
 
   movePos.x += velX * dt;
   movePos.z += velZ * dt;
+
+  // Grove and Hood share one physical road. Crossing the stone threshold only
+  // changes lighting/UI ownership; position and momentum remain continuous.
+  const roadX=outdoorOrigin.x-48;
+  if(currentRoom==='outdoor' && movePos.z>outdoorOrigin.z+outdoorDepth-1.35 && Math.abs(movePos.x-roadX)<5.2){
+    currentRoom='hood'; movePos.z=hoodOrigin.z+1.18; noteArchiveRoom('hood'); applyRoomLighting(); updateRoomUI(); msg('The gravel road continues into the Hood');
+  }else if(currentRoom==='hood' && movePos.z<hoodOrigin.z+1.25 && Math.abs(movePos.x-roadX)<5.2){
+    currentRoom='outdoor'; movePos.z=outdoorOrigin.z+outdoorDepth-1.48; noteArchiveRoom('outdoor'); applyRoomLighting(); updateRoomUI(); msg('The Grove opens ahead');
+  }
 
   if(currentRoom === 'theatre'){
     clampWithVelocity(movePos, theatreOrigin.x-theatreHalfWidth+1.2, theatreOrigin.x+theatreHalfWidth-1.2, theatreOrigin.z+2.5, theatreOrigin.z+theatreDepth-1.2);
