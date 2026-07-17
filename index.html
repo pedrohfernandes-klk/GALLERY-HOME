@@ -8096,16 +8096,21 @@ function buildMazeGarden(){
   // Back buffer: canonical architectural landscape window.
   {
     const light = new THREE.PointLight(0xffd7a6, 1.28, 15, 1.8);
-    light.position.set(x0,3.25,zBack+5.4); scene.add(light); regLight('maze', light);
+    light.position.set(x0,3.9,zBack+5.4); scene.add(light); regLight('maze', light);
     createArchitecturalWindow({
       roomX:x0, roomHalfWidth:gw/2, roomBackZ:zBack, roomFrontZ:zFront,
       wall:'back', room:'maze', toggleable:true,
       // Was 11.2 wide against 4.35 tall (aspect 2.58) for a 1.33-aspect photo
       // — under half the frame showed the image, and the three mullions cut
-      // straight through that visible strip. Narrowed to the photo's own
-      // proportions and dropped the mullions crossing it.
+      // straight through that visible strip. First fix narrowed to 7.5x4.35
+      // (dropping the mullions), but that was still aspect 1.724 against the
+      // photo's real 1.334 (some residual padding) and, more visibly, just
+      // small relative to this room's 41.4 m-wide back wall. Regrown to the
+      // photo's exact aspect (garden-landscape.webp is 1215x911 = 1.334) at
+      // a genuinely larger size — room height (gh=10.2) has plenty of spare
+      // headroom above this even with the sill raised.
       label:'Garden landscape window', title:'Landscape',
-      w:7.5, hgt:4.35, sillY:2.275,
+      w:9.34, hgt:7.0, sillY:3.7,
       imageSrc:MEDIA.gardenLandscape,
       revealDepth:.62, renderOrder:42,
       verticalMullionFractions:[], horizontalMullionOffsets:[],
@@ -10068,15 +10073,15 @@ function buildThinkingRoom(){
   scene.add(entryWall);
 
   // The rear wall is mostly a real panoramic window, now built by the canonical helper.
-  const sillHeight = 1.10;
-  const headMargin = 1.18;
+  // Sill/head margins trimmed slightly (was 1.10/1.18) to reclaim height —
+  // the fix that corrected this window's aspect also made it read as a
+  // small slot in a huge wall (the flanking fill panels ended up wider than
+  // the glass itself). Grown to use most of the room's real headroom, and
+  // dressed with flanking curtain panels (below) so the remaining wall on
+  // each side reads as a deliberate framing choice, not leftover space.
+  const sillHeight = .85;
+  const headMargin = .85;
   const winH = h - sillHeight - headMargin;
-  // The window used to span the full wall (hw*2-3.1 = 34.9, an 4.30 aspect)
-  // stretched over a 1.33-aspect photo — the contain-fit left the image
-  // occupying under a third of the frame, sliced further by three mullions.
-  // Narrowed to the photo's own proportions; the wall on either side (which
-  // used to be a thin 1.55m margin sized for the old full-width window) now
-  // fills the rest of the opening instead of leaving a gap.
   const winTargetW = winH * 1.33;
   const sideFill = (hw*2 - winTargetW)/2;
   const winY = sillHeight + winH/2;
@@ -10105,6 +10110,32 @@ function buildThinkingRoom(){
     revealDepth:1.08, renderOrder:46,
     verticalMullionFractions:[], horizontalMullionOffsets:[]
   });
+
+  // Flanking curtain panels: the window's own aspect ratio caps how wide it
+  // can honestly be for a 1.33-aspect photo, so the fill wall on each side
+  // (still ~13 m) needed a real design treatment rather than staying blank.
+  // Dark teal to match this room's shelfMat, brass rod/tiebacks to match
+  // metalMat — a library/study curtain rather than a generic drape.
+  {
+    const curtainMat = new THREE.MeshStandardMaterial({color:0x1c2a30, roughness:.88, metalness:.02});
+    const curtainFold = new THREE.MeshStandardMaterial({color:0x142025, roughness:.9, metalness:.02});
+    const curtainW = 2.6, curtainGap = .35;
+    const curtainTopY = winY + winH/2 + .45, curtainBottomY = .15;
+    const curtainH = curtainTopY - curtainBottomY;
+    const rod = new THREE.Mesh(new THREE.CylinderGeometry(.045,.045,winTargetW+curtainGap*2+curtainW*2+.6,16), metalMat);
+    rod.rotation.z = Math.PI/2; rod.position.set(x0, curtainTopY+.12, wallZ+.16); scene.add(rod);
+    for(const side of [-1,1]){
+      const panelX = x0 + side*(winTargetW/2+curtainGap+curtainW/2);
+      const panel = new THREE.Mesh(new THREE.PlaneGeometry(curtainW, curtainH), curtainMat);
+      panel.position.set(panelX, curtainTopY-curtainH/2, wallZ+.12); scene.add(panel);
+      for(let i=0;i<4;i++){
+        const fold = new THREE.Mesh(new THREE.BoxGeometry(.16,curtainH,.05), curtainFold);
+        fold.position.set(panelX-curtainW/2+.4+i*(curtainW-.8)/3, curtainTopY-curtainH/2, wallZ+.14); scene.add(fold);
+      }
+      const tieback = new THREE.Mesh(new THREE.TorusGeometry(.09,.02,8,20), metalMat);
+      tieback.rotation.y = Math.PI/2; tieback.position.set(panelX, curtainTopY-curtainH*.62, wallZ+.20); scene.add(tieback);
+    }
+  }
 
   const sunPatch = new THREE.Mesh(
     new THREE.PlaneGeometry(11.5,6.6),
