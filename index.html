@@ -4276,6 +4276,16 @@ function runWorkshopSelfTest(){
     check(monumentalWorks.length===4,'Hood hall monumental art sequence',`${monumentalWorks.length} upper-wall works`);
     check(monumentalWorks.every(w=>w.position.y>17),'Hood hall art clears furniture and mezzanine rails','all centres above 17 m');
   }
+  {
+    const studioConsoles=[],studioConsoleHits=[];
+    scene.traverse(obj=>{
+      if(obj.userData?.studioConsole)studioConsoles.push(obj);
+      if(obj.userData?.studioConsoleHit)studioConsoleHits.push(obj);
+    });
+    check(studioConsoles.length===1,'Studio has one production console',`${studioConsoles.length} console groups`);
+    check(studioConsoleHits.length===1,'Studio console has a full-size interaction target',`${studioConsoleHits.length} desk targets`);
+    check([...interactables].some(i=>i.room==='studio'&&i.mesh===studioConsoleHits[0]),'Studio console target is registered','desk opens from the complete operator face');
+  }
 
   check(portals.length >= 8, 'portals registered', `${portals.length} portals`);
   portals.forEach(p=>{
@@ -9936,8 +9946,6 @@ function buildStudio(){
   const cabMat    = new THREE.MeshStandardMaterial({color:0x0f0d13, roughness:.5, metalness:.16});
   const coneMat   = new THREE.MeshStandardMaterial({color:0x26242e, roughness:.44, metalness:.24});
   const brassMat  = new THREE.MeshStandardMaterial({color:0xba8b4c, roughness:.34, metalness:.72});
-  const velvetMat = new THREE.MeshStandardMaterial({color:0xb77960, roughness:.88, metalness:0});
-  const velvetDk  = new THREE.MeshStandardMaterial({color:0x8f5849, roughness:.92, metalness:0});
   const chromeMat = new THREE.MeshStandardMaterial({color:0xc7ccd6, roughness:.18, metalness:.9});
 
   // Shell
@@ -9989,7 +9997,9 @@ function buildStudio(){
   stageStripe.position.set(x0,.02,z0+stageDepth+.42); scene.add(stageStripe);
 
   // ===== THE VIDEO WALL (live YouTube) — contract preserved =====
-  const wallW = hw*2 - 2.6, wallH = 3.7, wallY = 3.6, wallZ = z0 + .18;
+  // The screen no longer runs into the speaker stacks: a dark wall margin on
+  // both sides makes the whole composition read as fitted architecture.
+  const wallW = 15.4, wallH = 4.6, wallY = 3.72, wallZ = z0 + .18;
   const wallSurround = new THREE.Mesh(new THREE.BoxGeometry(wallW+.8, wallH+.8, .22), cabMat);
   wallSurround.position.set(x0, wallY, wallZ-.14); scene.add(wallSurround);
   const wallBacking = new THREE.Mesh(new THREE.PlaneGeometry(wallW, wallH), new THREE.MeshBasicMaterial({color:0x04030a}));
@@ -10025,8 +10035,8 @@ function buildStudio(){
     const trim=new THREE.Mesh(new THREE.BoxGeometry(1.76,.06,.96),brassMat); trim.position.y=1.28; g.add(trim);
     scene.add(g);
   }
-  stack(x0-hw+2.0, z0+1.9, .22, 1.0);
-  stack(x0+hw-2.0, z0+1.9, -.22, 1.0);
+  stack(x0-hw+1.25, z0+1.9, .22, .92);
+  stack(x0+hw-1.25, z0+1.9, -.22, .92);
 
   // ===== Persian carpet listening floor =====
   const tileN = 8, tileS = 1.05, tileGap = .08;
@@ -10059,14 +10069,9 @@ function buildStudio(){
     fringe.rotation.x=-Math.PI/2; fringe.position.set(x0+sx*(floorW/2+.62),.038,dfZ+floorW/2); scene.add(fringe);
   }
 
-  // Disco ball + moving spot.
-  const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(.4,1),
-    new THREE.MeshStandardMaterial({color:0xdce0ea, roughness:.12, metalness:.95, flatShading:true}));
-  ball.position.set(x0,h-1.1,dfZ+floorW/2); scene.add(ball);
-  const ballRod = new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.6,6),cabMat);
-  ballRod.position.set(x0,h-.6,dfZ+floorW/2); scene.add(ballRod);
-  const ballLight = new THREE.PointLight(0xffffff,.85,10,2.0);
-  ballLight.position.copy(ball.position); scene.add(ballLight); regLight('studio', ballLight);
+  // The skylight is the ceiling focus. The former disco ball competed with it
+  // and made the room feel like several unrelated interiors occupying one bay.
+  const ball = null;
 
   // The room now relies on architectural light; floating holographic clutter is retired.
   for(let k=0;k<0;k++){
@@ -10088,61 +10093,9 @@ function buildStudio(){
   // It has been removed completely; the open bay is now circulation and gives
   // every work, the screen and the white lounge chairs an unobstructed view.
 
-  // ===== Velvet booths along the left wall =====
-  function booth(px,pz,rotY){
-    const g=new THREE.Group(); g.position.set(px,0,pz); g.rotation.y=rotY;
-    const seat=new THREE.Mesh(new THREE.BoxGeometry(3.2,.44,.95),velvetMat); seat.position.y=.42; g.add(seat);
-    const back=new THREE.Mesh(new THREE.BoxGeometry(3.2,1.05,.2),velvetDk); back.position.set(0,1.05,-.4); g.add(back);
-    const roll=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,3.2,10),velvetMat); roll.rotation.z=Math.PI/2; roll.position.set(0,1.6,-.4); g.add(roll);
-    const plinth=new THREE.Mesh(new THREE.BoxGeometry(3.26,.16,1.1),cabMat); plinth.position.y=.08; g.add(plinth);
-    scene.add(g);
-  }
-  function cocktail(px,pz){
-    const top=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.05,22),cabMat); top.position.set(px,.88,pz); scene.add(top);
-    const stem=new THREE.Mesh(new THREE.CylinderGeometry(.045,.1,.86,10),brassMat); stem.position.set(px,.44,pz); scene.add(stem);
-    const candle=new THREE.Mesh(new THREE.SphereGeometry(.05,8,8),new THREE.MeshBasicMaterial({color:0xffc873,toneMapped:false})); candle.position.set(px,.96,pz); scene.add(candle);
-  }
-  booth(x0-hw+1.15, midZ-2.0, Math.PI/2);
-  booth(x0-hw+1.15, midZ+2.2, Math.PI/2);
-  cocktail(x0-hw+2.9, midZ-2.0); cocktail(x0-hw+2.9, midZ+2.2);
-
-  // The former rear sectional crossed both return-door approaches. The two
-  // white Eames chairs below are now the principal listening seats; wall
-  // booths provide secondary seating without turning circulation into an
-  // obstacle course.
-  const loungeMat = new THREE.MeshStandardMaterial({color:0x3a2740, roughness:.90, metalness:.02});
-  const loungeCush = new THREE.MeshStandardMaterial({color:0x6d4a6b, roughness:.88, metalness:.02});
-  const loungeTrim = new THREE.MeshStandardMaterial({color:0x120d16, roughness:.6, metalness:.18});
-  function clubSofa(px, pz, rotY, len){
-    const g = new THREE.Group(); g.position.set(px,0,pz); g.rotation.y = rotY;
-    const base = new THREE.Mesh(new THREE.BoxGeometry(len,.30,1.20), loungeTrim); base.position.y=.30; g.add(base);
-    const seat = new THREE.Mesh(new THREE.BoxGeometry(len-.20,.24,1.05), loungeMat); seat.position.set(0,.52,.02); g.add(seat);
-    const back = new THREE.Mesh(new THREE.BoxGeometry(len,.95,.24), loungeMat); back.position.set(0,.98,-.50); g.add(back);
-    const roll = new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,len,12), loungeCush); roll.rotation.z=Math.PI/2; roll.position.set(0,1.44,-.48); g.add(roll);
-    const nCush = Math.max(2, Math.round(len/1.5));
-    for(let i=0;i<nCush;i++){
-      const cush = new THREE.Mesh(new THREE.BoxGeometry((len-.3)/nCush - .08,.22,.9), loungeCush);
-      cush.position.set(-len/2 + (i+.5)*((len-.3)/nCush), .70, .05); g.add(cush);
-    }
-    const a1 = new THREE.Mesh(new THREE.BoxGeometry(.24,.78,1.20), loungeTrim); a1.position.set(-len/2+.12,.62,0); g.add(a1);
-    const a2 = a1.clone(); a2.position.x = len/2-.12; g.add(a2);
-    scene.add(g);
-  }
-  function loungeTable(px,pz){
-    const t = new THREE.Mesh(new THREE.BoxGeometry(1.7,.10,.9), loungeTrim); t.position.set(px,.42,pz); scene.add(t);
-    const glass = new THREE.Mesh(new THREE.BoxGeometry(1.5,.03,.72),
-      new THREE.MeshStandardMaterial({color:0x2a2130, roughness:.15, metalness:.5, transparent:true, opacity:.7}));
-    glass.position.set(px,.48,pz); scene.add(glass);
-    for(const lx of [-.72,.72]) for(const lz of [-.34,.34]){
-      const leg=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.42,8),brassMat); leg.position.set(px+lx,.21,pz+lz); scene.add(leg);
-    }
-    const cx=new THREE.Mesh(new THREE.SphereGeometry(.05,8,8),new THREE.MeshBasicMaterial({color:0xffc873,toneMapped:false})); cx.position.set(px,.55,pz); scene.add(cx);
-  }
-  // A shallow runner visually marks the clear return route and prevents new
-  // furniture from drifting back into either doorway in later decor passes.
-  const returnRunner = new THREE.Mesh(new THREE.PlaneGeometry(7.2,4.2),
-    new THREE.MeshStandardMaterial({color:0xd8cbb7,roughness:.96,metalness:0}));
-  returnRunner.rotation.x=-Math.PI/2;returnRunner.position.set(x0,.022,z0+21.8);scene.add(returnRunner);
+  // The former booths, cocktail tables, rear sectional and runner are fully
+  // retired. Bare floor preserves both door approaches and lets the listening
+  // chairs, Persian carpet and console read as the room's only furniture.
 
   // ===== Dedicated listening bay: two Eames-inspired lounge chairs and ottomans.
   // Was z0+18.55 — 18+ metres from the screen, past the entire dancefloor and
@@ -10151,8 +10104,8 @@ function buildStudio(){
   // (carpet spans x0±5.02) and the speaker stacks (at x0∓8), but roughly half
   // the distance to the screen and with a real, unobstructed sightline to it. =====
   const viewingRugL=new THREE.Mesh(new THREE.PlaneGeometry(2.6,3.2),new THREE.MeshStandardMaterial({color:0x25202b,roughness:.94,metalness:0}));
-  viewingRugL.rotation.x=-Math.PI/2; viewingRugL.position.set(x0-6.6,.025,z0+9); scene.add(viewingRugL);
-  const viewingRugR=viewingRugL.clone(); viewingRugR.position.x=x0+6.6; scene.add(viewingRugR);
+  viewingRugL.rotation.x=-Math.PI/2; viewingRugL.position.set(x0-7.0,.025,z0+9); scene.add(viewingRugL);
+  const viewingRugR=viewingRugL.clone(); viewingRugR.position.x=x0+7.0; scene.add(viewingRugR);
   const leatherMat=new THREE.MeshStandardMaterial({color:0xf4f1e9,roughness:.48,metalness:.01});
   const plyMat=new THREE.MeshStandardMaterial({color:0xd8c7ab,roughness:.42,metalness:.02});
   const chairMetal=new THREE.MeshStandardMaterial({color:0xe3e7ea,roughness:.14,metalness:.92});
@@ -10174,12 +10127,12 @@ function buildStudio(){
       onUse:()=>{ seatedStudioView=true; velX=0; velZ=0; smoothSpeed=0; startCameraTransition(new THREE.Vector3(px,1.28,pz-.08),0,-.035,.8); msg('Seated viewing mode · look around freely · move to stand'); }
     });
   }
-  eamesLounge(x0-6.6,z0+9,-.18);
-  eamesLounge(x0+6.6,z0+9,.18);
+  eamesLounge(x0-7.0,z0+9,-.18);
+  eamesLounge(x0+7.0,z0+9,.18);
   const readingGlow=new THREE.PointLight(0xffe2bd,1.55,9.5,1.75); readingGlow.position.set(x0,3.3,z0+9); scene.add(readingGlow); regLight('studio',readingGlow);
   for(const sx of [-1,1]){
     const chairSpot=new THREE.SpotLight(0xfff0d8,2.8,9,.42,.68,1.55);
-    chairSpot.position.set(x0+sx*6.6,5.7,z0+8.1); chairSpot.target.position.set(x0+sx*6.6,.8,z0+9);
+    chairSpot.position.set(x0+sx*7.0,5.7,z0+8.1); chairSpot.target.position.set(x0+sx*7.0,.8,z0+9);
     scene.add(chairSpot,chairSpot.target); regLight('studio',chairSpot);
   }
 
@@ -10189,35 +10142,28 @@ function buildStudio(){
   // x0-4.2) plus the STUDIO wordmark sign (x0+3.15 to x0+6.95) — the tunnel
   // door was added after this rhythm was laid out and was never re-checked
   // against it, so DAMN. ended up mounted directly across the doorway.
-  // Re-spaced into the three real gaps this wall leaves: left of the tunnel
-  // door, between the two doors, and right of the sign. Only 3 pieces fit
-  // this wall cleanly now; Currents and the new Age of Adz moved to the
-  // side walls below instead of being crammed in. =====
+  // Re-spaced into the two calm outer bays. The central door zone remains
+  // deliberately empty, while the signature occupies its own upper register.
   const albumWorks=[
-    {src:STUDIO_DECOR_SRCS[0],title:'DAMN.',x:x0-8.5,y:3.85,w:1.92,h:1.92},
-    {src:STUDIO_DECOR_SRCS[1],title:'Pink Floyd',x:x0-2.9,y:3.85,w:1.92,h:1.92},
-    {src:STUDIO_DECOR_SRCS[3],title:'Rubber Soul',x:x0+8.4,y:3.85,w:1.92,h:1.92}
+    {src:STUDIO_DECOR_SRCS[0],title:'DAMN.',x:x0-8.35,y:3.55,w:2.28,h:2.28},
+    {src:STUDIO_MURDER_BALLADS_SRC,title:'Murder Ballads',x:x0+8.25,y:3.55,w:2.28,h:2.28}
   ];
   albumWorks.forEach(w=>addFramedWallArt({src:w.src,title:w.title,subtitle:'studio listening archive',width:w.w,height:w.h,x:w.x,y:w.y,z:z1-.17,rotationY:Math.PI,frameColor:0x171319,matteColor:0xeee7dc,showLabel:false}));
   const albumWashL=new THREE.PointLight(0xffd7b1,.82,6.2,1.9); albumWashL.position.set(x0-5.4,4.5,z1-2.0); scene.add(albumWashL); regLight('studio',albumWashL);
   const albumWashR=new THREE.PointLight(0xffd7b1,.82,6.2,1.9); albumWashR.position.set(x0+5.7,4.5,z1-2.0); scene.add(albumWashR); regLight('studio',albumWashR);
 
-  // ===== Lateral poster walls: large anchors with smaller records in measured bays.
-  // Currents (moved off the crowded front wall) and The Age of Adz (new —
-  // save the actual cover to assets/new/age-of-adz.webp; until then this
-  // frame shows its title as a placeholder, same graceful fallback every
-  // other framed piece in this file uses) both land at z0+19, past the
-  // Eames chairs' new position and clear of every existing side-wall piece. =====
+  // ===== Lateral poster walls: three listening-wall works, then one cover on
+  // each side of the console. The supplied Age of Adz is a real local asset,
+  // not a placeholder. =====
   const AGE_OF_ADZ_SRC = 'assets/new/age-of-adz.webp';
   const studioWallWorks = [
-    {src:STUDIO_DECOR_SRCS[2],title:'Sgt. Pepper',width:3.55,height:3.19,x:x0-hw+.16,y:3.65,z:z0+6.2,rotationY: Math.PI/2},
-    {src:STUDIO_DECOR_SRCS[4],title:'Pink Floyd at Pompeii',width:1.75,height:2.55,x:x0-hw+.16,y:3.55,z:z0+11.7,rotationY: Math.PI/2},
-    {src:STUDIO_DECOR_SRCS[7],title:'Flower Boy',width:2.08,height:2.08,x:x0-hw+.16,y:3.58,z:z0+14.15,rotationY: Math.PI/2},
-    {src:STUDIO_TAYK_SRC,title:'Tay-K',width:1.78,height:2.18,x:x0-hw+.16,y:3.62,z:z0+16.4,rotationY: Math.PI/2},
-    {src:STUDIO_DECOR_SRCS[8],title:'Currents',width:1.92,height:1.92,x:x0-hw+.16,y:3.60,z:z0+19.0,rotationY: Math.PI/2},
-    {src:STUDIO_DECOR_SRCS[6],title:'In Utero',width:2.35,height:2.35,x:x0+hw-.16,y:3.60,z:z0+6.0,rotationY:-Math.PI/2},
-    {src:STUDIO_MURDER_BALLADS_SRC,title:'Murder Ballads',width:2.30,height:2.30,x:x0+hw-.16,y:3.60,z:z0+16.2,rotationY:-Math.PI/2},
-    {src:AGE_OF_ADZ_SRC,title:'The Age of Adz',width:2.35,height:2.35,x:x0+hw-.16,y:3.60,z:z0+19.0,rotationY:-Math.PI/2}
+    // Three generous works on the listening wall: anchor, pause, anchor.
+    {src:STUDIO_DECOR_SRCS[2],title:'Sgt. Pepper',width:3.65,height:3.28,x:x0-hw+.16,y:3.70,z:z0+5.8,rotationY: Math.PI/2},
+    {src:STUDIO_DECOR_SRCS[7],title:'Flower Boy',width:2.55,height:2.55,x:x0-hw+.16,y:3.62,z:z0+12.5,rotationY: Math.PI/2},
+    {src:STUDIO_TAYK_SRC,title:'Tay-K',width:2.05,height:2.50,x:x0-hw+.16,y:3.62,z:z0+19.1,rotationY: Math.PI/2},
+    // The production wall frames the console with one work at each end.
+    {src:STUDIO_DECOR_SRCS[6],title:'In Utero',width:2.65,height:2.65,x:x0+hw-.16,y:3.72,z:z0+4.9,rotationY:-Math.PI/2},
+    {src:AGE_OF_ADZ_SRC,title:'The Age of Adz',width:2.65,height:2.65,x:x0+hw-.16,y:3.72,z:z0+19.2,rotationY:-Math.PI/2}
   ];
   studioWallWorks.forEach(w=>{
     addFramedWallArt({src:w.src, title:w.title, subtitle:'the studio',
@@ -10276,9 +10222,9 @@ function buildStudio(){
   const deskInset=new THREE.MeshStandardMaterial({color:0x17191a,roughness:.56,metalness:.18});
   const deskLeather=new THREE.MeshStandardMaterial({color:0xe5ded2,roughness:.68,metalness:0});
   const consoleGroup=new THREE.Group();
-  consoleGroup.position.set(x0+hw-1.08,0,z0+11.25);consoleGroup.rotation.y=Math.PI/2;scene.add(consoleGroup);
-  const consoleBase=new THREE.Mesh(new THREE.BoxGeometry(6.0,.68,1.72),deskMat);consoleBase.position.set(0,.47,0);consoleGroup.add(consoleBase);
-  const consoleTop=new THREE.Mesh(new THREE.BoxGeometry(6.18,.12,1.90),chromeMat);consoleTop.position.set(0,.88,0);consoleGroup.add(consoleTop);
+  consoleGroup.position.set(x0+hw-1.08,0,z0+12.0);consoleGroup.rotation.y=Math.PI/2;consoleGroup.userData.studioConsole=true;scene.add(consoleGroup);
+  const consoleBase=new THREE.Mesh(new THREE.BoxGeometry(5.35,.68,1.72),deskMat);consoleBase.position.set(0,.47,0);consoleGroup.add(consoleBase);
+  const consoleTop=new THREE.Mesh(new THREE.BoxGeometry(5.55,.12,1.90),chromeMat);consoleTop.position.set(0,.88,0);consoleGroup.add(consoleTop);
   const controlBed=new THREE.Mesh(new THREE.BoxGeometry(5.25,.12,1.18),deskInset);controlBed.position.set(0,1.00,-.03);controlBed.rotation.x=-.08;consoleGroup.add(controlBed);
   const meterBridge=new THREE.Mesh(new THREE.BoxGeometry(4.9,.78,.34),deskMat);meterBridge.position.set(0,1.36,-.62);meterBridge.rotation.x=-.10;consoleGroup.add(meterBridge);
   for(let i=0;i<12;i++){
@@ -10288,27 +10234,32 @@ function buildStudio(){
     for(let k=0;k<3;k++){const knob=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.045,12),k===0?brassMat:chromeMat);knob.rotation.x=Math.PI/2;knob.position.set(x,1.16,-.26-k*.15);consoleGroup.add(knob);}
     const led=new THREE.Mesh(new THREE.BoxGeometry(.19,.20,.018),new THREE.MeshBasicMaterial({color:i%4===0?0xe9a25d:0x72a889,toneMapped:false}));led.position.set(x,1.48,-.805);led.rotation.x=-.10;consoleGroup.add(led);
   }
-  for(const sx of [-2.82,2.82]){
+  for(const sx of [-2.48,2.48]){
     const mon=new THREE.Mesh(new THREE.BoxGeometry(.72,1.02,.60),deskInset);mon.position.set(sx,1.72,-.52);consoleGroup.add(mon);
     const bass=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.05,24),coneMat);bass.rotation.x=Math.PI/2;bass.position.set(sx,1.58,-.84);consoleGroup.add(bass);
     const tweeter=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.04,18),brassMat);tweeter.rotation.x=Math.PI/2;tweeter.position.set(sx,1.89,-.84);consoleGroup.add(tweeter);
   }
-  const deskDisplay=new THREE.Mesh(new THREE.PlaneGeometry(2.35,.78),new THREE.MeshBasicMaterial({map:makeSignTexture('STUDIO DESK','PLAY · SAMPLE · MIX · RECORD'),toneMapped:false}));
+  const deskDisplay=new THREE.Mesh(new THREE.PlaneGeometry(2.35,.78),new THREE.MeshBasicMaterial({map:makeSignTexture('STUDIO DESK','OPEN · PLAY · SAMPLE · RECORD'),toneMapped:false}));
   deskDisplay.position.set(0,1.62,-.82);deskDisplay.rotation.x=-.10;consoleGroup.add(deskDisplay);
-  registerInteractable({type:'maker',room:'studio',mesh:deskDisplay,label:'Studio mixing desk',hintId:'studio-maker',priority:6,
+  // A broad invisible interaction plane covers the complete operator face.
+  // The old target was only the small display and could be hidden by the
+  // console geometry, which made a visibly present desk feel non-functional.
+  const deskHit=new THREE.Mesh(new THREE.PlaneGeometry(5.55,2.25),new THREE.MeshBasicMaterial({transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));
+  deskHit.position.set(0,1.28,-.99);deskHit.rotation.x=-.04;deskHit.userData.studioConsoleHit=true;consoleGroup.add(deskHit);
+  registerInteractable({type:'maker',room:'studio',mesh:deskHit,label:'Studio mixing desk',hintId:'studio-maker',priority:8,
     hintText:'A complete eight-track desk: instant patterns, samples, microphone, YouTube reference, effects and recording.',prompt:()=>'Use the Studio mixing desk',onUse:openStudioMaker});
 
   // Pale operator chair: visible against the dark floor and aligned squarely
   // with the console. Sitting never traps the player; any movement stands up.
-  const opChair=new THREE.Group();opChair.position.set(x0+hw-3.05,0,z0+11.25);opChair.rotation.y=-Math.PI/2;scene.add(opChair);
+  const opChair=new THREE.Group();opChair.position.set(x0+hw-3.05,0,z0+12.0);opChair.rotation.y=-Math.PI/2;scene.add(opChair);
   const opSeat=new THREE.Mesh(new THREE.BoxGeometry(1.15,.22,1.08),deskLeather);opSeat.position.y=.72;opChair.add(opSeat);
   const opBack=new THREE.Mesh(new THREE.BoxGeometry(1.18,1.25,.18),deskLeather);opBack.position.set(0,1.30,.48);opBack.rotation.x=-.12;opChair.add(opBack);
   const opStem=new THREE.Mesh(new THREE.CylinderGeometry(.08,.10,.58,16),chromeMat);opStem.position.y=.35;opChair.add(opStem);
   for(let i=0;i<5;i++){const foot=new THREE.Mesh(new THREE.BoxGeometry(.055,.055,.72),chromeMat);foot.position.set(Math.sin(i*Math.PI*2/5)*.26,.08,Math.cos(i*Math.PI*2/5)*.26);foot.rotation.y=i*Math.PI*2/5;opChair.add(foot);}
   registerInteractable({type:'seat',room:'studio',mesh:opSeat,label:'Mixing position',hintId:'studio-mix-seat',priority:5,
     hintText:'Sit at the production console, then open the desk. Move at any time to stand.',prompt:()=>'Sit at the mixing console',
-    onUse:()=>{seatedStudioView=true;velX=0;velZ=0;smoothSpeed=0;startCameraTransition(new THREE.Vector3(x0+hw-3.00,1.34,z0+11.25),-Math.PI/2,-.10,.65);msg('Seated at the Studio console · Enter opens the desk · move to stand');}});
-  const deskGlow=new THREE.PointLight(0xffdfb5,1.35,9,1.85);deskGlow.position.set(x0+hw-3.0,3.0,z0+11.25);scene.add(deskGlow);regLight('studio',deskGlow);
+    onUse:()=>{seatedStudioView=true;velX=0;velZ=0;smoothSpeed=0;startCameraTransition(new THREE.Vector3(x0+hw-3.00,1.34,z0+12.0),-Math.PI/2,-.10,.65);setTimeout(openStudioMaker,700);msg('Studio desk open · move at any time to stand');}});
+  const deskGlow=new THREE.PointLight(0xffdfb5,1.35,9,1.85);deskGlow.position.set(x0+hw-3.0,3.0,z0+12.0);scene.add(deskGlow);regLight('studio',deskGlow);
 
   studioFX = {tiles:null, tileN:0, speakerRings, orbs, ball, tileTimer:0};
 }

@@ -677,18 +677,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <dialog id="welcome">
-    <div class="dialog-body">
-      <p class="eyebrow">The Studio</p>
-      <h2>A small machine for making surprisingly respectable accidents.</h2>
-      <p>Choose an instant composition, alter the illuminated steps, or simply press play and walk away with it. Headphones are advisable; musical dignity is optional.</p>
-      <div class="row">
-        <button class="btn primary" id="beginBtn" type="button">BEGIN WITH BUREAUCRATIC FUNK</button>
-        <button class="btn" id="blankBtn" type="button">START EMPTY</button>
-      </div>
-    </div>
-  </dialog>
-
   <script>
   (() => {
     'use strict';
@@ -1098,7 +1086,6 @@
       bind('bpm','bpm',v=>`${v} BPM`);bind('swing','swing',v=>`${v}%`);bind('master','master',v=>`${v}%`,v=>masterGain.gain.setTargetAtTime(v,ctx.currentTime,.03));bind('reverb','reverb',v=>`${v}%`,v=>reverbGain.gain.setTargetAtTime(v,ctx.currentTime,.05));bind('delay','delay',v=>`${v}%`,v=>delayGain.gain.setTargetAtTime(v,ctx.currentTime,.05));bind('tone','tone',v=>v>14000?'OPEN':`${(v/1000).toFixed(1)} kHz`,v=>{if(!state.radio)lowpass.frequency.setTargetAtTime(v,ctx.currentTime,.04)});
       $('#keySelect').selectedIndex=state.key;$('#keySelect').onchange=e=>{state.key=e.target.selectedIndex;saveProject();};$('#scaleSelect').value=state.scale;$('#scaleSelect').onchange=e=>{state.scale=e.target.value;saveProject();};
       $('#strangeRange').value=state.strange;const strange=e=>{state.strange=+e.target.value;$('#strangeValue').textContent=state.strange;$('#strangeDial').style.setProperty('--turn',`${-135+state.strange*2.7}deg`);saveProject();};$('#strangeRange').oninput=strange;strange({target:$('#strangeRange')});
-      $('#beginBtn').onclick=async()=>{$('#welcome').close();loadPreset('Bureaucratic Funk');await play();};$('#blankBtn').onclick=()=>{$('#welcome').close();state.tracks=emptyPattern();state.preset='Empty Desk';$('#nowTitle').textContent='Empty Desk';renderSteps();renderTrackMix();};
       window.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;if(e.code==='Space'){e.preventDefault();play();}if(e.key.toLowerCase()==='r')toggleRecording();});
     }
 
@@ -1120,8 +1107,19 @@
     }
 
     function init(){
-      setupMeter();const restored=restoreProject();renderPresets();renderSteps();renderSampleBank();setupVoiceModes();renderTrackMix();setupControls();setupYouTube();$('#nowTitle').textContent=state.preset;$$('.preset').forEach(x=>x.classList.toggle('active',x.dataset.name===state.preset));
-      if(!restored&&typeof $('#welcome').showModal==='function')$('#welcome').showModal();
+      setupMeter();
+      const restored=restoreProject();
+      // A new desk must already contain an audible arrangement. Previously
+      // the tracks stayed empty until a welcome dialog was accepted, so
+      // dismissing that dialog left a transport that moved but made no sound.
+      if(!restored) loadPreset('Bureaucratic Funk',true);
+      renderPresets();renderSteps();renderSampleBank();setupVoiceModes();renderTrackMix();setupControls();setupYouTube();
+      $('#nowTitle').textContent=state.preset;
+      $$('.preset').forEach(x=>x.classList.toggle('active',x.dataset.name===state.preset));
+      // The desk now opens ready to play. One direct PLAY click is the browser
+      // gesture that creates/resumes Web Audio; no modal sits between visitor
+      // and instrument.
+      $('#statusLine').textContent='Ready · press PLAY to start the loaded arrangement.';
     }
     init();
   })();
