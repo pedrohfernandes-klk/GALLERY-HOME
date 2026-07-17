@@ -6414,9 +6414,60 @@ function buildHood(){
   const veX=wx-70,cliffZ=wz+10;
   const cliffTex=makeStoneTexture('#594d42','rgba(110,96,80,.16)','rgba(50,42,34,.14)');cliffTex.repeat.set(8,3);
   const cliff=new THREE.Mesh(new THREE.BoxGeometry(48,21,7),new THREE.MeshStandardMaterial({map:cliffTex,roughness:1}));cliff.position.set(veX,10.5,cliffZ);scene.add(cliff);
-  const fallMat=new THREE.ShaderMaterial({transparent:true,side:THREE.DoubleSide,depthWrite:false,uniforms:{uTime:{value:0}},vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`uniform float uTime;varying vec2 vUv;float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}void main(){float n=h(floor(vec2(vUv.x*38.,(vUv.y+uTime*.28)*70.)));float bands=.48+.32*sin((vUv.x*19.+n*2.)*6.283);float edge=smoothstep(.02,.12,vUv.x)*smoothstep(.02,.12,1.-vUv.x);float a=edge*(.50+.38*bands)*smoothstep(0.,.16,vUv.y);gl_FragColor=vec4(mix(vec3(.43,.70,.79),vec3(.93,.98,1.),bands),a);}`});
-  const fall=new THREE.Mesh(new THREE.PlaneGeometry(20,18),fallMat);fall.position.set(veX,11,cliffZ-3.56);scene.add(fall);hoodWaterfallFX={material:fallMat};
-  const plunge=lake(veX,cliffZ-7.5,1.5,.50);
+  // Was a single 20 m-wide plane on a 48 m-wide cliff face (under half the
+  // rock covered) that floated ~2m above the pool surface with a hard-edged
+  // top and bottom, driven by one octave of scrolling hash noise. Widened to
+  // fill most of the cliff, extended down to actually meet the pool instead
+  // of stopping short in mid-air, and the shader gained a second noise
+  // octave (richer turbulence instead of one repeating streak pattern), a
+  // brightened foam zone at the base (impact with the pool) replacing the
+  // old fade-to-transparent there, and a soft crest fade at the top instead
+  // of a hard rectangular cutoff.
+  const fallMat=new THREE.ShaderMaterial({transparent:true,side:THREE.DoubleSide,depthWrite:false,uniforms:{uTime:{value:0}},vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`
+    uniform float uTime;
+    varying vec2 vUv;
+    float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+    void main(){
+      float n1=h(floor(vec2(vUv.x*38.,(vUv.y+uTime*.30)*72.)));
+      float n2=h(floor(vec2(vUv.x*15.+41.,(vUv.y+uTime*.21)*33.)));
+      float bands=.40+.30*sin((vUv.x*19.+n1*2.2)*6.283)+.16*sin((vUv.x*8.-n2*1.7)*6.283+2.1);
+      float edge=smoothstep(.012,.075,vUv.x)*smoothstep(.012,.075,1.-vUv.x);
+      float baseFoam=(1.0-smoothstep(0.,.22,vUv.y))*.55;
+      float topSoft=smoothstep(.94,1.0,vUv.y);
+      float a=edge*(.56+.34*bands+baseFoam)*(1.0-topSoft*.55);
+      vec3 col=mix(vec3(.40,.68,.78),vec3(.94,.99,1.),clamp(bands+baseFoam,0.,1.));
+      gl_FragColor=vec4(col,a);
+    }`});
+  const fall=new THREE.Mesh(new THREE.PlaneGeometry(34,19),fallMat);fall.position.set(veX,9.9,cliffZ-3.56);scene.add(fall);hoodWaterfallFX={material:fallMat};
+  const plunge=lake(veX,cliffZ-7.5,1.9,.55);
+  const foamRing=new THREE.Mesh(new THREE.RingGeometry(2.4,6.2,36),new THREE.MeshBasicMaterial({color:0xeaf7fb,transparent:true,opacity:.24,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
+  foamRing.rotation.x=-Math.PI/2;foamRing.position.set(veX,.14,cliffZ-7.5);scene.add(foamRing);
+
+  // Rising mist at the base — a small looping point cloud (same per-frame
+  // update pattern as the ambient dust in buildParticles) rather than a
+  // static effect, plus lighting the waterfall previously had none of: a
+  // cool glow to catch the mist/foam, and a warm rim light at the crest.
+  {
+    const mistCount=140;
+    const mistGeo=new THREE.BufferGeometry();
+    const mistPos=new Float32Array(mistCount*3);
+    const mistPhase=new Float32Array(mistCount);
+    for(let i=0;i<mistCount;i++){
+      mistPos[i*3]=veX+(Math.random()-.5)*32;
+      mistPos[i*3+1]=.3+Math.random()*2.6;
+      mistPos[i*3+2]=cliffZ-7.5+(Math.random()-.5)*11;
+      mistPhase[i]=Math.random()*10;
+    }
+    mistGeo.setAttribute('position',new THREE.BufferAttribute(mistPos,3));
+    const mistMat=new THREE.PointsMaterial({color:0xdff2f6,size:.55,transparent:true,opacity:.30,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true});
+    const mist=new THREE.Points(mistGeo,mistMat);
+    scene.add(mist);
+    hoodWaterfallFX.mist=mist;
+    hoodWaterfallFX.mistPhase=mistPhase;
+    hoodWaterfallFX.mistBaseX=mistPos.slice();
+  }
+  const mistGlow=new THREE.PointLight(0xbfe3ea,1.6,22,1.8);mistGlow.position.set(veX,1.6,cliffZ-7.0);scene.add(mistGlow);regLight('hood',mistGlow);
+  const crestGlow=new THREE.PointLight(0xffe3b0,1.2,18,1.7);crestGlow.position.set(veX,19.5,cliffZ-2.0);scene.add(crestGlow);regLight('hood',crestGlow);
 
   // A lit side passage makes the entrance believable without punching a fake
   // door through the water. Ten rising rows follow the geology of the slope.
@@ -12633,6 +12684,16 @@ function updateWorld(dt, t){
   updateHallWindow(dt);
   const visitor=getVisitorPosition();
   if(hoodWaterfallFX?.material?.uniforms?.uTime) hoodWaterfallFX.material.uniforms.uTime.value=t;
+  if(hoodWaterfallFX?.mist){
+    const arr=hoodWaterfallFX.mist.geometry.attributes.position.array;
+    const ph=hoodWaterfallFX.mistPhase;
+    const baseX=hoodWaterfallFX.mistBaseX;
+    for(let i=0;i<ph.length;i++){
+      arr[i*3+1]=.3+((t*.55+ph[i])%2.9);
+      arr[i*3]=baseX[i*3]+Math.sin(t*.4+ph[i])*.6;
+    }
+    hoodWaterfallFX.mist.geometry.attributes.position.needsUpdate=true;
+  }
   // Entering either real lift cabin opens its destination panel. The latch is
   // cleared only after walking away, so closing the panel does not trap users
   // in a loop.
