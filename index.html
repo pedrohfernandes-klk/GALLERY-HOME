@@ -1228,6 +1228,26 @@ body.reduced *{animation:none!important;transition:none!important}
   grid-template-columns:1fr 1fr;
   gap:8px;
 }
+.fastMapDistrict{margin-bottom:14px}
+.fastMapDistrict:last-child{margin-bottom:0}
+.fastMapDistrictTitle{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+  margin:0 0 7px;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:#17120d;
+}
+.fastMapDistrictTitle span{
+  font-size:9px;
+  font-weight:600;
+  letter-spacing:.08em;
+  text-transform:none;
+  color:rgba(23,18,13,.52);
+}
 .fastMapBtn{
   border:1px solid rgba(23,18,13,.16);
   border-radius:14px;
@@ -1859,19 +1879,32 @@ body.rpgMode #rpgModeBadge{display:block}
       <button class="btn" id="fastMapCloseBtn" type="button">Close</button>
     </div>
     <div class="fastMapCurrent" id="fastMapCurrent">You are in <strong>Workshop Hall</strong></div>
-    <p class="fastMapIntro">Choose a wing. Smaller rooms remain discoverable through doors inside each wing.</p>
-    <div class="fastMapGrid">
-      <button class="fastMapBtn" data-place="warehouse" data-room="gallery"><b>Workshop Hall</b><span>Main hall and gallery corridor.</span></button>
-      <button class="fastMapBtn" data-place="venue" data-room="theatre"><b>The Venue</b><span>Auditorium with one large SAYWHAT / NO WORRIES / YouTube screen.</span></button>
-      <button class="fastMapBtn" data-place="studio" data-room="studio"><b>The Studio</b><span>Warehouse club, production corner and giant wall screen.</span></button>
-      <button class="fastMapBtn" data-place="lab" data-room="lab"><b>The Laboratory</b><span>Projection chamber that becomes a long illuminated gallery.</span></button>
-      <button class="fastMapBtn" data-place="outdoor" data-room="outdoor"><b>The Grove</b><span>Garden, monument and cliffside amphitheatre.</span></button>
-      <button class="fastMapBtn" data-place="headquarters" data-room="hood"><b>Headquarters</b><span>Restored warehouse, cave theatre, tower residences and formal garden.</span></button>
-      <button class="fastMapBtn" data-place="the-tunnel" data-room="tunnel"><b>The Tunnel</b><span>Underground passage and waiting room.</span></button>
-      <button class="fastMapBtn" data-place="thinking" data-room="thinking"><b>THINKING ROOM</b><span>Reading and research room.</span></button>
-      <button class="fastMapBtn" data-place="garden" data-room="maze"><b>Experiment Garden</b><span>Images, windows and temporary exhibitions.</span></button>
-      <button class="fastMapBtn" data-place="spark" data-room="spark"><b>SPARK TOOLS LABS</b><span>Playable retropunk arcade.</span></button>
-    </div>
+    <p class="fastMapIntro">Three districts. Smaller rooms remain discoverable through doors inside each wing.</p>
+    <section class="fastMapDistrict">
+      <h4 class="fastMapDistrictTitle">The Workshop<span>main building &amp; underground</span></h4>
+      <div class="fastMapGrid">
+        <button class="fastMapBtn" data-place="warehouse" data-room="gallery"><b>Workshop Hall</b><span>Main hall and gallery corridor.</span></button>
+        <button class="fastMapBtn" data-place="venue" data-room="theatre"><b>The Venue</b><span>Auditorium with one large SAYWHAT / NO WORRIES / YouTube screen.</span></button>
+        <button class="fastMapBtn" data-place="studio" data-room="studio"><b>The Studio</b><span>Music salon, listening bay and giant wall screen.</span></button>
+        <button class="fastMapBtn" data-place="lab" data-room="lab"><b>The Laboratory</b><span>Projection chamber that becomes a long illuminated gallery.</span></button>
+        <button class="fastMapBtn" data-place="thinking" data-room="thinking"><b>Thinking Room</b><span>Reading and research room.</span></button>
+        <button class="fastMapBtn" data-place="garden" data-room="maze"><b>Experiment Garden</b><span>Projection wall, maker desk and window exhibitions.</span></button>
+        <button class="fastMapBtn" data-place="spark" data-room="spark"><b>Spark Tools Labs</b><span>Playable retropunk arcade.</span></button>
+        <button class="fastMapBtn" data-place="the-tunnel" data-room="tunnel"><b>The Tunnel</b><span>Underground passage and waiting room.</span></button>
+      </div>
+    </section>
+    <section class="fastMapDistrict">
+      <h4 class="fastMapDistrictTitle">The Grove<span>gardens east of the building</span></h4>
+      <div class="fastMapGrid">
+        <button class="fastMapBtn" data-place="outdoor" data-room="outdoor"><b>The Grove</b><span>Garden, monument and cliffside amphitheatre.</span></button>
+      </div>
+    </section>
+    <section class="fastMapDistrict">
+      <h4 class="fastMapDistrictTitle">Headquarters<span>separate district on the coast</span></h4>
+      <div class="fastMapGrid">
+        <button class="fastMapBtn" data-place="headquarters" data-room="hood"><b>Headquarters</b><span>Restored warehouse, cave theatre, tower residences and formal garden.</span></button>
+      </div>
+    </section>
   </aside>
 
 
@@ -4151,6 +4184,11 @@ function runWorkshopSelfTest(){
   check(!!hoodSky && hoodSky.material?.fog === false, 'Hood sky bypasses global fog', hoodSky?.material?.fog);
   check(!!hoodHorizon && hoodHorizon.material?.fog === false, 'Hood ocean horizon bypasses global fog', hoodHorizon?.material?.fog);
   check(!!hoodCaveWallScreen && screens.includes(hoodCaveWallScreen), 'Hood wide projection registered', hoodCaveWallScreen?.title || 'missing');
+
+  // Hierarchical navigator: three districts, all ten destinations still wired.
+  check(document.querySelectorAll('#fastMapPanel .fastMapDistrict').length === 3, 'navigator has 3 districts', document.querySelectorAll('#fastMapPanel .fastMapDistrict').length);
+  check(document.querySelectorAll('#fastMapPanel .fastMapBtn').length === 10, 'navigator has 10 destinations', document.querySelectorAll('#fastMapPanel .fastMapBtn').length);
+  check([...document.querySelectorAll('#fastMapPanel .fastMapBtn')].every(b=>b.dataset.place && b.dataset.room), 'navigator buttons fully wired', 'data-place/data-room');
 
   check(portals.length >= 8, 'portals registered', `${portals.length} portals`);
   portals.forEach(p=>{
