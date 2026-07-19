@@ -2304,6 +2304,7 @@ let yaw = 0, pitch = 0, fov = 58;
 // changing room coordinates, portal targets or collision bounds.
 let rpgMode = false;
 let rpgAvatar = null;
+let rpgAvatarShadow = null;
 let rpgFacingYaw = 0;
 let rpgOrbitPitch = .43;
 let rpgCameraDistance = 5.4;
@@ -2328,23 +2329,69 @@ function markRpgAvatar(object){
 }
 // A shade, not a figure: the visitor reads as a soft dark silhouette rather
 // than a lit, multi-coloured toy body, so it doesn't compete with the art.
+// Fresnel "shade" material: a dark volumetric core with a cool rim-light on the
+// silhouette edge, so the visitor reads as a sculpted shadow-figure that turns
+// with the light rather than a flat black blob. depthWrite off keeps it from
+// occluding the world; it is excluded from the camera occlusion ray by its mark.
+function makeShadeMaterial(){
+  return new THREE.ShaderMaterial({
+    transparent:true, depthWrite:false,
+    uniforms:{ uCore:{value:new THREE.Color(0x05060a)}, uRim:{value:new THREE.Color(0x4a5f83)} },
+    vertexShader:`varying vec3 vN; varying vec3 vV;
+      void main(){ vec4 mv=modelViewMatrix*vec4(position,1.0);
+        vN=normalize(normalMatrix*normal); vV=normalize(-mv.xyz);
+        gl_Position=projectionMatrix*mv; }`,
+    fragmentShader:`precision mediump float; uniform vec3 uCore; uniform vec3 uRim;
+      varying vec3 vN; varying vec3 vV;
+      void main(){ float f=1.0-max(dot(normalize(vN),normalize(vV)),0.0);
+        float rim=pow(f,2.3);
+        vec3 col=mix(uCore,uRim,rim*0.85);
+        gl_FragColor=vec4(col,0.80+rim*0.16); }`
+  });
+}
 function buildRpgAvatar(){
   const root=new THREE.Group();
   root.name='Workshop RPG visitor';
-  const shade=new THREE.MeshBasicMaterial({color:0x07080a,transparent:true,opacity:.7,depthWrite:false,toneMapped:false});
-  const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.32,.5,6,12),shade);torso.position.y=1.24;root.add(torso);
-  const head=new THREE.Mesh(new THREE.SphereGeometry(.27,18,14),shade);head.scale.set(.86,1.05,.88);head.position.y=1.95;root.add(head);
-  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.09,.11,.18,10),shade);neck.position.y=1.70;root.add(neck);
-  const makeLimb=(x,y,length,radius)=>{const pivot=new THREE.Group();pivot.position.set(x,y,0);const mesh=new THREE.Mesh(new THREE.CapsuleGeometry(radius,length,5,9),shade);mesh.position.y=-(length/2+radius*.55);pivot.add(mesh);root.add(pivot);return pivot;};
-  rpgAvatarParts.leftLeg=makeLimb(-.17,.84,.56,.105);
-  rpgAvatarParts.rightLeg=makeLimb(.17,.84,.56,.105);
-  rpgAvatarParts.leftArm=makeLimb(-.40,1.50,.46,.09);
-  rpgAvatarParts.rightArm=makeLimb(.40,1.50,.46,.09);
+  const shade=makeShadeMaterial();
+  // Head, neck.
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.25,24,18),shade);
+  head.scale.set(.9,1.06,.92); head.position.y=1.94; root.add(head);
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.085,.10,.16,12),shade);
+  neck.position.y=1.73; root.add(neck);
+  // Tapered torso with defined shoulders and hips for a real silhouette.
+  const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.30,.52,8,16),shade);
+  torso.position.y=1.28; torso.scale.set(1.12,1.0,.72); root.add(torso);
+  const shoulders=new THREE.Mesh(new THREE.SphereGeometry(.20,18,12),shade);
+  shoulders.scale.set(1.95,.66,.9); shoulders.position.y=1.55; root.add(shoulders);
+  const hips=new THREE.Mesh(new THREE.SphereGeometry(.20,18,12),shade);
+  hips.scale.set(1.32,.7,.82); hips.position.y=1.00; root.add(hips);
+  // Limbs: tapered capsules with a foot/hand cap; pivots drive the walk cycle.
+  const makeLimb=(x,y,length,radius,capR,capFlat)=>{
+    const pivot=new THREE.Group(); pivot.position.set(x,y,0);
+    const mesh=new THREE.Mesh(new THREE.CapsuleGeometry(radius,length,6,12),shade);
+    mesh.position.y=-(length/2+radius*.5); pivot.add(mesh);
+    const cap=new THREE.Mesh(new THREE.SphereGeometry(capR,12,10),shade);
+    cap.position.y=-(length+radius*.5); if(capFlat) cap.scale.set(1,.62,1.5); pivot.add(cap);
+    root.add(pivot); return pivot;
+  };
+  rpgAvatarParts.leftLeg=makeLimb(-.15,.98,.56,.11,.12,true);
+  rpgAvatarParts.rightLeg=makeLimb(.15,.98,.56,.11,.12,true);
+  rpgAvatarParts.leftArm=makeLimb(-.34,1.54,.50,.085,.075,false);
+  rpgAvatarParts.rightArm=makeLimb(.34,1.54,.50,.085,.075,false);
   root.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;o.frustumCulled=true;}});
   markRpgAvatar(root);
   root.visible=false;
   scene.add(root);
   rpgAvatar=root;
+  // Soft radial ground-contact shadow so the shade feels planted, not floating.
+  const shC=document.createElement('canvas'); shC.width=shC.height=128;
+  { const g=shC.getContext('2d'); const grd=g.createRadialGradient(64,64,3,64,64,62);
+    grd.addColorStop(0,'rgba(0,0,0,.55)'); grd.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=grd; g.fillRect(0,0,128,128); }
+  const shadow=new THREE.Mesh(new THREE.CircleGeometry(.60,28),
+    new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(shC),transparent:true,depthWrite:false,opacity:.9,toneMapped:false}));
+  shadow.rotation.x=-Math.PI/2; shadow.position.y=.02; shadow.visible=false;
+  markRpgAvatar(shadow); scene.add(shadow); rpgAvatarShadow=shadow;
 }
 function isRpgCameraOccluder(hit){
   let object=hit.object;
@@ -2360,6 +2407,7 @@ function updateRpgAvatar(dt=0,speed=0){
   if(!rpgMode) return;
   const floor=visitorFloorY(rpgPlayerPosition);
   rpgAvatar.position.set(rpgPlayerPosition.x,floor,rpgPlayerPosition.z);
+  if(rpgAvatarShadow){ rpgAvatarShadow.visible=rpgMode; rpgAvatarShadow.position.set(rpgPlayerPosition.x,floor+.02,rpgPlayerPosition.z); }
   const moving=speed>.08;
   if(moving) rpgFacingYaw=lerpAngle(rpgFacingYaw,Math.atan2(-velX,-velZ),Math.min(1,dt*11));
   else rpgFacingYaw=lerpAngle(rpgFacingYaw,yaw,Math.min(1,dt*4));
@@ -2374,10 +2422,15 @@ function updateRpgCamera(dt=.016,snap=false){
   if(!rpgMode || !camera) return;
   const horizontal=Math.cos(rpgOrbitPitch)*rpgCameraDistance;
   const vertical=Math.sin(rpgOrbitPitch)*rpgCameraDistance+.28;
-  rpgCameraTarget.set(rpgPlayerPosition.x,rpgPlayerPosition.y-.42,rpgPlayerPosition.z);
+  // As the orbit drops (drag the view up), lift the look-target well above the
+  // character so the camera gazes upward — revealing the tower, building tops
+  // and sky. At the neutral orbit it frames the body as before.
+  const upLook=Math.max(0,(.36-rpgOrbitPitch))*rpgCameraDistance*1.15;
+  const floorY=visitorFloorY(rpgPlayerPosition);
+  rpgCameraTarget.set(rpgPlayerPosition.x,rpgPlayerPosition.y-.42+upLook,rpgPlayerPosition.z);
   rpgCameraDesired.set(
     rpgPlayerPosition.x+Math.sin(yaw)*horizontal,
-    rpgPlayerPosition.y+vertical,
+    Math.max(floorY+.4,rpgPlayerPosition.y+vertical),
     rpgPlayerPosition.z+Math.cos(yaw)*horizontal
   );
   rpgCameraDirection.copy(rpgCameraDesired).sub(rpgCameraTarget);
@@ -12316,13 +12369,13 @@ document.addEventListener('pointerlockchange', ()=>{
 document.addEventListener('mousemove', e=>{
   if(document.pointerLockElement === canvas && !reducedMotion){
     yaw -= e.movementX * .0030;
-    if(rpgMode) rpgOrbitPitch=clamp(rpgOrbitPitch+e.movementY*.0030,.18,.88);
-    else {pitch -= e.movementY * .0030;pitch = clamp(pitch, -1.15, 1.05);}
+    if(rpgMode) rpgOrbitPitch=clamp(rpgOrbitPitch+e.movementY*.0032,-.55,1.20);
+    else {pitch -= e.movementY * .0030;pitch = clamp(pitch, -1.25, 1.40);}
     updateCameraRotation();
   }else if(mouseDown && lastMouse && !reducedMotion){
     yaw -= (e.clientX - lastMouse.x) * .0052;
-    if(rpgMode) rpgOrbitPitch=clamp(rpgOrbitPitch+(e.clientY-lastMouse.y)*.0052,.18,.88);
-    else {pitch -= (e.clientY - lastMouse.y) * .0052;pitch = clamp(pitch, -1.15, 1.05);}
+    if(rpgMode) rpgOrbitPitch=clamp(rpgOrbitPitch+(e.clientY-lastMouse.y)*.0055,-.55,1.20);
+    else {pitch -= (e.clientY - lastMouse.y) * .0052;pitch = clamp(pitch, -1.25, 1.40);}
     lastMouse = {x:e.clientX,y:e.clientY};
     updateCameraRotation();
   }
@@ -12332,7 +12385,7 @@ document.addEventListener('mouseup', ()=>{mouseDown=false; lastMouse=null;});
 canvas.addEventListener('wheel', e=>{
   e.preventDefault();
   if(rpgMode){
-    rpgCameraDistance=clamp(rpgCameraDistance+Math.sign(e.deltaY)*.55,3.15,8.5);
+    rpgCameraDistance=clamp(rpgCameraDistance+Math.sign(e.deltaY)*.6,2.6,14.0);
     updateRpgCamera(0,true);
     msg(`RPG camera ${rpgCameraDistance.toFixed(1)} m`);
     return;
@@ -12433,8 +12486,8 @@ function setupMobileControls(){
     const dy = e.clientY - mobileInput.lookLastY;
     if(Math.hypot(dx,dy) > 2) mobileInput.lookMoved = true;
     yaw -= dx * .0045;
-    if(rpgMode) rpgOrbitPitch=clamp(rpgOrbitPitch+dy*.0045,.18,.88);
-    else {pitch -= dy * .0045;pitch = clamp(pitch, -1.15, 1.05);}
+    if(rpgMode) rpgOrbitPitch=clamp(rpgOrbitPitch+dy*.0048,-.55,1.20);
+    else {pitch -= dy * .0045;pitch = clamp(pitch, -1.25, 1.40);}
     mobileInput.lookLastX = e.clientX;
     mobileInput.lookLastY = e.clientY;
     updateCameraRotation();
