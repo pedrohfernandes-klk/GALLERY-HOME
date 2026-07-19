@@ -2101,9 +2101,11 @@ if(hrmWork01Replacement){
   hrmWork01Replacement.aspect = 1371/911;
 }
 
-// HrM corridor additions: one original mixed-media work followed by two
-// materially related Cadavre Expat collages. Kept in the main corridor gallery,
-// away from the tunnel's architectural windows.
+// HrM corridor additions. The Cadavre Expat collages that once hung here have
+// moved to Headquarters, where the complete I–IV sequence is now installed
+// monumentally, so the whole series lives only in the Hood. The corridor keeps
+// this original mixed-media work plus the two new pieces added below. The
+// CADAVRE_EXPAT_*_SRC constants stay defined — the Hood grand hall uses them.
 const HRM_CORRIDOR_424_SRC = 'assets/extracted/hrm-corridor-424.webp';
 const CADAVRE_EXPAT_II_SRC = 'assets/extracted/cadavre-expat-ii.webp';
 const CADAVRE_EXPAT_III_SRC = 'assets/extracted/cadavre-expat-iii.webp';
@@ -2113,18 +2115,6 @@ artworks.push(
     medium:'mixed media on reclaimed support · HrM', room:'Gallery corridor',
     wing:'HrM corridor sequence', aspect:495/640, src:HRM_CORRIDOR_424_SRC,
     summary:'A weathered earthen field opens around a fractured face, with exposed mesh and radiating scraped passages.'
-  },
-  {
-    title:'Cadavre Expat II', collection:'User works',
-    medium:'handmade mixed-media collage · HrM', room:'Gallery corridor',
-    wing:'HrM corridor sequence', aspect:1, src:CADAVRE_EXPAT_II_SRC,
-    summary:'A pasted impasto face and three progressively abraded echoes travel through sweeping red arcs, glue ridges and lifted fibres.'
-  },
-  {
-    title:'Cadavre Expat III', collection:'User works',
-    medium:'reclaimed-cardboard mixed-media collage · HrM', room:'Gallery corridor',
-    wing:'HrM corridor sequence', aspect:640/466, src:CADAVRE_EXPAT_III_SRC,
-    summary:'The face reappears in stitched cardboard relief; its strongest echo wraps the raised sphere before five impressions recede into gauze and wax.'
   }
 );
 
@@ -2158,6 +2148,24 @@ const SUNSET_CHANG_SRC='assets/new/chang-sunset.webp';
 artworks.push({title:'Unfinished Arc Study I',collection:'HrM archive',medium:'mixed media · HrM',room:'Gallery corridor',wing:'HrM corridor sequence',aspect:1,src:HRM_CORRIDOR_429_SRC});
 artworks.push({title:'Unfinished Arc Study II',collection:'HrM archive',medium:'mixed media · HrM',room:'Gallery corridor',wing:'HrM corridor sequence',aspect:1,src:HRM_CORRIDOR_430_SRC});
 
+// Two further HrM works keep the corridor's rhythm full now that the Cadavre
+// Expat pieces have moved to Headquarters. Drop the image files at the paths
+// below; until then each shows a graceful title placeholder (fallbackTexture).
+const HRM_CORRIDOR_FIRESTORM_SRC='assets/new/hrm-firestorm.webp';
+const HRM_CORRIDOR_CAT_SRC='assets/new/hrm-cat.webp';
+artworks.push({
+  title:'Firestorm · HrM', collection:'User works',
+  medium:'mixed media collage · HrM', room:'Gallery corridor',
+  wing:'HrM corridor sequence', aspect:1190/913, src:HRM_CORRIDOR_FIRESTORM_SRC,
+  summary:'A domed city burns behind a lone motorcyclist crossing a field of scraped orange and yellow impasto; a pasted street, a car, an iron crane and a fallen figure ring the mouth of a dark cave.'
+});
+artworks.push({
+  title:'The Watcher · HrM', collection:'User works',
+  medium:'stencil and spray on concrete · HrM', room:'Gallery corridor',
+  wing:'HrM corridor sequence', aspect:775/914, src:HRM_CORRIDOR_CAT_SRC,
+  summary:'A four-eyed cat sprayed as a stencil on raw concrete, its doubled gaze and dark flank dissolving into the wall.'
+});
+
 function initialiseHrmCataloguing(){
   let n = 0;
   artworks.forEach(a=>{
@@ -2180,8 +2188,10 @@ const MIXED_MEDIA_4_SRC = "assets/extracted/mixed-media-4.webp";
 
 const CADAVRE_EXPAT_SRC = 'assets/extracted/cadavre-expat.webp';
 const STUDIO_DECOR_MORE_SRCS = STUDIO_DECOR_SRCS.slice(5);
+// The base "Cadavre Expat" pool entry was removed: the whole Cadavre Expat
+// series now lives only in the Headquarters grand hall. CADAVRE_EXPAT_SRC stays
+// defined above — the Hood installs "CADAVRE EXPAT I" from it directly.
 const hrm2024EndGalleryWorks = [
-  {"key":"Cadavre Expat","title":"Cadavre Expat","medium":"handmade mixed-media collage · HrM","summary":"The Grove figure cut, glued and worked into a layered oil-and-acrylic field.","aspect":1.5024,"src":CADAVRE_EXPAT_SRC},
   {"key": "Bull Guy", "title": "Bull Guy", "medium": "digital image · HrM", "summary": "Tall central figure work.", "aspect": 0.52, "src": BULL_GUY_SRC},
   {"key": "Chartres Light", "title": "Chartres Light", "medium": "digital stained glass · HrM", "summary": "Tall central light work.", "aspect": 0.52, "src": CHARTRES_LIGHT_SRC},
   {"key": "HrM New Work VIII", "title": "Untitled · HrM", "medium": "mixed media · HrM", "summary": "Vertical mixed-media figure work.", "aspect": 0.9638, "src": HRM_NEW_END_SRC},
