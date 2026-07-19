@@ -132,6 +132,11 @@ button:focus-visible,input:focus-visible{outline:2px solid rgba(169,76,68,.62);o
    per-frame from JS in lockstep with the camera's forward dolly (see
    updatePosterReveal/beginPosterOpen) while opening; the CSS transition
    below only governs the plain, non-interactive fallback fade. */
+/* Minimal full-screen portal. The overlay itself is transparent; the single
+   arched aperture (#posterDoor) is a real see-through window onto the darkened
+   hall behind, and its huge box-shadow fills the rest of the screen with the
+   beige ground. On ENTER, the JS iris-reveal grows the aperture to fill the
+   screen while the camera dollies into the hall. */
 #poster{
   position:absolute;
   inset:0;
@@ -139,10 +144,7 @@ button:focus-visible,input:focus-visible{outline:2px solid rgba(169,76,68,.62);o
   display:grid;
   place-items:center;
   overflow:hidden;
-  background:
-    radial-gradient(circle at 50% 20%, rgba(255,255,255,.55), transparent 44%),
-    radial-gradient(ellipse at 50% 108%, rgba(199,170,112,.20), transparent 56%),
-    linear-gradient(180deg, #faf5e9 0%, #f7f0e2 52%, #efe6d2 100%);
+  background:transparent;
   color:#17120d;
   transition:opacity .55s ease, visibility .55s ease;
 }
@@ -151,248 +153,114 @@ button:focus-visible,input:focus-visible{outline:2px solid rgba(169,76,68,.62);o
   visibility:hidden;
   pointer-events:none;
 }
-#poster::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:
-    radial-gradient(circle at 18% 30%, rgba(169,76,68,.05), transparent 30%),
-    radial-gradient(circle at 84% 68%, rgba(199,170,112,.07), transparent 34%),
-    repeating-linear-gradient(0deg, rgba(23,18,13,.014) 0px, rgba(23,18,13,.014) 1px, transparent 1px, transparent 3px);
-  opacity:.8;
-  pointer-events:none;
-}
-#poster::after{
-  content:"";
-  position:absolute;
-  inset:22px;
-  border:1px solid rgba(23,18,13,.14);
-  pointer-events:none;
-}
-#posterCard{
-  position:relative;
-  width:min(680px, calc(100vw - 56px));
-  padding:30px 28px 32px;
-  text-align:center;
-  color:#17120d;
-  overflow:hidden;
-}
-#posterCard::after{
-  content:"";
-  position:absolute;
-  left:50%;
-  bottom:22px;
-  width:150px;
-  height:1px;
-  transform:translateX(-50%);
-  background:linear-gradient(90deg, transparent, rgba(23,18,13,.30), transparent);
-  pointer-events:none;
-}
-#posterIntroTopline{
-  font: 700 10px/1 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
-  letter-spacing:.42em;
-  text-transform:uppercase;
-  color:rgba(169,76,68,.85);
-  margin:2px 0 12px;
-}
-#posterSignature{
-  display:block;
-  width:min(160px, 38vw);
-  height:auto;
-  margin:2px auto 12px;
-  opacity:.78;
-  filter:grayscale(1) contrast(1.05);
-}
-#posterCard h1{
-  margin:0 0 2px;
-  font-family:ui-serif, Georgia, "Times New Roman", serif;
-  font-size:clamp(42px, 7vw, 76px);
-  line-height:.94;
-  font-weight:500;
-  letter-spacing:.22em;
-  text-indent:.22em;
-  text-transform:uppercase;
-  color:#17120d;
-}
-#posterSubtitle{
-  margin:8px 0 0;
-  padding-left:.24em;
-  font:600 10px/1.2 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
-  letter-spacing:.24em;
-  text-transform:uppercase;
-  color:rgba(23,18,13,.52);
-}
-#posterDoorWrap{
-  position:relative;
-  margin-top:28px;
-  display:grid;
-  place-items:center;
-  gap:10px;
-}
-#posterDoorWrap::before{
-  content:"";
-  position:absolute;
-  left:50%;
-  bottom:-8px;
-  width:min(300px, 60vw);
-  height:34px;
-  transform:translateX(-50%);
-  background:radial-gradient(ellipse at center, rgba(23,18,13,.20), rgba(23,18,13,.08) 44%, transparent 74%);
-  filter:blur(5px);
-  pointer-events:none;
-}
-/* Slow "sonar" pulse behind the door — the one clearly "portal" motion cue,
-   kept to a single restrained ring rather than a busy multi-ring animation,
-   and turned off entirely under prefers-reduced-motion. */
-#posterPortalPulse{
-  position:absolute;
-  left:50%;
-  top:50%;
-  width:56%;
-  height:56%;
-  transform:translate(-50%,-50%);
-  border-radius:50%;
-  pointer-events:none;
-  box-shadow:0 0 0 0 rgba(169,76,68,.18);
-}
-@media (prefers-reduced-motion: no-preference){
-  #posterPortalPulse{ animation:posterPulse 4.6s ease-out infinite; }
-}
-@keyframes posterPulse{
-  0%{ box-shadow:0 0 0 0 rgba(169,76,68,.18); }
-  70%{ box-shadow:0 0 0 32px rgba(169,76,68,0); }
-  100%{ box-shadow:0 0 0 32px rgba(169,76,68,0); }
-}
+/* The portal aperture: transparent centre (the hall shows through), with a
+   100vmax box-shadow that paints the whole screen beige around it. */
 #posterDoor{
   position:relative;
-  width:min(238px, 34vw);
-  aspect-ratio:7 / 13.4;
+  z-index:1;
+  width:min(30vw, 340px);
+  height:min(62vh, 560px);
+  background:transparent;
+  border:2px solid #17120d;
+  border-radius:999px 999px 30px 30px;
   cursor:pointer;
   outline:none;
-  transition:transform .3s ease;
+  box-shadow:
+    0 0 0 100vmax #f2ead6,
+    inset 0 0 70px rgba(23,18,13,.22),
+    inset 0 -34px 64px rgba(169,76,68,.12);
+  transition:box-shadow .3s ease;
+}
+#posterDoor::after{
+  content:"";
+  position:absolute;
+  left:12%; right:12%; bottom:0; height:34%;
+  background:linear-gradient(0deg, rgba(233,200,86,.18), rgba(169,76,68,.06) 46%, transparent);
+  pointer-events:none;
 }
 #posterDoor:hover,
 #posterDoor:focus-visible{
-  transform:translateY(-2px);
-}
-#posterDoorFrame{
-  position:absolute;
-  inset:0;
-  border:2px solid #17120d;
   box-shadow:
-    0 0 0 1px rgba(199,170,112,.55) inset,
-    0 22px 54px rgba(23,18,13,.30);
+    0 0 0 100vmax #f2ead6,
+    inset 0 0 84px rgba(23,18,13,.26),
+    inset 0 -38px 70px rgba(169,76,68,.18);
 }
-#posterDoorInner{
+#posterCard{
   position:absolute;
-  inset:13px;
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  grid-template-rows:52px 1fr;
-  overflow:hidden;
-  border:1px solid rgba(199,170,112,.2);
-  background:
-    linear-gradient(180deg, rgba(255,244,222,.018), rgba(255,244,222,.004) 26%, rgba(255,244,222,.02) 100%),
-    #010101;
+  z-index:3;
+  top:11vh;
+  left:0; right:0;
+  text-align:center;
+  color:#17120d;
 }
-#posterDoorTransom{
-  grid-column:1 / -1;
-  position:relative;
-  border-bottom:1px solid rgba(199,170,112,.16);
-  background:linear-gradient(180deg, rgba(255,196,120,.04), rgba(255,196,120,.01));
-}
-#posterDoorTransom::before{
-  content:"";
-  position:absolute;
-  inset:10px 18px;
-  border:1px solid rgba(199,170,112,.12);
-}
-.posterDoorLeaf{
-  position:relative;
-  margin-top:-1px;
-  border:1px solid rgba(199,170,112,.18);
-  background:
-    linear-gradient(180deg, rgba(255,244,222,.028), rgba(255,244,222,.008) 24%, rgba(255,244,222,.035) 100%),
-    linear-gradient(90deg, rgba(255,244,222,.02), transparent 16%, transparent 84%, rgba(255,244,222,.02)),
-    #020202;
-  transform-style:preserve-3d;
-  transition:transform .95s cubic-bezier(.68,-0.2,.18,1.02), opacity .6s ease;
-  will-change:transform;
-}
-.posterDoorLeaf::before{
-  content:"";
-  position:absolute;
-  left:15%; right:15%; top:11%; bottom:11%;
-  border:1px solid rgba(199,170,112,.14);
-}
-.posterDoorLeaf::after{
-  content:"";
-  position:absolute;
-  left:24%; right:24%; top:16%; height:26%;
-  border:1px solid rgba(199,170,112,.12);
-}
-#posterDoorLeft{ transform-origin:left center; }
-#posterDoorRight{ transform-origin:right center; }
-.posterKnob{
-  position:absolute;
-  top:50%;
-  width:7px;
-  height:7px;
-  margin-top:-3.5px;
-  border-radius:50%;
-  background:#ffd8a0;
-  box-shadow:0 0 10px rgba(255,196,120,.5), 0 0 0 1px rgba(255,196,120,.16);
-}
-#posterDoorLeft .posterKnob{ right:14px; }
-#posterDoorRight .posterKnob{ left:14px; }
-#posterDoorGlow{
-  position:absolute;
-  inset:24px 28px 30px;
-  background:
-    radial-gradient(circle at 50% 54%, rgba(255,196,120,.19), rgba(116,232,255,.08) 30%, rgba(255,196,120,.03) 50%, transparent 68%),
-    linear-gradient(180deg, rgba(116,232,255,.025), transparent 60%);
-  opacity:.14;
-  transition:opacity .8s ease;
-  pointer-events:none;
-}
-#posterThreshold{
-  position:absolute;
-  left:50%;
-  bottom:-24px;
-  width:160px;
-  height:2px;
-  transform:translateX(-50%);
-  background:linear-gradient(90deg, transparent, rgba(169,76,68,.65), rgba(199,170,112,.65), transparent);
-  pointer-events:none;
-}
-#posterOpenHint{
-  padding-left:.36em;
-  font-size:10px;
-  font-weight:700;
-  letter-spacing:.36em;
+#posterIntroTopline{
+  font:800 11px/1 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+  letter-spacing:.5em;
   text-transform:uppercase;
-  color:rgba(23,18,13,.62);
+  color:#a94c44;
+  margin:0 0 14px;
+}
+#posterCard h1{
+  margin:0;
+  font-family:ui-serif, Georgia, "Times New Roman", serif;
+  font-size:clamp(46px, 7.4vw, 88px);
+  line-height:.92;
+  font-weight:700;
+  letter-spacing:.16em;
+  text-indent:.16em;
+  text-transform:uppercase;
+  color:#17120d;
+}
+#posterCard h1::after{
+  content:"";
+  display:block;
+  width:132px;
+  height:3px;
+  margin:16px auto 0;
+  background:linear-gradient(90deg, #a94c44, #e6a12e 46%, #6db7c9);
+}
+#posterSubtitle{
+  margin:14px 0 0;
+  font:600 10px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+  letter-spacing:.34em;
+  text-transform:uppercase;
+  color:rgba(23,18,13,.55);
+}
+#posterEnter{
+  position:absolute;
+  z-index:3;
+  bottom:12vh;
+  left:50%;
+  transform:translateX(-50%);
+  padding:14px 46px;
+  font:800 13px/1 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+  letter-spacing:.42em;
+  text-indent:.42em;
+  text-transform:uppercase;
+  color:#17120d;
+  background:transparent;
+  border:2px solid #17120d;
+  border-radius:2px;
+  cursor:pointer;
+  transition:background .2s ease, color .2s ease, transform .2s ease;
+}
+#posterEnter:hover,
+#posterEnter:focus-visible{
+  background:#17120d;
+  color:#f2ead6;
+  transform:translateX(-50%) translateY(-1px);
+  outline:none;
 }
 #posterControls,.ctrlGroup,.keyRow,.key,.ctrlIcon,.ctrlLabel{display:none}
 
-#poster.opening #posterDoorLeft{ transform:perspective(1200px) rotateY(-108deg); opacity:.06; }
-#poster.opening #posterDoorRight{ transform:perspective(1200px) rotateY(108deg); opacity:.06; }
-#poster.opening #posterDoorGlow{ opacity:.8; }
-#poster.opening #posterIntroTopline,
-#poster.opening #posterOpenHint,
-#poster.opening #posterThreshold,
-#poster.opening #posterCard::after,
-#poster.opening #posterSignature,
-#poster.opening h1,
-#poster.opening #posterSubtitle,
-#poster.opening #posterPortalPulse{ opacity:.06; transition:opacity .45s ease; }
+#poster.opening #posterCard,
+#poster.opening #posterEnter{ opacity:0; transition:opacity .4s ease; }
 
-@media (max-width:700px){
-  #posterCard{padding:18px 16px 22px}
-  #posterCard::before{inset:10px}
-  #posterCard h1{font-size:clamp(40px, 9vw, 56px);letter-spacing:.24em;text-indent:.24em}
-  #posterDoor{width:min(248px, 64vw)}
-  #posterDoorTransom{grid-template-rows:none}
+@media (max-width:820px){
+  #posterDoor{ width:min(62vw, 340px); height:min(52vh, 520px); }
+  #posterCard{ top:8vh; }
+  #posterCard h1{ font-size:clamp(40px, 10vw, 60px); }
+  #posterEnter{ bottom:9vh; }
 }
 
 #topbar{
@@ -1803,26 +1671,13 @@ body.rpgMode #rpgModeBadge{display:block}
   <canvas id="renderCanvas" aria-label="The Workshop 3D museum. Use W A S D or arrow keys to walk. Move mouse to look. Mouse wheel zooms."></canvas>
 
   <div id="poster">
+    <div id="posterDoor" role="button" aria-label="Enter the Workshop" tabindex="0"></div>
     <div id="posterCard">
       <div id="posterIntroTopline">HrM</div>
-      <img id="posterSignature" alt="HrM signature">
       <h1>THE WORKSHOP</h1>
       <div id="posterSubtitle">museum of rooms · images · machines</div>
-      <div id="posterDoorWrap">
-        <div id="posterPortalPulse"></div>
-        <div id="posterDoor" role="button" aria-label="Open the workshop door" tabindex="0">
-          <div id="posterDoorFrame"></div>
-          <div id="posterDoorInner">
-            <div id="posterDoorTransom"></div>
-            <div class="posterDoorLeaf" id="posterDoorLeft"><span class="posterKnob"></span></div>
-            <div class="posterDoorLeaf" id="posterDoorRight"><span class="posterKnob"></span></div>
-          </div>
-          <div id="posterDoorGlow"></div>
-          <div id="posterThreshold"></div>
-        </div>
-        <div id="posterOpenHint">Enter</div>
-      </div>
     </div>
+    <button id="posterEnter" type="button">Enter</button>
   </div>
 
   <header id="topbar">
@@ -12794,6 +12649,7 @@ if(posterDoor){
   posterDoor.onclick = beginPosterOpen;
   posterDoor.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); beginPosterOpen(); } });
 }
+if($('posterEnter')) $('posterEnter').onclick = beginPosterOpen;
 $('focusBtn').onclick = focusNearest;
 $('catalogueBtn').onclick = ()=>catalogue.classList.toggle('open');
 $('archiveBtn').onclick = ()=>openArchive('rooms');
