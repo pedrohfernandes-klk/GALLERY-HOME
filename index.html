@@ -140,11 +140,10 @@ button:focus-visible,input:focus-visible{outline:2px solid rgba(169,76,68,.62);o
   place-items:center;
   overflow:hidden;
   background:
-    radial-gradient(circle at 50% 24%, rgba(255,226,168,.08), transparent 17%),
-    radial-gradient(circle at 50% 60%, rgba(255,226,168,.025), transparent 42%),
-    radial-gradient(ellipse at 50% 102%, rgba(116,232,255,.05), transparent 52%),
-    linear-gradient(180deg, #020202 0%, #000 55%, #030303 100%);
-  color:var(--paper);
+    radial-gradient(circle at 50% 20%, rgba(255,255,255,.55), transparent 44%),
+    radial-gradient(ellipse at 50% 108%, rgba(199,170,112,.20), transparent 56%),
+    linear-gradient(180deg, #faf5e9 0%, #f7f0e2 52%, #efe6d2 100%);
+  color:#17120d;
   transition:opacity .55s ease, visibility .55s ease;
 }
 #poster.hide{
@@ -157,40 +156,26 @@ button:focus-visible,input:focus-visible{outline:2px solid rgba(169,76,68,.62);o
   position:absolute;
   inset:0;
   background:
-    linear-gradient(90deg, transparent 0, rgba(255,244,222,.016) 50%, transparent 100%),
-    linear-gradient(0deg, transparent 0, rgba(255,244,222,.012) 50%, transparent 100%),
-    radial-gradient(circle at 50% 82%, rgba(255,226,168,.04), transparent 24%),
-    repeating-linear-gradient(0deg, rgba(116,232,255,.05) 0px, rgba(116,232,255,.05) 1px, transparent 1px, transparent 3px);
-  opacity:.22;
+    radial-gradient(circle at 18% 30%, rgba(169,76,68,.05), transparent 30%),
+    radial-gradient(circle at 84% 68%, rgba(199,170,112,.07), transparent 34%),
+    repeating-linear-gradient(0deg, rgba(23,18,13,.014) 0px, rgba(23,18,13,.014) 1px, transparent 1px, transparent 3px);
+  opacity:.8;
   pointer-events:none;
 }
 #poster::after{
   content:"";
   position:absolute;
-  inset:30px;
-  border:1px solid rgba(199,170,112,.08);
+  inset:22px;
+  border:1px solid rgba(23,18,13,.14);
   pointer-events:none;
 }
 #posterCard{
   position:relative;
-  width:min(520px, calc(100vw - 56px));
+  width:min(680px, calc(100vw - 56px));
   padding:30px 28px 32px;
   text-align:center;
-  color:var(--paper);
-  border:1px solid rgba(199,170,112,.16);
-  background:linear-gradient(180deg, rgba(255,244,222,.012), rgba(255,244,222,.005));
-  box-shadow:
-    0 32px 90px rgba(0,0,0,.42),
-    inset 0 0 0 1px rgba(199,170,112,.06),
-    inset 0 24px 60px rgba(255,244,222,.012);
+  color:#17120d;
   overflow:hidden;
-}
-#posterCard::before{
-  content:"";
-  position:absolute;
-  inset:16px;
-  border:1px solid rgba(199,170,112,.09);
-  pointer-events:none;
 }
 #posterCard::after{
   content:"";
@@ -200,43 +185,42 @@ button:focus-visible,input:focus-visible{outline:2px solid rgba(169,76,68,.62);o
   width:150px;
   height:1px;
   transform:translateX(-50%);
-  background:linear-gradient(90deg, transparent, rgba(199,170,112,.35), transparent);
+  background:linear-gradient(90deg, transparent, rgba(23,18,13,.30), transparent);
   pointer-events:none;
 }
 #posterIntroTopline{
-  font: 700 9px/1 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+  font: 700 10px/1 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
   letter-spacing:.42em;
   text-transform:uppercase;
-  color:rgba(199,170,112,.6);
-  margin:2px 0 10px;
+  color:rgba(169,76,68,.85);
+  margin:2px 0 12px;
 }
 #posterSignature{
   display:block;
-  width:min(152px, 38vw);
+  width:min(160px, 38vw);
   height:auto;
-  margin:2px auto 10px;
-  opacity:.4;
-  filter:invert(1) grayscale(1) brightness(1.45) contrast(1.12) sepia(.3) saturate(1.4) hue-rotate(-10deg);
+  margin:2px auto 12px;
+  opacity:.78;
+  filter:grayscale(1) contrast(1.05);
 }
 #posterCard h1{
   margin:0 0 2px;
   font-family:ui-serif, Georgia, "Times New Roman", serif;
-  font-size:clamp(40px, 6.2vw, 64px);
+  font-size:clamp(42px, 7vw, 76px);
   line-height:.94;
   font-weight:500;
   letter-spacing:.22em;
   text-indent:.22em;
   text-transform:uppercase;
-  color:var(--paper);
-  text-shadow:0 0 46px rgba(116,232,255,.10);
+  color:#17120d;
 }
 #posterSubtitle{
-  margin:6px 0 0;
+  margin:8px 0 0;
   padding-left:.24em;
   font:600 10px/1.2 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
   letter-spacing:.24em;
   text-transform:uppercase;
-  color:rgba(199,170,112,.46);
+  color:rgba(23,18,13,.52);
 }
 #posterDoorWrap{
   position:relative;
@@ -253,7 +237,7 @@ button:focus-visible,input:focus-visible{outline:2px solid rgba(169,76,68,.62);o
   width:min(300px, 60vw);
   height:34px;
   transform:translateX(-50%);
-  background:radial-gradient(ellipse at center, rgba(255,196,120,.11), rgba(116,232,255,.06) 34%, rgba(255,196,120,.02) 54%, transparent 74%);
+  background:radial-gradient(ellipse at center, rgba(23,18,13,.20), rgba(23,18,13,.08) 44%, transparent 74%);
   filter:blur(5px);
   pointer-events:none;
 }
@@ -269,15 +253,15 @@ button:focus-visible,input:focus-visible{outline:2px solid rgba(169,76,68,.62);o
   transform:translate(-50%,-50%);
   border-radius:50%;
   pointer-events:none;
-  box-shadow:0 0 0 0 rgba(116,232,255,.16);
+  box-shadow:0 0 0 0 rgba(169,76,68,.18);
 }
 @media (prefers-reduced-motion: no-preference){
   #posterPortalPulse{ animation:posterPulse 4.6s ease-out infinite; }
 }
 @keyframes posterPulse{
-  0%{ box-shadow:0 0 0 0 rgba(116,232,255,.16); }
-  70%{ box-shadow:0 0 0 32px rgba(116,232,255,0); }
-  100%{ box-shadow:0 0 0 32px rgba(116,232,255,0); }
+  0%{ box-shadow:0 0 0 0 rgba(169,76,68,.18); }
+  70%{ box-shadow:0 0 0 32px rgba(169,76,68,0); }
+  100%{ box-shadow:0 0 0 32px rgba(169,76,68,0); }
 }
 #posterDoor{
   position:relative;
@@ -294,12 +278,10 @@ button:focus-visible,input:focus-visible{outline:2px solid rgba(169,76,68,.62);o
 #posterDoorFrame{
   position:absolute;
   inset:0;
-  border:1.4px solid rgba(199,170,112,.78);
+  border:2px solid #17120d;
   box-shadow:
-    0 0 0 1px rgba(199,170,112,.08) inset,
-    0 18px 50px rgba(0,0,0,.28),
-    0 0 30px rgba(255,196,120,.04),
-    0 0 44px rgba(116,232,255,.05);
+    0 0 0 1px rgba(199,170,112,.55) inset,
+    0 22px 54px rgba(23,18,13,.30);
 }
 #posterDoorInner{
   position:absolute;
@@ -380,16 +362,16 @@ button:focus-visible,input:focus-visible{outline:2px solid rgba(169,76,68,.62);o
   width:160px;
   height:2px;
   transform:translateX(-50%);
-  background:linear-gradient(90deg, transparent, rgba(255,196,120,.6), rgba(116,232,255,.6), transparent);
-  box-shadow:0 0 14px rgba(116,232,255,.18), 0 0 10px rgba(255,196,120,.14);
+  background:linear-gradient(90deg, transparent, rgba(169,76,68,.65), rgba(199,170,112,.65), transparent);
   pointer-events:none;
 }
 #posterOpenHint{
   padding-left:.36em;
-  font-size:9px;
+  font-size:10px;
+  font-weight:700;
   letter-spacing:.36em;
   text-transform:uppercase;
-  color:rgba(199,170,112,.5);
+  color:rgba(23,18,13,.62);
 }
 #posterControls,.ctrlGroup,.keyRow,.key,.ctrlIcon,.ctrlLabel{display:none}
 
