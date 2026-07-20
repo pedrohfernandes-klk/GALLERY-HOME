@@ -1525,26 +1525,26 @@ body.reduced #mobileInteractBtn.hasTarget{animation:none}
 .fastMapIntro{margin-bottom:15px!important}
 .journeyMap{
   display:grid;
-  grid-template-columns:repeat(5,minmax(0,1fr));
+  grid-template-columns:repeat(6,minmax(0,1fr));
   gap:6px;
   margin:0 0 14px;
 }
 .journeyBeat{
+  grid-column:span 2;
   border:1px solid rgba(23,18,13,.14);
   border-radius:7px;
   background:rgba(255,250,239,.44);
   padding:7px 8px;
   min-width:0;
 }
+.journeyBeat:nth-child(n+4){grid-column:span 3}
 .journeyBeat b{
   display:block;
   font-size:10px;
   letter-spacing:.12em;
   text-transform:uppercase;
   color:var(--ink);
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  white-space:normal;
 }
 .journeyBeat span{
   display:block;
@@ -1558,6 +1558,34 @@ body.reduced #mobileInteractBtn.hasTarget{animation:none}
   background:rgba(255,240,221,.82);
   box-shadow:0 10px 24px rgba(84,58,22,.08);
 }
+.journeyBeat.stamped{
+  border-color:rgba(74,104,72,.38);
+  background:rgba(232,239,222,.86);
+}
+.journeyBeat.stamped::after{
+  content:'Stamped';
+  display:block;
+  margin-top:5px;
+  color:#4a6848;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+}
+.passportSummary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:-4px 0 14px;
+  padding:9px 10px;
+  border:1px solid rgba(23,18,13,.12);
+  border-radius:9px;
+  background:rgba(255,255,255,.28);
+}
+#passportProgress{font-size:9px;letter-spacing:.06em;color:var(--muted);white-space:nowrap}
+#passportProgress strong{color:var(--ink);text-transform:uppercase}
+#passportResetBtn{border:0;background:transparent;color:rgba(23,18,13,.48);font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
 .fastMapSection{margin-top:13px}
 .fastMapSectionTitle{margin:0 0 7px;font-size:9px;font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:rgba(23,18,13,.50)}
 .fastMapGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -1761,6 +1789,10 @@ body.rpgMode #rpgModeBadge{display:block}
       <div class="journeyBeat" data-beat="outside"><b>Outside</b><span>Grove</span></div>
       <div class="journeyBeat" data-beat="return"><b>Return</b><span>Headquarters</span></div>
     </div>
+    <div class="passportSummary">
+      <div id="passportProgress" aria-live="polite"><strong>Visitor Passport</strong> · 0 of 5 acts stamped</div>
+      <button id="passportResetBtn" type="button">New visit</button>
+    </div>
     <section class="fastMapDistrict">
       <h4 class="fastMapDistrictTitle">The Workshop<span>main building &amp; underground</span></h4>
       <div class="fastMapGrid">
@@ -1962,6 +1994,7 @@ body.rpgMode #rpgModeBadge{display:block}
 <script type="module">
 import * as THREE from 'three';
 import { CSS3DRenderer, CSS3DObject } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/renderers/CSS3DRenderer.js';
+import { PASSPORT_ACTS, createPassportState, recordPassportEvent, passportProgress, runIdleBuildQueue } from './assets/js/workshop-foundation.js';
 const GUERNICA_IMAGE_SRC = 'assets/extracted/guernica-image.webp';
 const BULL_GUY_SRC = 'assets/extracted/bull-guy.webp';
 const CHARTRES_LIGHT_SRC = 'assets/extracted/chartres-light.webp';
@@ -2689,6 +2722,41 @@ let noteDraftContext = null;
 let researchState = { query:'', results:[], summary:'', lastUpdated:'' };
 let currentRoom = 'gallery'; // gallery | theatre | lab | maze | maps | spark | thinking | outdoor | hood | night
 
+const PASSPORT_STORAGE_KEY = 'workshop:visitor-passport-v1';
+let passportState = (()=>{
+  try{return createPassportState(localStorage.getItem(PASSPORT_STORAGE_KEY));}
+  catch(e){return createPassportState();}
+})();
+function renderPassport(){
+  const progress=passportProgress(passportState);
+  const el=$('passportProgress');
+  if(el) el.innerHTML=`<strong>Visitor Passport</strong> · ${progress.completed} of ${progress.total} acts stamped`;
+  document.querySelectorAll('.journeyBeat[data-beat]').forEach(beat=>{
+    const stamped=Number.isFinite(passportState.stamps[beat.dataset.beat]);
+    beat.classList.toggle('stamped',stamped);
+    beat.setAttribute('aria-label',`${beat.querySelector('b')?.textContent || beat.dataset.beat}: ${stamped?'stamped':'not yet stamped'}`);
+  });
+}
+function recordPassportEvidence(event){
+  const previous=passportState;
+  const before=passportProgress(previous).completed;
+  passportState=recordPassportEvent(previous,event);
+  const after=passportProgress(passportState).completed;
+  try{localStorage.setItem(PASSPORT_STORAGE_KEY,JSON.stringify(passportState));}catch(e){}
+  renderPassport();
+  if(after>before && poster?.classList.contains('hide')){
+    const fresh=PASSPORT_ACTS.find(act=>!Number.isFinite(previous.stamps[act.id]) && Number.isFinite(passportState.stamps[act.id]));
+    msg(fresh ? `Passport stamped · ${fresh.label}` : 'Visitor Passport stamped');
+  }
+  return after>before;
+}
+function resetPassport(){
+  passportState=createPassportState();
+  try{localStorage.removeItem(PASSPORT_STORAGE_KEY);}catch(e){}
+  renderPassport();
+  msg('New visit started');
+}
+
 // UNIFIED INTERACTION REGISTRY (v113)
 // Portals, screens, windows, archive hotspots and artworks all register here.
 // Desktop click, keyboard Enter and mobile ENTER resolve the same centre target.
@@ -2826,6 +2894,7 @@ function getNearestInteractable({types=null}={}){
 function useInteractable(item, context={}){
   if(!interactionEnabled(item) || !item.onUse) return false;
   item.onUse(item, context);
+  recordPassportEvidence({kind:'interaction',room:item.room,type:item.type,id:item.id});
   return true;
 }
 function registerPortal(portal){
@@ -2954,6 +3023,14 @@ function msg(t){
 }
 let posterOpening = false;
 let worldReady = false;
+let worldFullyReady = false;
+const ENTRY_READY_PLACES = new Set(['warehouse','guernica','end-gallery','the-tunnel','waiting-room']);
+let animationStarted = false;
+function ensureAnimationStarted(){
+  if(animationStarted) return;
+  animationStarted = true;
+  animate();
+}
 function hidePoster(){ poster.classList.add('hide'); }
 // Grows a clip-path window on the door's own screen position, and fades
 // opacity, both driven by the same eased progress value the camera dolly
@@ -2977,6 +3054,8 @@ function beginPosterOpen(){
   if(!poster || poster.classList.contains('hide')) return;
   if(posterOpening || !worldReady) return;
   posterOpening = true;
+  recordPassportEvidence({kind:'enter',room:'gallery'});
+  ensureAnimationStarted();
   exitScreenControl();
   poster.classList.add('opening');
   poster.style.transition = 'none';
@@ -4085,6 +4164,8 @@ function updateHallWindow(dt){
 }
 
 function init(){
+  const initStarted=performance.now();
+  window.__workshopMetrics={initStarted,entryReady:0,fullyReady:0,built:[]};
   // Adaptive DPR (batch 127): desktop keeps the 1.32 cap; touch devices cap at
   // 1.15, and low-memory phones (<=4 GB) at 1.0 to protect load and framerate.
   const memGB = navigator.deviceMemory || 8;
@@ -4113,28 +4194,16 @@ function init(){
 
   camera = new THREE.PerspectiveCamera(fov, innerWidth/innerHeight, 0.08, 520);
   camera.position.copy(posterEntryPos);
-
   clock = new THREE.Clock();
 
+  // Threshold first: construct only the connected opening sequence before
+  // enabling ENTER. Distant districts are added one room per idle turn below.
   buildHall();
-  buildOutdoorSpace();
-  buildHood();
-  buildNightRoom();
-  buildStudio();
   buildTunnelPassage();
   addChannelScreens();
   buildTunnel();
   buildHub();
-  buildTheatre();
-  buildLaboratory();
-  buildMazeGarden();
-  buildMapGallery();
-  buildSparkToolsLab();
-  buildThinkingRoom();
   buildArtworks();
-  // applyBatch5NightAndEndGalleryPass disabled: end gallery now rebuilt directly in buildHub.
-  applyGlobalTuning();
-  buildParticles();
   buildCatalogue();
   buildArchiveData();
   loadNotes();
@@ -4146,11 +4215,42 @@ function init(){
   resize();
   applyRoomLighting();
   selectNearest(true);
+  renderPassport();
   worldReady = true;
   markEntryReady();
-  animate();
-  msg('Tunnel ready');
-  if(/[?&#]selftest/.test(location.href)) setTimeout(runWorkshopSelfTest, 900);
+  window.__workshopMetrics.entryReady=performance.now()-initStarted;
+  msg('Threshold ready');
+
+  const deferredBuilds=[
+    {id:'venue',build:buildTheatre},
+    {id:'laboratory',build:buildLaboratory},
+    {id:'experiment-garden',build:buildMazeGarden},
+    {id:'many-maps',build:buildMapGallery},
+    {id:'spark-tools',build:buildSparkToolsLab},
+    {id:'thinking-room',build:buildThinkingRoom},
+    {id:'sunset-lounge',build:buildNightRoom},
+    {id:'studio',build:buildStudio},
+    {id:'grove',build:buildOutdoorSpace},
+    {id:'headquarters',build:buildHood}
+  ];
+  runIdleBuildQueue(deferredBuilds,{
+    onTask:id=>window.__workshopMetrics.built.push(id),
+    onDone:()=>{
+      applyGlobalTuning();
+      buildParticles();
+      applyRoomLighting();
+      updateRoomUI();
+      window.__workshopMetrics.fullyReady=performance.now()-initStarted;
+      window.__workshopMetrics.resources=performance.getEntriesByType('resource').length;
+      worldFullyReady=true;
+      msg('All districts ready');
+      if(/[?&#]selftest/.test(location.href)) setTimeout(runWorkshopSelfTest, 120);
+    }
+  }).catch(err=>{
+    console.error('Deferred world build failed',err);
+    window.__lastInitError=err;
+    msg('A distant room failed to build');
+  });
 }
 
 // WORKSHOP SELF-TEST (batch 126) — open the file with ?selftest (or #selftest)
@@ -4277,7 +4377,11 @@ function runWorkshopSelfTest(){
   });
 
   Object.entries(roomLights).forEach(([room, ls])=>{
-    check(ls.length >= 1, `room lit · ${room}`, `${ls.length} lights`);
+    if(room === 'lab'){
+      check(ls.length === 0 && labArtworkLights.length >= 1, 'room deliberately dark · lab', `${ls.length} ambient · ${labArtworkLights.length} switched artwork lights`);
+    }else{
+      check(ls.length >= 1, `room lit · ${room}`, `${ls.length} lights`);
+    }
   });
 
   check(!!rpgAvatar && inScene(rpgAvatar), 'RPG avatar in scene', rpgAvatar?.name || 'missing');
@@ -4285,6 +4389,7 @@ function runWorkshopSelfTest(){
   check(!!$('viewModeBtn') && !!$('mobileViewBtn'), 'RPG view-mode controls present', `desktop ${!!$('viewModeBtn')}, mobile ${!!$('mobileViewBtn')}`);
 
   const failed = results.filter(r=>!r.ok);
+  window.__workshopSelfTestResults=results;
   if(console.table) console.table(results.map(r=>({ok:r.ok?'✓':'✗', test:r.test, detail:r.detail})));
   if(failed.length){
     console.warn(`WORKSHOP SELFTEST: ${failed.length} of ${results.length} checks FAILED`, failed);
@@ -6969,7 +7074,7 @@ function buildHood(){
     const cx=gx+sx*34,cz=gz-8+sz*22;
     const bed=new THREE.Mesh(new THREE.PlaneGeometry(48,25),new THREE.MeshStandardMaterial({color:0x816344,roughness:1}));bed.rotation.x=-Math.PI/2;bed.position.set(cx,.085,cz);scene.add(bed);
     for(const dz of [-11,11]){const h=new THREE.Mesh(new THREE.BoxGeometry(49,1.0,.9),hedgeMat);h.position.set(cx,.55,cz+dz);scene.add(h);}for(const dx of [-23.5,23.5]){const h=new THREE.Mesh(new THREE.BoxGeometry(.9,1.0,22),hedgeMat);h.position.set(cx+dx,.55,cz);scene.add(h);}
-    for(let i=0;i<18;i++){const bloom=new THREE.Mesh(new THREE.SphereGeometry(.18,10,8),new THREE.MeshStandardMaterial({color:['0xc94145','0xe9c856','0xe7d8ca'][i%3],roughness:.9}));bloom.position.set(cx-19+(i%6)*7.4,.25,cz-7+Math.floor(i/6)*7);scene.add(bloom);}
+    for(let i=0;i<18;i++){const bloom=new THREE.Mesh(new THREE.SphereGeometry(.18,10,8),new THREE.MeshStandardMaterial({color:[0xc94145,0xe9c856,0xe7d8ca][i%3],roughness:.9}));bloom.position.set(cx-19+(i%6)*7.4,.25,cz-7+Math.floor(i/6)*7);scene.add(bloom);}
   }
   function lake(cx,cz,sx,sz){const rim=new THREE.Mesh(new THREE.CircleGeometry(8.9,64),limestone);rim.rotation.x=-Math.PI/2;rim.scale.set(sx,sz,1);rim.position.set(cx,.085,cz);scene.add(rim);const water=new THREE.Mesh(new THREE.CircleGeometry(8.1,64),new THREE.MeshStandardMaterial({color:0x4d91a0,roughness:.18,metalness:.22,transparent:true,opacity:.88}));water.rotation.x=-Math.PI/2;water.scale.set(sx,sz,1);water.position.set(cx,.11,cz);scene.add(water);return water;}
   lake(gx-44,gz+18,1.8,1);lake(gx+44,gz+18,1.8,1);
@@ -12349,6 +12454,7 @@ function setPlayerLocation(room, pos, newYaw, label, newPitch=0){
   seatedAmphView = false;
   if($('playOverlay').classList.contains('show')) closePlayOverlay();
   currentRoom = room;
+  recordPassportEvidence({kind:'arrival',room});
   if(studioWallIframe && !studioMusicFollow){
     if(room !== 'studio'){
       studioPlaybackRequested=false;
@@ -12387,6 +12493,10 @@ function setPlayerLocation(room, pos, newYaw, label, newPitch=0){
   msg(label || 'Moved');
 }
 function fastTravel(place){
+  if(!worldFullyReady && !ENTRY_READY_PLACES.has(place)){
+    msg('Preparing this district…');
+    return;
+  }
   const hallMid = tunnelMouthZ + hallDepth*.50;
   const hallDoors = tunnelMouthZ + hallDepth*.50;
   const places = {
@@ -12511,6 +12621,7 @@ function travelTo(portal){
     overlay.classList.add('show');
     setTimeout(()=>{
       currentRoom = portal.room;
+      recordPassportEvidence({kind:'arrival',room:currentRoom});
       applyRoomLighting();
       if(studioWallIframe && !studioMusicFollow){
         if(currentRoom !== 'studio'){
@@ -12793,6 +12904,7 @@ $('archiveCloseBtn').onclick = closeArchive;
 if(archiveSearch) archiveSearch.addEventListener('input', ()=>renderArchive());
 $('mapBtn').onclick = ()=>toggleRoomsPanel();
 if($('fastMapCloseBtn')) $('fastMapCloseBtn').onclick=()=>toggleRoomsPanel(false);
+if($('passportResetBtn')) $('passportResetBtn').onclick=resetPassport;
 document.querySelectorAll('.fastMapBtn').forEach(btn=>btn.onclick=()=>fastTravel(btn.dataset.place));
 $('helpBtn').onclick = ()=>helpPanel.classList.toggle('open');
 if($('notesBtn')) $('notesBtn').onclick = openNotes;
@@ -13166,7 +13278,6 @@ function animate(){
       updateCameraRotation();
     }
     updateLookRay();
-    updateHallWindow(dt);
     if(currentRoom === 'gallery'){
       selectNearest(true);
     }
