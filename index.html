@@ -2615,9 +2615,9 @@ function regLight(room, ...ls){ if(!roomLights[room]) roomLights[room]=[]; ls.fo
 // now brighter than the old first boost, and the two boost steps move up with
 // it so the Lights button still has real headroom.
 const LIGHT_LEVELS = [
-  { label:'Lights',   mult:1.34, exp:1.20 },
-  { label:'Lights+',  mult:1.85, exp:1.34 },
-  { label:'Lights++', mult:2.45, exp:1.50 }
+  { label:'Lights',   mult:1.62, exp:1.32 },
+  { label:'Lights+',  mult:2.10, exp:1.46 },
+  { label:'Lights++', mult:2.70, exp:1.60 }
 ];
 let lightLevelIndex = 0;
 function applyLightBoost(){
@@ -2635,6 +2635,24 @@ function cycleLightBoost(){
   if(btn){ btn.textContent = lv.label; btn.classList.toggle('active', lightLevelIndex !== 0); }
   msg(lightLevelIndex === 0 ? 'Room lighting · normal' : `Room lighting · ${lv.label}`);
 }
+// Fog is per-room. Interiors keep the original deep navy falloff, but the
+// daylit exterior districts need a pale coastal haze instead. With one global
+// dark fog, everything more than ~150 m away in the Hood faded to near-black
+// while the sky and sea (which opt out of fog) stayed bright — so the far
+// scenery went dark and stopped against a luminous sky, which is exactly what
+// made the horizon read as the edge of the set.
+const ROOM_FOG = {
+  _default: { color:0x080b12, density:0.0078 },
+  outdoor:  { color:0xdce9ee, density:0.0021 },
+  hood:     { color:0xd2dfe4, density:0.0017 }
+};
+function applyRoomFog(){
+  if(typeof scene === 'undefined' || !scene || !scene.fog) return;
+  const key = isHoodRoom(currentRoom) ? 'hood' : (ROOM_FOG[currentRoom] ? currentRoom : '_default');
+  const f = ROOM_FOG[key];
+  scene.fog.color.setHex(f.color);
+  scene.fog.density = f.density;
+}
 function applyRoomLighting(){
   for(const r in roomLights) (roomLights[r]||[]).forEach(l=>{ if(l) l.visible = (r === currentRoom); });
   // The Lab artwork circuit is intentionally independent from normal room
@@ -2642,6 +2660,7 @@ function applyRoomLighting(){
   // the physical spotlight switch.
   setLabArtworkLighting();
   applyLightBoost();
+  applyRoomFog();
 }
 const screens = [];
 const archiveHotspots = [];
@@ -6225,17 +6244,59 @@ function hoodLiftTravel(room,mode='main'){
   const goingUp=hoodFloorY(room)>hoodFloorY(currentRoom);
   if(indicator){ indicator.classList.toggle('up',goingUp); indicator.classList.toggle('down',!goingUp); }
   animateHoodLiftDoors(currentRoom,false,mode);
+
+  // Travel now reads as travel. The car indicator steps through every floor it
+  // actually passes, and the journey lasts longer the further it goes, so a
+  // basement-to-penthouse run feels different from going up one level —
+  // previously every trip was one fixed pause over an instant teleport.
+  const ordered=(mode==='private'?HOOD_PRIVATE_FLOORS:HOOD_MAIN_FLOORS).slice().sort((a,b)=>a.y-b.y);
+  const fromIdx=ordered.findIndex(f=>f.id===currentRoom), toIdx=ordered.findIndex(f=>f.id===room);
+  const stops=(fromIdx<0||toIdx<0)?1:Math.max(1,Math.abs(toIdx-fromIdx));
+  const travelMs=reducedMotion?80:Math.min(2000,640+stops*250);
+  const codeEl=indicator?indicator.querySelector('.liftCode'):null;
+  const tickers=[];
+  if(codeEl && fromIdx>=0 && toIdx>=0){
+    const step=toIdx>fromIdx?1:-1;
+    for(let s=1;s<=stops;s++){
+      const passing=ordered[fromIdx+step*s];
+      tickers.push(setTimeout(()=>{ codeEl.textContent=passing.code; }, Math.round(travelMs*(s/stops)*.80)));
+    }
+  }
+
   const veil=$('fadeOverlay');
-  setTimeout(()=>{veil.classList.add('show');},reducedMotion?0:300);
+  setTimeout(()=>{veil.classList.add('show');},reducedMotion?0:Math.round(travelMs*.62));
   setTimeout(()=>{
+    tickers.forEach(clearTimeout);
     panel.classList.remove('show','travelling');
     const L=hoodLiftLayout; const privateStop=mode==='private';
     const px=privateStop?L.plx:L.lx, pz=privateStop?L.plz-3.25:L.lz-3.25;
     setPlayerLocation(room,new THREE.Vector3(px,hoodFloorY(room)+cameraHeight,pz),Math.PI,hoodFloorDefinition(room).label);
-    if(indicator){ indicator.classList.remove('up','down'); const codeEl=indicator.querySelector('.liftCode'); if(codeEl) codeEl.textContent=hoodFloorDefinition(room).code; }
+    if(indicator){ indicator.classList.remove('up','down'); if(codeEl) codeEl.textContent=hoodFloorDefinition(room).code; }
+    if(status)status.textContent=`${hoodFloorDefinition(room).label} · doors opening`;
+    liftChime();
     animateHoodLiftDoors(room,true,mode);
     setTimeout(()=>{animateHoodLiftDoors(room,false,mode);veil.classList.remove('show');},reducedMotion?60:430);
-  },reducedMotion?80:920);
+  },reducedMotion?80:travelMs);
+}
+// Two-tone arrival chime, synthesized so it costs no asset. The floor button
+// click is the user gesture that permits an AudioContext.
+let liftAudioCtx=null;
+function liftChime(){
+  if(reducedMotion) return;
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    liftAudioCtx=liftAudioCtx||new AC();
+    const t=liftAudioCtx.currentTime;
+    [988,1319].forEach((f,i)=>{
+      const o=liftAudioCtx.createOscillator(),g=liftAudioCtx.createGain(),at=t+i*.14;
+      o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(0,at);
+      g.gain.linearRampToValueAtTime(.14,at+.012);
+      g.gain.exponentialRampToValueAtTime(.0008,at+.52);
+      o.connect(g);g.connect(liftAudioCtx.destination);
+      o.start(at);o.stop(at+.56);
+    });
+  }catch(e){}
 }
 
 function buildHood(){
@@ -6265,6 +6326,14 @@ function buildHood(){
   const glass=new THREE.MeshPhysicalMaterial({color:0xcce8ee,roughness:.06,metalness:.02,transmission:.82,thickness:.08,transparent:true,opacity:.24,depthWrite:false,side:THREE.DoubleSide});
   const litGlass=new THREE.MeshPhysicalMaterial({color:0xd9f1f4,roughness:.04,metalness:0,transmission:.92,thickness:.05,transparent:true,opacity:.16,depthWrite:false,side:THREE.DoubleSide});
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(hw*2,hoodDepth),concrete);ground.rotation.x=-Math.PI/2;ground.position.set(x0,0,mid);ground.receiveShadow=true;scene.add(ground);
+  // Ground apron. The district floor is exactly the size of the district, so
+  // its edge was a hard line with open sky beyond — the single most "end of
+  // the set" thing in the Hood. This low-contrast apron carries the terrain
+  // far past the built area in every direction except seaward (its south edge
+  // stops just behind the ocean plane, so no land appears in front of the
+  // water) and simply dissolves into the coastal haze.
+  const apron=new THREE.Mesh(new THREE.PlaneGeometry(1200,1200),new THREE.MeshStandardMaterial({color:0x9fa79f,roughness:1,metalness:0}));
+  apron.rotation.x=-Math.PI/2;apron.position.set(x0,-.06,z0+590);scene.add(apron);
 
   // District sky: a high-resolution painted atmosphere with cloud depth,
   // warm coastal haze and a clear sun direction. It surrounds the Hood and is
@@ -6272,11 +6341,18 @@ function buildHood(){
   const hoodSkyCanvas=document.createElement('canvas');hoodSkyCanvas.width=2048;hoodSkyCanvas.height=1024;
   {
     const q=hoodSkyCanvas.getContext('2d'),g=q.createLinearGradient(0,0,0,1024);
-    g.addColorStop(0,'#3f86bc');g.addColorStop(.42,'#8fc6df');g.addColorStop(.72,'#e7d1b2');g.addColorStop(1,'#c68e69');q.fillStyle=g;q.fillRect(0,0,2048,1024);
+    // The stop at v=.50 is the horizon line, and it is deliberately the same
+    // colour as the Hood's fog (ROOM_FOG.hood). Distant geometry fades to the
+    // fog colour, so it now dissolves into the sky at exactly the right tone
+    // instead of ending against a differently-coloured band. Above that it
+    // deepens to real sky blue; below is muted and mostly hidden by ground.
+    g.addColorStop(0,'#2f6fa8');g.addColorStop(.30,'#6aa6cd');g.addColorStop(.46,'#b7d3e0');
+    g.addColorStop(.50,'#d2dfe4');g.addColorStop(.58,'#d6dcdc');g.addColorStop(1,'#b3b8b4');
+    q.fillStyle=g;q.fillRect(0,0,2048,1024);
     const sun=q.createRadialGradient(1550,235,10,1550,235,180);sun.addColorStop(0,'rgba(255,249,220,.98)');sun.addColorStop(.20,'rgba(255,228,175,.54)');sun.addColorStop(1,'rgba(255,210,160,0)');q.fillStyle=sun;q.fillRect(1320,5,460,460);
     let seed=913;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
     for(let i=0;i<42;i++){const x=rnd()*2048,y=80+rnd()*440,w=100+rnd()*330,h=24+rnd()*62;const cg=q.createRadialGradient(x,y,2,x,y,w*.55);cg.addColorStop(0,'rgba(255,255,255,.62)');cg.addColorStop(.48,'rgba(243,247,247,.28)');cg.addColorStop(1,'rgba(210,224,231,0)');q.save();q.scale(1,h/w);q.fillStyle=cg;q.beginPath();q.arc(x,y*w/h,w*.58,0,Math.PI*2);q.fill();q.restore();}
-    q.fillStyle='rgba(65,78,86,.20)';q.fillRect(0,785,2048,55);
+    
   }
   const hoodSkyTex=new THREE.CanvasTexture(hoodSkyCanvas);hoodSkyTex.colorSpace=THREE.SRGBColorSpace;
   hoodSky=new THREE.Mesh(new THREE.SphereGeometry(500,64,32),new THREE.MeshBasicMaterial({map:hoodSkyTex,side:THREE.BackSide,toneMapped:false,fog:false,depthWrite:false}));hoodSky.position.set(x0,72,mid);hoodSky.renderOrder=-100;scene.add(hoodSky);
@@ -6303,7 +6379,7 @@ function buildHood(){
 
   // Ocean horizon and project district.
   const seaC=document.createElement('canvas');seaC.width=1024;seaC.height=512;{const q=seaC.getContext('2d'),g=q.createLinearGradient(0,0,0,512);g.addColorStop(0,'#b7dceb');g.addColorStop(.42,'#efc7a2');g.addColorStop(.47,'#7aa7b5');g.addColorStop(1,'#244d5e');q.fillStyle=g;q.fillRect(0,0,1024,512);q.fillStyle='rgba(255,255,255,.54)';q.fillRect(0,242,1024,3);}
-  const seaTex=new THREE.CanvasTexture(seaC);seaTex.colorSpace=THREE.SRGBColorSpace;hoodHorizon=new THREE.Mesh(new THREE.PlaneGeometry(230,62),new THREE.MeshBasicMaterial({map:seaTex,toneMapped:false,fog:false,depthWrite:false}));hoodHorizon.position.set(x0,24,z0-7);hoodHorizon.renderOrder=-80;scene.add(hoodHorizon);
+  const seaTex=new THREE.CanvasTexture(seaC);seaTex.colorSpace=THREE.SRGBColorSpace;hoodHorizon=new THREE.Mesh(new THREE.PlaneGeometry(900,62),new THREE.MeshBasicMaterial({map:seaTex,toneMapped:false,fog:false,depthWrite:false}));hoodHorizon.position.set(x0,24,z0-7);hoodHorizon.renderOrder=-80;scene.add(hoodHorizon);
   function graffitiTexture(seed,word){const c=document.createElement('canvas');c.width=1024;c.height=512;const q=c.getContext('2d');q.fillStyle='#5c5b56';q.fillRect(0,0,1024,512);let r=seed*983+11;const rnd=()=>{r=Math.sin(r*12.9898)*43758.5453;return Math.abs(r)%1;};q.globalAlpha=.34;for(let i=0;i<170;i++){q.fillStyle=['#d64337','#258e9d','#e6bd45','#181719'][i%4];q.fillRect(rnd()*1024,rnd()*512,30+rnd()*180,4+rnd()*17);}q.globalAlpha=1;q.translate(512,275);q.rotate((seed-.5)*.14);q.textAlign='center';q.font='900 170px Arial Black';q.lineWidth=21;q.strokeStyle='#171719';q.strokeText(word,0,0);q.fillStyle=seed>.5?'#e64b3d':'#e9cf45';q.fillText(word,0,0);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;}
   for(const side of [-1,1])for(let i=0;i<5;i++){
     const h=12+(i%3)*4.1,w=15+(i%2)*4,d=13;const bx=x0+side*(31+i*4.3),bz=z0+22+i*14.2;
