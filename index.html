@@ -4163,7 +4163,13 @@ function runWorkshopSelfTest(){
   const knownRooms = new Set(Object.keys(roomLights));
 
   check(!!hoodSky && hoodSky.material?.fog === false, 'Hood sky bypasses global fog', hoodSky?.material?.fog);
-  check(!!hoodHorizon && hoodHorizon.material?.fog === false, 'Hood ocean horizon bypasses global fog', hoodHorizon?.material?.fog);
+  // The ocean is now a horizontal sea plane rather than a vertical billboard,
+  // so it deliberately DOES take fog — that is how the water dissolves into
+  // the coastal haze at the horizon. A backdrop had to opt out; a real surface
+  // must opt in. The sky still opts out (checked above).
+  check(!!hoodHorizon && hoodHorizon.material?.fog !== false, 'Hood ocean takes the coastal haze', hoodHorizon?.material?.fog);
+  check(!!hoodHorizon && Math.abs(hoodHorizon.rotation.x + Math.PI/2) < .01, 'Hood ocean lies flat', hoodHorizon?.rotation?.x?.toFixed(3));
+  check(!!hoodSky && hoodSky.geometry?.parameters?.radius >= 2000, 'Hood sky dome encloses the terrain apron', hoodSky?.geometry?.parameters?.radius);
   check(!!hoodCaveWallScreen && screens.includes(hoodCaveWallScreen), 'Hood wide projection registered', hoodCaveWallScreen?.title || 'missing');
 
   // Every projection wall must actually be drivable by the remote: it needs an
@@ -6215,11 +6221,10 @@ function buildOutdoorSpace(){
     const portalLight=new THREE.PointLight(0xd7f2ff,2.8,18,1.5);portalLight.position.set(0,3.2,1.6);portal.add(portalLight);regLight('outdoor',portalLight);
     registerPortal({
       mesh:field, room:'hood', fromRoom:'outdoor', label:'Headquarters',
-      // Step out onto the civic axis facing due north (yaw=PI gives forward
-      // (0,+1) under camera.rotation.y=yaw): straight up the shopfront street
-      // to the warehouse entrance, tower above it. The sightline runs between
-      // the two housing rows rather than behind them.
-      targetPos:new THREE.Vector3(hoodOrigin.x, cameraHeight, hoodOrigin.z+50),
+      // Land just north of the gate on the entrance axis, facing due north
+      // (yaw=PI gives forward (0,+1) under camera.rotation.y=yaw). The
+      // warehouse entrance is 10 m ahead at z0+94, so it fills the view.
+      targetPos:new THREE.Vector3(hoodOrigin.x+12, cameraHeight, hoodOrigin.z+84),
       targetYaw:Math.PI
     });
   }
@@ -6386,7 +6391,16 @@ function buildHood(){
     
   }
   const hoodSkyTex=new THREE.CanvasTexture(hoodSkyCanvas);hoodSkyTex.colorSpace=THREE.SRGBColorSpace;
-  hoodSky=new THREE.Mesh(new THREE.SphereGeometry(500,64,32),new THREE.MeshBasicMaterial({map:hoodSkyTex,side:THREE.BackSide,toneMapped:false,fog:false,depthWrite:false}));hoodSky.position.set(x0,72,mid);hoodSky.renderOrder=-100;scene.add(hoodSky);
+  // Radius 500 was smaller than the ground it had to cover: the terrain apron
+  // reaches ~1005 m from here, so the last 500 m of ground stood OUTSIDE the
+  // dome against raw scene background, and the dome's own lower edge read as a
+  // huge dark ball sitting on the horizon. At radius 2200 every piece of
+  // ground is comfortably inside it.
+  //
+  // The centre also drops from y=72 to y=0. The painted horizon sits on the
+  // sphere's equator, so at the old height it rendered ~8 degrees above the
+  // true ground horizon — a permanent mismatched band. At y=0 the two line up.
+  hoodSky=new THREE.Mesh(new THREE.SphereGeometry(2200,64,32),new THREE.MeshBasicMaterial({map:hoodSkyTex,side:THREE.BackSide,toneMapped:false,fog:false,depthWrite:false}));hoodSky.position.set(x0,0,mid);hoodSky.renderOrder=-100;scene.add(hoodSky);
 
   // A coherent industrial-public realm: broad pavements, planted rain beds,
   // utility lights and distant silhouettes rather than an empty grey plane.
@@ -6408,12 +6422,24 @@ function buildHood(){
   // The approach road now runs east into the relocated gate on the civic axis,
   // instead of north-south past the district's western edge where the gate
   // used to stand.
-  const road=new THREE.Mesh(new THREE.PlaneGeometry(96,8),gravel);road.rotation.x=-Math.PI/2;road.position.set(x0-48,.035,z0+44);scene.add(road);
-  for(let i=0;i<42;i++){const stone=new THREE.Mesh(new THREE.DodecahedronGeometry(.10+Math.random()*.17,0),new THREE.MeshStandardMaterial({color:i%3?0x9b8c75:0x665d50,roughness:1}));stone.position.set(x0-96+Math.random()*96,.08,z0+40+Math.random()*8);scene.add(stone);}
+  const road=new THREE.Mesh(new THREE.PlaneGeometry(110,8),gravel);road.rotation.x=-Math.PI/2;road.position.set(x0-43,.035,z0+78);scene.add(road);
+  for(let i=0;i<42;i++){const stone=new THREE.Mesh(new THREE.DodecahedronGeometry(.10+Math.random()*.17,0),new THREE.MeshStandardMaterial({color:i%3?0x9b8c75:0x665d50,roughness:1}));stone.position.set(x0-98+Math.random()*110,.08,z0+74+Math.random()*8);scene.add(stone);}
 
   // Ocean horizon and project district.
-  const seaC=document.createElement('canvas');seaC.width=1024;seaC.height=512;{const q=seaC.getContext('2d'),g=q.createLinearGradient(0,0,0,512);g.addColorStop(0,'#b7dceb');g.addColorStop(.42,'#efc7a2');g.addColorStop(.47,'#7aa7b5');g.addColorStop(1,'#244d5e');q.fillStyle=g;q.fillRect(0,0,1024,512);q.fillStyle='rgba(255,255,255,.54)';q.fillRect(0,242,1024,3);}
-  const seaTex=new THREE.CanvasTexture(seaC);seaTex.colorSpace=THREE.SRGBColorSpace;hoodHorizon=new THREE.Mesh(new THREE.PlaneGeometry(900,62),new THREE.MeshBasicMaterial({map:seaTex,toneMapped:false,fog:false,depthWrite:false}));hoodHorizon.position.set(x0,24,z0-7);hoodHorizon.renderOrder=-80;scene.add(hoodHorizon);
+  // (The painted sea+sky gradient canvas is gone with the billboard it fed;
+  // the horizontal ocean below takes its colour from the sky and the haze.)
+  // The ocean used to be a 62 m tall vertical billboard standing 7 m off the
+  // district edge — from anywhere in the Hood that is a wall of sea filling
+  // ~57 degrees of view, not a horizon. It is now a real horizontal sea plane
+  // running 1400 m south from the coastline to meet the sky, and it takes fog
+  // (the billboard could not, since a flat backdrop must not fade) so the
+  // water dissolves into the same coastal haze as the land.
+  hoodHorizon=new THREE.Mesh(new THREE.PlaneGeometry(2600,1400),new THREE.MeshStandardMaterial({color:0x6f97a8,roughness:.42,metalness:.05}));
+  hoodHorizon.rotation.x=-Math.PI/2;hoodHorizon.position.set(x0,-.08,z0-710);hoodHorizon.renderOrder=-80;scene.add(hoodHorizon);
+  // A low band of surf where the water meets the land edge, so the coastline
+  // is a place rather than a seam.
+  const surf=new THREE.Mesh(new THREE.PlaneGeometry(2600,7),new THREE.MeshBasicMaterial({color:0xdCEaEa,transparent:true,opacity:.5,depthWrite:false}));
+  surf.rotation.x=-Math.PI/2;surf.position.set(x0,-.03,z0-12);scene.add(surf);
   function graffitiTexture(seed,word){const c=document.createElement('canvas');c.width=1024;c.height=512;const q=c.getContext('2d');q.fillStyle='#5c5b56';q.fillRect(0,0,1024,512);let r=seed*983+11;const rnd=()=>{r=Math.sin(r*12.9898)*43758.5453;return Math.abs(r)%1;};q.globalAlpha=.34;for(let i=0;i<170;i++){q.fillStyle=['#d64337','#258e9d','#e6bd45','#181719'][i%4];q.fillRect(rnd()*1024,rnd()*512,30+rnd()*180,4+rnd()*17);}q.globalAlpha=1;q.translate(512,275);q.rotate((seed-.5)*.14);q.textAlign='center';q.font='900 170px Arial Black';q.lineWidth=21;q.strokeStyle='#171719';q.strokeText(word,0,0);q.fillStyle=seed>.5?'#e64b3d':'#e9cf45';q.fillText(word,0,0);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;}
   for(const side of [-1,1])for(let i=0;i<5;i++){
     const h=12+(i%3)*4.1,w=15+(i%2)*4,d=13;const bx=x0+side*(31+i*4.3),bz=z0+22+i*14.2;
@@ -6476,12 +6502,14 @@ function buildHood(){
 
   // Return portal: broad, luminous and placed clear of every sightline.
   {
-    // The gate sits on the civic axis at the foot of the street, facing north,
-    // so stepping through it puts the warehouse entrance dead ahead at the end
-    // of the street with the tower above it. It used to stand out on the west
-    // approach road at x0-72, behind the housing row — from there every view
-    // was of the backs of those buildings.
-    const px0=x0,pz0=z0+44,portal=new THREE.Group();portal.position.set(px0,0,pz0);scene.add(portal);
+    // The gate stands directly in front of the warehouse's main entrance,
+    // on the entrance's own axis (wx = x0+12, not the street's x0) and 16 m
+    // short of it, facing north. Stepping through puts the GROUND ZERO portal
+    // and its canopy filling the view with the tower above. Earlier positions
+    // put it out on the west approach road (nothing but the backs of the
+    // housing row) and then at the far foot of the street (the entrance was
+    // there, but 50 m away and small).
+    const px0=x0+12,pz0=z0+78,portal=new THREE.Group();portal.position.set(px0,0,pz0);scene.add(portal);
     const pStone=new THREE.MeshStandardMaterial({color:0xb9ad98,roughness:.76,metalness:.04});
     const pMetal=new THREE.MeshStandardMaterial({color:0x20262a,roughness:.32,metalness:.68});
     for(const sx of [-1,1]){const pier=new THREE.Mesh(new THREE.BoxGeometry(1.10,7.1,1.5),pStone);pier.position.set(sx*4.4,3.55,0);portal.add(pier);}
