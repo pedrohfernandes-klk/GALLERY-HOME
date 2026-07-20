@@ -10312,10 +10312,10 @@ function buildStudio(){
   const lampShade=new THREE.Mesh(new THREE.CylinderGeometry(.09,.16,.18,14),cabMat); lampShade.position.set(x0+8.18,1.62,z0+17.42); lampShade.rotation.z=.6; scene.add(lampShade);
   const lampGlow=new THREE.PointLight(0xffd9a0,1.15,5.5,1.8); lampGlow.position.set(x0+8.1,1.55,z0+17.3); scene.add(lampGlow); regLight('studio',lampGlow);
   const deskGlow=new THREE.PointLight(0x9d6de2,.85,7,1.9); deskGlow.position.set(x0+7,1.9,z0+17); scene.add(deskGlow); regLight('studio',deskGlow);
-  const deskSign=new THREE.Mesh(new THREE.PlaneGeometry(1.5,.9),new THREE.MeshBasicMaterial({map:makeSignTexture('MIX','sequence · samples · record'),toneMapped:false}));
+  const deskSign=new THREE.Mesh(new THREE.PlaneGeometry(1.5,.9),new THREE.MeshBasicMaterial({map:makeSignTexture('MIX','8 tracks · decks · samples · record'),toneMapped:false}));
   deskSign.position.set(x0+7,1.62,z0+16.38); deskSign.rotation.x=-.34; scene.add(deskSign);
   registerInteractable({type:'maker',room:'studio',mesh:deskSign,label:'Studio mixing desk',hintId:'studio-maker',priority:5,
-    hintText:'A working sequencer with drum synthesis, your own samples, and the room’s YouTube wall as a backing source.',prompt:()=>'Open the mixing desk',onUse:openStudioMaker});
+    hintText:'A full workstation with instant mixes, dual sample decks, voice recording, effects, export and the Studio YouTube wall.',prompt:()=>'Open the mixing desk',onUse:openStudioMaker});
 
   studioFX = {tiles:null, tileN:0, speakerRings, orbs, ball, tileTimer:0};
 }
@@ -11865,463 +11865,117 @@ function openGardenMaker(){
   }
   panel.style.display='grid';
 }
-// Small, dependency-free sound-making desk for The Studio — same pattern as
-// openGardenMaker (a full-screen in-memory tool, nothing persisted until the
-// visitor explicitly exports), applied to a 16-step sequencer instead of a
-// canvas. Recording uses MediaRecorder against a MediaStreamDestination fed
-// by the same master gain everything is heard through, so the exported clip
-// is exactly what was audible, not a separate offline render.
+// The Studio workstation lives in its own lightweight same-origin document.
+// Keeping the iframe mounted while this overlay is hidden lets Web Audio and
+// recording continue as the visitor walks; the host bridge supplies compact
+// transport controls and can move the desk's YouTube source to the room wall.
 function openStudioMaker(){
   if(document.pointerLockElement) document.exitPointerLock();
   let panel=$('studioMakerPanel');
+  let mini=$('studioDeskMini');
+
   if(!panel){
-    panel=document.createElement('div'); panel.id='studioMakerPanel';
-    panel.style.cssText='position:fixed;inset:0;z-index:12000;background:radial-gradient(circle at 50% -10%,rgba(157,109,226,.14),transparent 46%),linear-gradient(180deg,#0d0a13,#0a070f 60%,#0d0a13);display:grid;grid-template-rows:auto auto 1fr;padding:18px;gap:14px;color:#f1e8ff;font:13px Arial,sans-serif;overflow:auto';
-    panel.innerHTML=`
-      <style>
-        .djConsole{display:grid;grid-template-columns:1fr 250px 1fr;gap:12px;align-items:stretch}
-        .djDeck{border:1px solid #2e2540;border-radius:14px;padding:14px;background:linear-gradient(180deg,#1a1526,#121019);display:grid;gap:11px;justify-items:center;align-content:start}
-        .djDeckHead{font:800 11px/1 Arial,sans-serif;letter-spacing:.3em;color:#f5dfba}
-        .djJog{width:150px;height:150px;border-radius:50%;position:relative;
-          background:radial-gradient(circle at 42% 34%,#4a4550,#211d29 62%,#15121c);
-          border:3px solid #35304a;box-shadow:0 10px 26px #000,inset 0 2px 6px rgba(255,255,255,.10)}
-        .djJog::after{content:"";position:absolute;inset:30px;border-radius:50%;background:radial-gradient(circle at 40% 32%,#2b2636,#17141f);border:1px solid #3a3450}
-        .djJogMark{position:absolute;top:7px;left:50%;width:4px;height:22px;margin-left:-2px;border-radius:2px;background:#ff4d8d;box-shadow:0 0 10px rgba(255,77,141,.85);z-index:2}
-        .djJog.spin{animation:djSpin 1.9s linear infinite}
-        @keyframes djSpin{to{transform:rotate(360deg)}}
-        .djRow{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:center}
-        .djTransport{appearance:none;cursor:pointer;min-width:52px;padding:9px 12px;border-radius:8px;font:800 11px/1 Arial,sans-serif;letter-spacing:.08em;
-          color:#f1e8ff;background:linear-gradient(180deg,#2a2438,#1b1726);border:1px solid #443a63}
-        .djTransport.on{background:linear-gradient(180deg,#ff4d8d,#c62f6a);border-color:#ff7fae;color:#12070d;box-shadow:0 0 16px rgba(255,77,141,.6)}
-        .djPads{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;width:100%}
-        .djPad{appearance:none;cursor:pointer;aspect-ratio:1;border-radius:8px;font:800 10px/1 Arial,sans-serif;color:#ffd9e8;
-          background:linear-gradient(180deg,#3a1e2e,#26141f);border:1px solid #6d3350;transition:box-shadow .08s,background .08s}
-        .djPad:hover{border-color:#ff4d8d}
-        .djPad.hit{background:linear-gradient(180deg,#ff5f9a,#d8377a);color:#180a10;box-shadow:0 0 18px rgba(255,77,141,.85)}
-        .djFader{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:3px;background:#332b48;outline:none}
-        .djFader::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:26px;border-radius:4px;background:linear-gradient(180deg,#e8e2f2,#9d93b5);border:1px solid #0c0a12;cursor:pointer}
-        .djLabel{font:700 9px/1 Arial,sans-serif;letter-spacing:.16em;color:#9c90bd;text-transform:uppercase}
-        .djMixer{border:1px solid #2e2540;border-radius:14px;padding:14px;background:linear-gradient(180deg,#141120,#0e0c16);display:grid;gap:10px;align-content:start}
-        .djEqRow{display:grid;grid-template-columns:34px 1fr 1fr;gap:8px;align-items:center}
-        .djKnob{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:3px;background:#332b48;outline:none}
-        .djKnob::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 36% 30%,#f3ecff,#8d80ad);border:1px solid #0c0a12;cursor:pointer}
-        .djXf{margin-top:4px;padding-top:10px;border-top:1px solid #2a2340}
-        @media(max-width:900px){.djConsole{grid-template-columns:1fr}}
-      </style>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;border:1px solid #2e2540;border-radius:12px;padding:12px 16px;background:linear-gradient(180deg,#171224,#120e1c)">
-        <b style="font:26px Georgia,serif;letter-spacing:.06em;margin-right:8px;color:#f5dfba">STUDIO MIXING DESK</b>
-        <label style="display:flex;gap:6px;align-items:center">wave <select data-ctl="wave"><option value="sine">sine</option><option value="triangle" selected>triangle</option><option value="square">square</option><option value="sawtooth">saw</option></select></label>
-        <label style="display:flex;gap:6px;align-items:center">tempo <input data-ctl="tempo" type="range" min="60" max="200" value="112"> <span data-out="tempo">112</span> bpm</label>
-        <label style="display:flex;gap:6px;align-items:center">volume <input data-ctl="vol" type="range" min="0" max="100" value="70"></label>
-        <button data-act="play">PLAY</button><button data-act="clear">CLEAR</button><button data-act="record">&#9679; RECORD</button>
-        <button data-act="close" style="margin-left:auto">CLOSE</button>
-      </div>
-      <div class="djConsole">
-        <div class="djDeck" data-deck="a">
-          <div class="djDeckHead">DECK A</div>
-          <div class="djJog" data-jog="a"><span class="djJogMark"></span></div>
-          <div class="djRow">
-            <button class="djTransport" data-deckplay="a">&#9654; PLAY</button>
-            <button class="djTransport" data-deckcue="a">CUE</button>
-            <select data-decksrc="a"><option value="0">S1</option><option value="1">S2</option><option value="2">S3</option><option value="3">S4</option></select>
-          </div>
-          <div style="width:100%"><div class="djLabel">tempo <span data-out="rate-a">100%</span></div><input class="djFader" data-decktempo="a" type="range" min="70" max="130" value="100"></div>
-          <div class="djPads">
-            <button class="djPad" data-pad="a0">S1</button><button class="djPad" data-pad="a1">S2</button>
-            <button class="djPad" data-pad="a2">S3</button><button class="djPad" data-pad="a3">S4</button>
-          </div>
-        </div>
-        <div class="djMixer">
-          <div class="djLabel" style="text-align:center;letter-spacing:.24em;color:#f5dfba">MIXER</div>
-          <div class="djEqRow"><span class="djLabel">high</span><input class="djKnob" data-eq="a-high" type="range" min="-24" max="12" value="0"><input class="djKnob" data-eq="b-high" type="range" min="-24" max="12" value="0"></div>
-          <div class="djEqRow"><span class="djLabel">mid</span><input class="djKnob" data-eq="a-mid" type="range" min="-24" max="12" value="0"><input class="djKnob" data-eq="b-mid" type="range" min="-24" max="12" value="0"></div>
-          <div class="djEqRow"><span class="djLabel">low</span><input class="djKnob" data-eq="a-low" type="range" min="-24" max="12" value="0"><input class="djKnob" data-eq="b-low" type="range" min="-24" max="12" value="0"></div>
-          <div class="djEqRow" style="margin-top:6px"><span class="djLabel">vol</span><input class="djFader" data-deckvol="a" type="range" min="0" max="100" value="80"><input class="djFader" data-deckvol="b" type="range" min="0" max="100" value="80"></div>
-          <div class="djXf">
-            <div class="djLabel" style="text-align:center">crossfader &nbsp;A &#8596; B</div>
-            <input class="djFader" data-ctl="xfade" type="range" min="0" max="100" value="50" style="margin-top:7px">
-          </div>
-        </div>
-        <div class="djDeck" data-deck="b">
-          <div class="djDeckHead">DECK B</div>
-          <div class="djJog" data-jog="b"><span class="djJogMark"></span></div>
-          <div class="djRow">
-            <button class="djTransport" data-deckplay="b">&#9654; PLAY</button>
-            <button class="djTransport" data-deckcue="b">CUE</button>
-            <select data-decksrc="b"><option value="1">S2</option><option value="0">S1</option><option value="2">S3</option><option value="3">S4</option></select>
-          </div>
-          <div style="width:100%"><div class="djLabel">tempo <span data-out="rate-b">100%</span></div><input class="djFader" data-decktempo="b" type="range" min="70" max="130" value="100"></div>
-          <div class="djPads">
-            <button class="djPad" data-pad="b0">S1</button><button class="djPad" data-pad="b1">S2</button>
-            <button class="djPad" data-pad="b2">S3</button><button class="djPad" data-pad="b3">S4</button>
-          </div>
-        </div>
-      </div>
-      <div style="min-height:0;display:grid;grid-template-columns:1fr 275px;gap:14px;align-items:start">
-        <div style="display:grid;place-items:center;min-width:0;overflow:auto">
-          <div id="studioMakerGrid" style="display:grid;gap:4px;background:linear-gradient(180deg,#1c1528,#161022);padding:16px;border-radius:12px;border:1px solid #2e2540;box-shadow:0 20px 70px #000"></div>
-        </div>
-        <div id="studioMakerCrate" style="display:grid;gap:10px;align-content:start;border:1px solid #2e2540;border-radius:12px;padding:14px;background:linear-gradient(180deg,#151021,#100c1a)">
-          <b style="font:15px Georgia,serif;letter-spacing:.14em;color:#f5dfba">SAMPLE CRATE</b>
-          <div style="font-size:11px;color:#b9aed4;line-height:1.5">Load your own audio into the four sample lanes (S1&ndash;S4). Files stay in memory &mdash; nothing uploads anywhere.</div>
-          <button data-act="loadfiles">LOAD AUDIO FILES&hellip;</button>
-          <input data-ctl="files" type="file" accept="audio/*" multiple style="display:none">
-          <div style="display:flex;gap:6px"><input data-ctl="url" type="url" placeholder="direct audio URL&hellip;" style="flex:1;min-width:0;background:#0d0a14;border:1px solid #3a2f52;border-radius:6px;color:#f1e8ff;padding:7px 9px"><button data-act="loadurl">FETCH</button></div>
-          <div data-out="slots" style="display:grid;gap:4px;font-size:11px;color:#cfc4e6"></div>
-          <b style="font:13px Georgia,serif;letter-spacing:.14em;color:#f5dfba;margin-top:4px">FIND SAMPLES</b>
-          <div style="font-size:11px;color:#b9aed4;line-height:1.5">Free &amp; public-domain libraries &mdash; download there, then load the file here.</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button data-url="https://archive.org/details/audio">archive.org</button>
-            <button data-url="https://freesound.org">freesound</button>
-            <button data-url="https://commons.wikimedia.org/wiki/Category:Audio_files">wikimedia</button>
-            <button data-url="https://sound-effects.bbcrewind.co.uk">bbc sfx</button>
-          </div>
-          <b style="font:13px Georgia,serif;letter-spacing:.14em;color:#f5dfba;margin-top:4px">RECORD VOICE</b>
-          <div style="font-size:11px;color:#b9aed4;line-height:1.5">Record your voice or any microphone input straight into the next sample lane, then sequence it.</div>
-          <button data-act="recvoice">&#127908; REC VOICE</button>
-          <b style="font:13px Georgia,serif;letter-spacing:.14em;color:#f5dfba;margin-top:4px">BACKING &middot; THE WALL</b>
-          <div style="font-size:11px;color:#b9aed4;line-height:1.5">Send YouTube to the Studio's video wall and jam over it.</div>
-          <div style="display:flex;gap:6px"><input data-ctl="yt" type="url" placeholder="YouTube link&hellip;" style="flex:1;min-width:0;background:#0d0a14;border:1px solid #3a2f52;border-radius:6px;color:#f1e8ff;padding:7px 9px"><button data-act="towall">TO WALL</button></div>
-        </div>
-      </div>`;
-    document.body.appendChild(panel);
-    // The deck transports and performance pads carry their own hardware styling
-    // from the stylesheet above, so they are excluded from this blanket restyle
-    // (inline cssText would otherwise beat the class rules and flatten them).
-    panel.querySelectorAll('button:not(.djPad):not(.djTransport)').forEach(b=>b.style.cssText='border:1px solid #9d6de2;background:#211b30;color:#f1e8ff;padding:8px 11px;border-radius:6px;cursor:pointer;font-size:11px;letter-spacing:.06em');
+    const style=document.createElement('style');
+    style.id='studioDeskHostStyles';
+    style.textContent=`
+      #studioMakerPanel{position:fixed;inset:0;z-index:12000;background:#d8d2c7;display:block;opacity:0;pointer-events:none;transform:translateX(-110vw);transition:opacity .18s ease,transform 0s linear .2s}
+      #studioMakerPanel.open{opacity:1;pointer-events:auto;transform:none;transition:opacity .18s ease}
+      #studioMakerPanel iframe{display:block;width:100%;height:100%;border:0;background:#d8d2c7}
+      #studioDeskMini{position:fixed;right:18px;bottom:82px;z-index:58;display:none;align-items:center;gap:7px;width:min(500px,calc(100vw - 36px));padding:9px 10px 9px 14px;border:1px solid rgba(214,165,94,.38);border-radius:15px;background:rgba(24,25,24,.94);color:#f4f1e9;box-shadow:0 18px 55px rgba(0,0,0,.42);backdrop-filter:blur(14px)}
+      #studioDeskMini.show{display:flex}
+      #studioDeskMini .deskMiniText{min-width:0;flex:1}
+      #studioDeskMini small{display:block;color:#d6a55e;font-size:8px;font-weight:900;letter-spacing:.17em;text-transform:uppercase}
+      #studioDeskMini strong{display:block;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+      #studioDeskMini button{border:1px solid rgba(244,241,233,.24);border-radius:999px;background:transparent;color:#f4f1e9;padding:7px 10px;font-size:9px;font-weight:850;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+      #studioDeskMini button:hover,#studioDeskMini button.active{border-color:#d6a55e;background:#d6a55e;color:#171717}
+      #studioDeskMini .recording{border-color:#dc6f5e;background:#dc6f5e;color:#fff}
+      @media(max-width:920px){#studioDeskMini{right:10px;bottom:calc(218px + env(safe-area-inset-bottom));width:calc(100vw - 20px);flex-wrap:wrap}#studioDeskMini .deskMiniText{flex-basis:100%}#studioDeskMini button{flex:1}}
+    `;
+    document.head.appendChild(style);
 
-    // ROW MODEL — three sections sharing one 16-step timeline:
-    // 8 synthesized drum lanes, 6 melodic lanes, 4 user-sample lanes
-    // (loaded from files, a URL, or the microphone).
-    const STEPS=16;
-    const NOTES=[523.25,466.16,392.00,349.23,293.66,261.63];
-    const NOTE_NAMES=['C5','A#4','G4','F4','D4','C4'];
-    const DRUM_LABELS=['KICK','SNARE','HAT','OPEN HAT','CLAP','TOM','RIM','COWBELL'];
-    const ROWS=[
-      ...DRUM_LABELS.map((label,i)=>({kind:'drum', idx:i, label, on:'#e0a45c'})),
-      ...NOTES.map((f,i)=>({kind:'note', freq:f, label:NOTE_NAMES[i], on:'#c76bff'})),
-      ...[0,1,2,3].map(i=>({kind:'sample', idx:i, label:'S'+(i+1)+' · empty', on:'#6fc2a0'}))
-    ];
-    const grid=panel.querySelector('#studioMakerGrid');
-    grid.style.gridTemplateColumns=`96px repeat(${STEPS},26px)`;
-    const cells=[], rowMuted=ROWS.map(()=>false), rowLabelEls=[];
-    ROWS.forEach((rowDef,row)=>{
-      const lab=document.createElement('div');
-      lab.style.cssText='display:flex;align-items:center;gap:5px;height:26px;font-size:10px;letter-spacing:.08em;color:#cfc4e6;white-space:nowrap;overflow:hidden';
-      const mute=document.createElement('span');
-      mute.textContent='M';
-      mute.style.cssText='flex:none;width:16px;height:16px;display:grid;place-items:center;border:1px solid #3a2f52;border-radius:4px;font-size:9px;cursor:pointer;color:#8f82ad';
-      mute.onclick=()=>{ rowMuted[row]=!rowMuted[row]; mute.style.background=rowMuted[row]?'#c75454':''; mute.style.color=rowMuted[row]?'#fff':'#8f82ad'; };
-      const name=document.createElement('span'); name.textContent=rowDef.label;
-      lab.appendChild(mute); lab.appendChild(name); grid.appendChild(lab); rowLabelEls.push(name);
-      for(let col=0;col<STEPS;col++){
-        const cell=document.createElement('div');
-        const beatShade=(col%8<4)?'#2b2340':'#251d38';
-        cell.style.cssText=`width:26px;height:26px;border-radius:4px;background:${beatShade};cursor:pointer;border:1px solid #3a2f52;transition:outline .05s`;
-        cell.dataset.on='0'; cell.dataset.off=beatShade;
-        cell.onclick=()=>{const on=cell.dataset.on==='1';cell.dataset.on=on?'0':'1';cell.style.background=on?cell.dataset.off:rowDef.on;};
-        grid.appendChild(cell);
-        cells.push({cell,row,col,def:rowDef});
-      }
-    });
+    panel=document.createElement('div');
+    panel.id='studioMakerPanel';
+    panel.setAttribute('role','dialog');
+    panel.setAttribute('aria-label','Studio Mixing Desk');
+    panel.setAttribute('aria-modal','true');
+    const frame=document.createElement('iframe');
+    frame.id='studioMakerFrame';
+    frame.title='Studio Mixing Desk';
+    frame.src='assets/apps/studio-mixing-desk.html';
+    frame.allow='autoplay; microphone; encrypted-media; picture-in-picture';
+    frame.referrerPolicy='strict-origin-when-cross-origin';
+    panel.appendChild(frame);
 
-    let audioCtx=null, master=null, dest=null, recorder=null, chunks=[];
-    let playing=false, timer=null, step=0, noiseBuf=null;
-    const sampleBufs=[null,null,null,null];
-    let nextSlot=0;
-    let micRec=null, micStream=null, micChunks=[], voiceN=0;
-    const waveSel=panel.querySelector('[data-ctl=wave]');
-    const tempoInp=panel.querySelector('[data-ctl=tempo]');
-    const volInp=panel.querySelector('[data-ctl=vol]');
-    const tempoOut=panel.querySelector('[data-out=tempo]');
-    const slotsOut=panel.querySelector('[data-out=slots]');
-    const fileInp=panel.querySelector('[data-ctl=files]');
-    tempoInp.oninput=()=>{tempoOut.textContent=tempoInp.value;};
+    mini=document.createElement('aside');
+    mini.id='studioDeskMini';
+    mini.setAttribute('aria-live','polite');
+    mini.innerHTML=`<div class="deskMiniText"><small>Studio desk · playback continues</small><strong data-desk-title>Bureaucratic Funk · ready</strong></div><button data-desk-action="toggle" type="button">Play</button><button data-desk-action="record" type="button">Record</button><button data-desk-action="open" type="button">Desk</button><button data-desk-action="stop" type="button">Stop</button>`;
 
-    function ensureAudio(){
-      if(audioCtx) return;
-      audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-      master=audioCtx.createGain(); master.gain.value=(+volInp.value)/100;
-      master.connect(audioCtx.destination);
-      dest=audioCtx.createMediaStreamDestination();
-      master.connect(dest);
-    }
-    volInp.oninput=()=>{if(master) master.gain.value=(+volInp.value)/100;};
+    document.body.append(panel,mini);
 
-    function noise(){
-      if(noiseBuf) return noiseBuf;
-      noiseBuf=audioCtx.createBuffer(1,audioCtx.sampleRate,audioCtx.sampleRate);
-      const d=noiseBuf.getChannelData(0);
-      for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
-      return noiseBuf;
-    }
-    function envGain(peak,decay){
-      const g=audioCtx.createGain();
-      g.gain.setValueAtTime(0,audioCtx.currentTime);
-      g.gain.linearRampToValueAtTime(peak,audioCtx.currentTime+.005);
-      g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+decay);
-      g.connect(master); return g;
-    }
-    function noiseHit(filterType,freq,peak,decay){
-      const src=audioCtx.createBufferSource(); src.buffer=noise();
-      const f=audioCtx.createBiquadFilter(); f.type=filterType; f.frequency.value=freq;
-      src.connect(f); f.connect(envGain(peak,decay));
-      src.start(); src.stop(audioCtx.currentTime+decay+.05);
-    }
-    // Eight-piece synthesized kit (order matches DRUM_LABELS / the drum rows).
-    const DRUMS=[
-      function kick(){ const o=audioCtx.createOscillator(); o.type='sine';
-        o.frequency.setValueAtTime(150,audioCtx.currentTime);
-        o.frequency.exponentialRampToValueAtTime(40,audioCtx.currentTime+.24);
-        o.connect(envGain(.85,.28)); o.start(); o.stop(audioCtx.currentTime+.3); },
-      function snare(){ noiseHit('bandpass',1800,.55,.16);
-        const o=audioCtx.createOscillator(); o.type='triangle'; o.frequency.value=185;
-        o.connect(envGain(.30,.10)); o.start(); o.stop(audioCtx.currentTime+.12); },
-      function hat(){ noiseHit('highpass',7000,.32,.05); },
-      function openhat(){ noiseHit('highpass',6200,.26,.34); },
-      function clap(){ for(let i=0;i<3;i++) setTimeout(()=>{ if(audioCtx) noiseHit('bandpass',1200,.4,.09); }, i*12); },
-      function tom(){ const o=audioCtx.createOscillator(); o.type='sine';
-        o.frequency.setValueAtTime(210,audioCtx.currentTime);
-        o.frequency.exponentialRampToValueAtTime(90,audioCtx.currentTime+.3);
-        o.connect(envGain(.6,.34)); o.start(); o.stop(audioCtx.currentTime+.36); },
-      function rim(){ const o=audioCtx.createOscillator(); o.type='square'; o.frequency.value=440;
-        o.connect(envGain(.30,.04)); o.start(); o.stop(audioCtx.currentTime+.05); },
-      function cowbell(){ [540,800].forEach(fq=>{ const o=audioCtx.createOscillator(); o.type='square'; o.frequency.value=fq;
-        o.connect(envGain(.20,.20)); o.start(); o.stop(audioCtx.currentTime+.22); }); }
-    ];
-    function pluck(freq){
-      const osc=audioCtx.createOscillator();
-      osc.type=waveSel.value; osc.frequency.value=freq;
-      osc.connect(envGain(.5,.32));
-      osc.start(); osc.stop(audioCtx.currentTime+.34);
-    }
-    function playSample(i){
-      if(!sampleBufs[i]) return;
-      const src=audioCtx.createBufferSource(); src.buffer=sampleBufs[i];
-      const g=audioCtx.createGain(); g.gain.value=.9;
-      src.connect(g); g.connect(master); src.start();
-    }
-    function trigger(c){
-      if(!audioCtx || rowMuted[c.row]) return;
-      if(c.def.kind==='drum') DRUMS[c.def.idx]();
-      else if(c.def.kind==='note') pluck(c.def.freq);
-      else playSample(c.def.idx);
-    }
-
-    function refreshSlots(){
-      slotsOut.innerHTML=sampleBufs.map((b,i)=>
-        `<div style="display:flex;gap:6px;align-items:center"><span style="flex:none;width:20px;color:#6fc2a0">S${i+1}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b?b._name+' · '+b.duration.toFixed(1)+'s':'&mdash; empty &mdash;'}</span></div>`).join('');
-    }
-    refreshSlots();
-    function adoptBuffer(buf,name){
-      buf._name=name;
-      const slot=nextSlot%4; nextSlot++;
-      sampleBufs[slot]=buf;
-      const rowIdx=ROWS.findIndex(r=>r.kind==='sample'&&r.idx===slot);
-      rowLabelEls[rowIdx].textContent='S'+(slot+1)+' · '+name.slice(0,10);
-      refreshSlots();
-      msg(`Sample loaded into S${slot+1} · ${name}`);
-    }
-    function decodeInto(arrayBuf,name){
-      ensureAudio();
-      audioCtx.decodeAudioData(arrayBuf).then(buf=>adoptBuffer(buf,name))
-        .catch(()=>msg('Could not decode that file as audio'));
-    }
-    fileInp.onchange=()=>{
-      [...fileInp.files].slice(0,4).forEach(f=>{
-        f.arrayBuffer().then(ab=>decodeInto(ab,f.name.replace(/\.[^.]+$/,'')));
-      });
-      fileInp.value='';
+    const send=action=>{
+      try{frame.contentWindow.postMessage({type:'workshop-studio-desk',action},'*');}catch(e){}
+    };
+    const showDesk=()=>{
+      panel.style.display='block';
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden','false');
+      mini.classList.remove('show');
+      setTimeout(()=>{frame.focus();send('state-request');},40);
+    };
+    const closeDesk=()=>{
+      panel.classList.remove('open');
+      panel.setAttribute('aria-hidden','true');
+      mini.classList.add('show');
+      try{renderer.domElement.focus();}catch(e){}
     };
 
-    // ===== TWO-DECK ENGINE =====
-    // Each deck loops one crate slot through its own 3-band EQ, pitch and
-    // channel gain, then through a crossfade gain into the shared master — so
-    // the desk is a real mixer, not just a sequencer: you can beat-match two
-    // sources, EQ them independently and blend between them.
-    //
-    //   BufferSource(loop) -> lowshelf -> peaking -> highshelf -> vol -> xfade -> master
-    const decks={
-      a:{id:'a',slot:0,rate:1,vol:.8,src:null,playing:false,chain:null},
-      b:{id:'b',slot:1,rate:1,vol:.8,src:null,playing:false,chain:null}
-    };
-    function deckChain(d){
-      if(d.chain) return d.chain;
-      ensureAudio();
-      const lo=audioCtx.createBiquadFilter(); lo.type='lowshelf';  lo.frequency.value=250;
-      const md=audioCtx.createBiquadFilter(); md.type='peaking';   md.frequency.value=1200; md.Q.value=.9;
-      const hi=audioCtx.createBiquadFilter(); hi.type='highshelf'; hi.frequency.value=4000;
-      const vol=audioCtx.createGain(); vol.gain.value=d.vol;
-      const xf=audioCtx.createGain();  xf.gain.value=.707;
-      lo.connect(md); md.connect(hi); hi.connect(vol); vol.connect(xf); xf.connect(master);
-      d.chain={lo,md,hi,vol,xf};
-      return d.chain;
-    }
-    function deckStop(d){
-      if(d.src){ try{ d.src.stop(); }catch(e){} d.src=null; }
-      d.playing=false;
-      const btn=panel.querySelector(`[data-deckplay="${d.id}"]`);
-      const jog=panel.querySelector(`[data-jog="${d.id}"]`);
-      if(btn){ btn.classList.remove('on'); btn.innerHTML='&#9654; PLAY'; }
-      if(jog) jog.classList.remove('spin');
-    }
-    function deckPlay(d){
-      ensureAudio();
-      const buf=sampleBufs[d.slot];
-      if(!buf){ msg(`Deck ${d.id.toUpperCase()}: load a sample into S${d.slot+1} first`); return; }
-      deckStop(d);
-      const c=deckChain(d);
-      const s=audioCtx.createBufferSource();
-      s.buffer=buf; s.loop=true; s.playbackRate.value=d.rate;
-      s.connect(c.lo); s.start();
-      d.src=s; d.playing=true;
-      const btn=panel.querySelector(`[data-deckplay="${d.id}"]`);
-      const jog=panel.querySelector(`[data-jog="${d.id}"]`);
-      if(btn){ btn.classList.add('on'); btn.innerHTML='&#10074;&#10074; PAUSE'; }
-      if(jog && !reducedMotion) jog.classList.add('spin');
-    }
-    function applyCrossfade(pct){
-      // Equal-power law, so the centre position is not a volume dip.
-      const t=clamp(pct/100,0,1);
-      if(decks.a.chain) decks.a.chain.xf.gain.value=Math.cos(t*Math.PI/2);
-      if(decks.b.chain) decks.b.chain.xf.gain.value=Math.cos((1-t)*Math.PI/2);
-    }
-    panel.querySelectorAll('[data-deckplay]').forEach(btn=>{
-      const d=decks[btn.dataset.deckplay];
-      btn.onclick=()=>{ d.playing?deckStop(d):deckPlay(d); };
-    });
-    panel.querySelectorAll('[data-deckcue]').forEach(btn=>{
-      const d=decks[btn.dataset.deckcue];
-      btn.onclick=()=>{ if(d.playing){ deckStop(d); deckPlay(d); } else deckPlay(d); };
-    });
-    panel.querySelectorAll('[data-decksrc]').forEach(sel=>{
-      const d=decks[sel.dataset.decksrc];
-      d.slot=+sel.value;
-      sel.onchange=()=>{ d.slot=+sel.value; if(d.playing){ deckStop(d); deckPlay(d); } };
-    });
-    panel.querySelectorAll('[data-decktempo]').forEach(inp=>{
-      const d=decks[inp.dataset.decktempo];
-      const out=panel.querySelector(`[data-out="rate-${d.id}"]`);
-      inp.oninput=()=>{
-        d.rate=(+inp.value)/100;
-        if(out) out.textContent=inp.value+'%';
-        if(d.src) d.src.playbackRate.value=d.rate;
-      };
-    });
-    panel.querySelectorAll('[data-deckvol]').forEach(inp=>{
-      const d=decks[inp.dataset.deckvol];
-      inp.oninput=()=>{ d.vol=(+inp.value)/100; if(d.chain) d.chain.vol.gain.value=d.vol; };
-    });
-    panel.querySelectorAll('[data-eq]').forEach(inp=>{
-      const [id,band]=inp.dataset.eq.split('-');
-      inp.oninput=()=>{
-        const c=deckChain(decks[id]);
-        (band==='high'?c.hi:band==='mid'?c.md:c.lo).gain.value=+inp.value;
-      };
-    });
-    { const xf=panel.querySelector('[data-ctl="xfade"]'); if(xf) xf.oninput=()=>applyCrossfade(+xf.value); }
-    // Performance pads fire crate slots as one-shots, independent of the decks.
-    panel.querySelectorAll('[data-pad]').forEach(pad=>{
-      const slot=+pad.dataset.pad.slice(1);
-      pad.onclick=()=>{
-        ensureAudio();
-        if(!sampleBufs[slot]){ msg(`Pad: S${slot+1} is empty`); return; }
-        playSample(slot);
-        pad.classList.add('hit');
-        setTimeout(()=>pad.classList.remove('hit'),140);
+    mini.querySelectorAll('[data-desk-action]').forEach(button=>{
+      button.onclick=()=>{
+        const action=button.dataset.deskAction;
+        if(action==='open'){showDesk();return;}
+        send(action);
       };
     });
 
-    function advance(){
-      cells.filter(c=>c.col===step && c.cell.dataset.on==='1').forEach(trigger);
-      cells.forEach(c=>{c.cell.style.outline = c.col===step ? '2px solid #f1e8ff' : 'none';});
-      step=(step+1)%STEPS;
-    }
-
-    function setPlaying(on){
-      playing=on;
-      const btn=panel.querySelector('[data-act=play]');
-      if(on){
-        ensureAudio();
-        btn.textContent='STOP';
-        const loop=()=>{advance();timer=setTimeout(loop,60000/(+tempoInp.value)/4);};
-        loop();
-      }else{
-        btn.textContent='PLAY';
-        clearTimeout(timer);
-        cells.forEach(c=>{c.cell.style.outline='none';});
-      }
-    }
-
-    panel.onclick=e=>{
-      const b=e.target.closest('button'); if(!b) return;
-      if(b.dataset.url){ window.open(b.dataset.url,'_blank','noopener'); return; }
-      const a=b.dataset.act;
-      if(a==='close'){ setPlaying(false); deckStop(decks.a); deckStop(decks.b); if(recorder && recorder.state==='recording') recorder.stop(); if(micRec && micRec.state==='recording') micRec.stop(); panel.style.display='none'; return; }
-      if(a==='play'){ setPlaying(!playing); return; }
-      if(a==='clear'){ cells.forEach(c=>{c.cell.dataset.on='0';c.cell.style.background=c.cell.dataset.off;}); return; }
-      if(a==='loadfiles'){ fileInp.click(); return; }
-      if(a==='recvoice'){
-        if(micRec && micRec.state==='recording'){ micRec.stop(); return; }
-        ensureAudio();
-        if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ msg('This browser has no microphone access'); return; }
-        navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
-          micStream=stream; micChunks=[];
-          micRec=new MediaRecorder(stream);
-          micRec.ondataavailable=ev=>micChunks.push(ev.data);
-          micRec.onstop=()=>{
-            const blob=new Blob(micChunks,{type:micRec.mimeType||'audio/webm'});
-            blob.arrayBuffer().then(ab=>decodeInto(ab,'voice '+(++voiceN)));
-            micStream.getTracks().forEach(t=>t.stop());
-            b.innerHTML='&#127908; REC VOICE'; b.style.background='#211b30';
-          };
-          micRec.start();
-          b.innerHTML='&#9632; STOP VOICE'; b.style.background='#c72b2b';
-          msg('Recording voice — click again to stop and load it into a sample lane');
-        }).catch(()=>msg('Microphone unavailable or permission denied'));
+    window.addEventListener('message',event=>{
+      if(event.source!==frame.contentWindow || event.data?.type!=='workshop-studio-desk')return;
+      const data=event.data;
+      if(data.action==='close'){closeDesk();return;}
+      if(data.action==='state'){
+        const title=mini.querySelector('[data-desk-title]');
+        const toggle=mini.querySelector('[data-desk-action="toggle"]');
+        const record=mini.querySelector('[data-desk-action="record"]');
+        if(title)title.textContent=`${data.preset||'Studio mix'} · ${data.bpm||108} BPM${data.recording?' · RECORDING':data.playing?' · playing':' · paused'}`;
+        if(toggle){toggle.textContent=data.playing?'Pause':'Play';toggle.classList.toggle('active',!!data.playing);}
+        if(record){record.textContent=data.recording?'Stop rec':'Record';record.classList.toggle('recording',!!data.recording);}
         return;
       }
-      if(a==='loadurl'){
-        const u=panel.querySelector('[data-ctl=url]').value.trim();
-        if(!u){ msg('Paste a direct audio URL first'); return; }
-        fetch(u).then(r=>{ if(!r.ok) throw 0; return r.arrayBuffer(); })
-          .then(ab=>decodeInto(ab,(u.split('/').pop()||'url sample').split('?')[0].replace(/\.[^.]+$/,'').slice(0,24)||'url sample'))
-          .catch(()=>msg('Could not fetch that URL (the host must allow cross-origin audio)'));
-        return;
-      }
-      if(a==='towall'){
-        const raw=panel.querySelector('[data-ctl=yt]').value.trim();
-        if(!raw){ msg('Paste a YouTube link first'); return; }
+      if(data.action==='youtube-wall'){
+        const raw=String(data.value||'').trim();
         const url=studioEmbedFrom(raw,true);
-        if(!url){ msg('That does not look like a YouTube link'); return; }
-        if(!studioWallIframe){ msg('The Studio wall is not ready'); return; }
+        if(!url || !studioWallIframe){msg('The Studio wall could not accept that YouTube link');return;}
         studioWallIframe.src=url;
-        try{ localStorage.setItem('workshopStudioSourceV1',raw); }catch(err){}
-        msg('Playing on the Studio wall — jam over it');
-        return;
+        studioWallIframe.dataset.studioStopped='0';
+        studioCurrentLabel=raw;
+        studioProjectedChannel='youtube';
+        studioPlaybackRequested=true;
+        studioMuted=false;
+        try{localStorage.setItem('workshopStudioSourceV1',raw);}catch(e){}
+        updateStudioNowPlaying(true);
+        setTimeout(()=>{studioCommand('setVolume',[100]);studioCommand('unMute');studioCommand('playVideo');updateStudioAudioButton();},1650);
+        msg('YouTube moved from the desk to the Studio wall');
       }
-      if(a==='record'){
-        ensureAudio();
-        if(!recorder || recorder.state==='inactive'){
-          chunks=[];
-          recorder=new MediaRecorder(dest.stream);
-          recorder.ondataavailable=ev=>chunks.push(ev.data);
-          recorder.onstop=()=>{
-            const blob=new Blob(chunks,{type:'audio/webm'});
-            const link=document.createElement('a'); link.download='hrm-studio-loop.webm'; link.href=URL.createObjectURL(blob); link.click();
-          };
-          recorder.start();
-          b.innerHTML='&#9632; STOP REC'; b.style.background='#c72b2b';
-          if(!playing) setPlaying(true);
-        }else{
-          recorder.stop();
-          b.innerHTML='&#9679; RECORD'; b.style.background='#211b30';
-        }
-        return;
-      }
-    };
+    });
+    frame.addEventListener('load',()=>send('state-request'));
   }
-  panel.style.display='grid';
+
+  panel.style.display='block';
+  panel.classList.add('open');
+  panel.setAttribute('aria-hidden','false');
+  mini.classList.remove('show');
+  const frame=$('studioMakerFrame');
+  setTimeout(()=>{frame?.focus();try{frame?.contentWindow.postMessage({type:'workshop-studio-desk',action:'state-request'},'*');}catch(e){}},40);
 }
 function updateStudioNowPlaying(show=true){
   const bar=$('studioNowPlaying');
