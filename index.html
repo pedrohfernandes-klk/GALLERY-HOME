@@ -9852,61 +9852,19 @@ function buildStudio(){
   booth(x0-hw+1.15, midZ+2.2, Math.PI/2);
   cocktail(x0-hw+2.9, midZ-2.0); cocktail(x0-hw+2.9, midZ+2.2);
 
-  // ===== Back-of-club lounge: a proper sectional you settle into, facing the
-  // video wall across the sunken dancefloor. Split around the return door so
-  // the doorway stays walkable. (Batch 160 — the club previously had only wall
-  // booths; this is the comfortable "sit and watch the wall" seating.) =====
-  const loungeMat = new THREE.MeshStandardMaterial({color:0x3a2740, roughness:.90, metalness:.02});
-  const loungeCush = new THREE.MeshStandardMaterial({color:0x6d4a6b, roughness:.88, metalness:.02});
-  const loungeTrim = new THREE.MeshStandardMaterial({color:0x120d16, roughness:.6, metalness:.18});
-  function clubSofa(px, pz, rotY, len){
-    const g = new THREE.Group(); g.position.set(px,0,pz); g.rotation.y = rotY;
-    const base = new THREE.Mesh(new THREE.BoxGeometry(len,.30,1.20), loungeTrim); base.position.y=.30; g.add(base);
-    const seat = new THREE.Mesh(new THREE.BoxGeometry(len-.20,.24,1.05), loungeMat); seat.position.set(0,.52,.02); g.add(seat);
-    const back = new THREE.Mesh(new THREE.BoxGeometry(len,.95,.24), loungeMat); back.position.set(0,.98,-.50); g.add(back);
-    const roll = new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,len,12), loungeCush); roll.rotation.z=Math.PI/2; roll.position.set(0,1.44,-.48); g.add(roll);
-    const nCush = Math.max(2, Math.round(len/1.5));
-    for(let i=0;i<nCush;i++){
-      const cush = new THREE.Mesh(new THREE.BoxGeometry((len-.3)/nCush - .08,.22,.9), loungeCush);
-      cush.position.set(-len/2 + (i+.5)*((len-.3)/nCush), .70, .05); g.add(cush);
-    }
-    const a1 = new THREE.Mesh(new THREE.BoxGeometry(.24,.78,1.20), loungeTrim); a1.position.set(-len/2+.12,.62,0); g.add(a1);
-    const a2 = a1.clone(); a2.position.x = len/2-.12; g.add(a2);
-    scene.add(g);
-  }
-  function loungeTable(px,pz){
-    const t = new THREE.Mesh(new THREE.BoxGeometry(1.7,.10,.9), loungeTrim); t.position.set(px,.42,pz); scene.add(t);
-    const glass = new THREE.Mesh(new THREE.BoxGeometry(1.5,.03,.72),
-      new THREE.MeshStandardMaterial({color:0x2a2130, roughness:.15, metalness:.5, transparent:true, opacity:.7}));
-    glass.position.set(px,.48,pz); scene.add(glass);
-    for(const lx of [-.72,.72]) for(const lz of [-.34,.34]){
-      const leg=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.42,8),brassMat); leg.position.set(px+lx,.21,pz+lz); scene.add(leg);
-    }
-    const cx=new THREE.Mesh(new THREE.SphereGeometry(.05,8,8),new THREE.MeshBasicMaterial({color:0xffc873,toneMapped:false})); cx.position.set(px,.55,pz); scene.add(cx);
-  }
-  // Two lounge rugs, one per corner group. (Was one 14 m rug spanning the
-  // whole rear wall — it ran under both return doors and the left sofa group
-  // sat directly across the Tunnel doorway, which was added to this wall
-  // after the lounge was laid out and never re-checked against it.)
-  function loungeRugAt(px,pz,w,d){
-    const rug = new THREE.Mesh(new THREE.PlaneGeometry(w,d),
-      new THREE.MeshStandardMaterial({color:0x1a1220, roughness:.9, metalness:.02}));
-    rug.rotation.x=-Math.PI/2; rug.position.set(px,.02,pz); scene.add(rug);
-  }
-  loungeRugAt(x0-8.3, z0+21.5, 3.4, 4.4);
-  loungeRugAt(x0+4.35, z0+21.9, 5.2, 3.6);
-
-  // Left lounge: a corner L in the bay LEFT of the Tunnel door (door spans
-  // x0-6.8..x0-4.2 — the walkway out of it stays completely clear).
-  clubSofa(x0-8.45, z0+22.55, Math.PI,   2.9);
-  clubSofa(x0-9.30, z0+20.20, Math.PI/2, 2.9);
-  loungeTable(x0-7.8, z0+20.9);
-  // Right lounge, mirrored, clear of the central Workshop Hall door.
-  clubSofa(x0+4.35, z0+22.55, Math.PI,   3.2);
-  loungeTable(x0+4.3, z0+21.1);
-
-  const loungeLamp1 = new THREE.PointLight(0xffd9c2,.95,7.0,1.85); loungeLamp1.position.set(x0-8.3,2.2,z0+21.4); scene.add(loungeLamp1); regLight('studio', loungeLamp1);
-  const loungeLamp2 = new THREE.PointLight(0xffe4c8,.85,6.5,1.9); loungeLamp2.position.set(x0+4.4,2.2,z0+21.6); scene.add(loungeLamp2); regLight('studio', loungeLamp2);
+  // ===== Clear arrival bay =====
+  // Both return doors open into this end of the room. The former rear lounge
+  // still read as furniture pressure around the thresholds, so this bay is now
+  // deliberately obstacle-free. The inlaid runner keeps the area designed
+  // without putting sofas or tables in the route.
+  const arrivalRunner = new THREE.Mesh(new THREE.PlaneGeometry(13.6,3.7),
+    new THREE.MeshStandardMaterial({color:0x25212a,roughness:.88,metalness:.02}));
+  arrivalRunner.rotation.x=-Math.PI/2; arrivalRunner.position.set(x0,.024,z1-2.05); scene.add(arrivalRunner);
+  const arrivalInlay = new THREE.Mesh(new THREE.PlaneGeometry(13.0,3.10),
+    new THREE.MeshBasicMaterial({color:0xc89a61,transparent:true,opacity:.09,depthWrite:false}));
+  arrivalInlay.rotation.x=-Math.PI/2; arrivalInlay.position.set(x0,.03,z1-2.05); scene.add(arrivalInlay);
+  const arrivalLampL = new THREE.PointLight(0xffdfbd,.82,6.5,1.9); arrivalLampL.position.set(x0-hw+1.1,2.8,z1-1.7); scene.add(arrivalLampL); regLight('studio',arrivalLampL);
+  const arrivalLampR = new THREE.PointLight(0xd9e8ff,.76,6.5,1.9); arrivalLampR.position.set(x0+hw-1.1,2.8,z1-1.7); scene.add(arrivalLampR); regLight('studio',arrivalLampR);
 
   // ===== Dedicated listening bay: two Eames-inspired lounge chairs and ottomans.
   // Was z0+18.55 — 18+ metres from the screen, past the entire dancefloor and
