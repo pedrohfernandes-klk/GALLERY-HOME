@@ -6258,8 +6258,16 @@ function buildOutdoorSpace(){
     const portalLight=new THREE.PointLight(0xd7f2ff,2.8,18,1.5);portalLight.position.set(0,3.2,1.6);portal.add(portalLight);regLight('outdoor',portalLight);
     registerPortal({
       mesh:field, room:'hood', fromRoom:'outdoor', label:'Headquarters',
-      targetPos:new THREE.Vector3(hoodOrigin.x-72, cameraHeight, hoodOrigin.z+72),
-      targetYaw:Math.PI/2
+      // Arrival used to land ON the gate facing yaw=PI/2, which with
+      // camera.rotation.y=yaw means looking down -x — straight out at the
+      // district's empty western edge, with the west housing row's blank
+      // backs to one side. You now step clear of the gate onto the approach
+      // road and face north-northeast: the road runs ahead, the Cave's 21 m
+      // cliff and waterfall stand at the end of it, and the warehouse and
+      // tower rise beyond to the right. That sightline passes west of the
+      // housing row, so nothing blocks it.
+      targetPos:new THREE.Vector3(hoodOrigin.x-72, cameraHeight, hoodOrigin.z+80),
+      targetYaw:-2.90
     });
   }
 
@@ -6370,9 +6378,14 @@ function buildHood(){
   const pavement=new THREE.MeshStandardMaterial({color:0xa8a197,roughness:.94,metalness:.01});
   for(const sx of [-1,1]){const walk=new THREE.Mesh(new THREE.PlaneGeometry(8,hoodDepth-18),pavement);walk.rotation.x=-Math.PI/2;walk.position.set(x0+sx*56,.052,mid);scene.add(walk);}
   const lampSteel=new THREE.MeshStandardMaterial({color:0x252b2e,roughness:.42,metalness:.66});
+  // Every lamp keeps a visibly lit head (cheap unlit mesh); only every third
+  // carries a real PointLight. The district is daylit by its hemisphere+sun
+  // rig, so 22 point lights added almost nothing visually while every one of
+  // them was shaded per-fragment across the whole Hood — a major cost.
+  const lampGlowMat=new THREE.MeshBasicMaterial({color:0xffd8a6,toneMapped:false});
   for(let i=0;i<12;i++)for(const sx of [-1,1]){
     if(sx<0 && (i===6||i===7)) continue; // The Cave's relocated cliff face now sits here — its own lighting covers this stretch.
-    const lp=new THREE.Group();lp.position.set(x0+sx*53,0,z0+18+i*22);scene.add(lp);const post=new THREE.Mesh(new THREE.CylinderGeometry(.07,.10,5.6,10),lampSteel);post.position.y=2.8;lp.add(post);const arm=new THREE.Mesh(new THREE.BoxGeometry(1.25,.08,.08),lampSteel);arm.position.set(-sx*.58,5.45,0);lp.add(arm);const bulb=new THREE.PointLight(0xffd8a6,.72,12,1.8);bulb.position.set(-sx*1.08,5.32,0);lp.add(bulb);regLight('hood',bulb);
+    const lp=new THREE.Group();lp.position.set(x0+sx*53,0,z0+18+i*22);scene.add(lp);const post=new THREE.Mesh(new THREE.CylinderGeometry(.07,.10,5.6,10),lampSteel);post.position.y=2.8;lp.add(post);const arm=new THREE.Mesh(new THREE.BoxGeometry(1.25,.08,.08),lampSteel);arm.position.set(-sx*.58,5.45,0);lp.add(arm);const head=new THREE.Mesh(new THREE.SphereGeometry(.13,10,8),lampGlowMat);head.position.set(-sx*1.08,5.32,0);lp.add(head);if(i%3===0){const bulb=new THREE.PointLight(0xffd8a6,1.15,16,1.8);bulb.position.set(-sx*1.08,5.32,0);lp.add(bulb);regLight('hood',bulb);}
   }
 
   // Ten-kilometre road is represented by a convincing terminal spur; travel
@@ -6544,7 +6557,9 @@ function buildHood(){
       const armL=new THREE.Mesh(new THREE.BoxGeometry(.12,.48,1.0),caveSeatWood),armR=armL.clone();armL.position.set(-.82,.48,0);armR.position.set(.82,.48,0);chair.add(armL,armR);
       sitPoint('hood',seat,`Cave · row ${row+1}, seat ${col+1}`,new THREE.Vector3(x,y+1.05,z),0,-.04);
     }
-    const aisle=new THREE.PointLight(0xffb76e,.32,5,1.8);aisle.position.set(veX-15.1,y+.16,z);scene.add(aisle);regLight('hood',aisle);
+    // Aisle markers every other row: ten dim 5 m point lights read the same as
+    // five slightly stronger ones, at half the per-fragment cost.
+    if(row%2===0){const aisle=new THREE.PointLight(0xffb76e,.46,6,1.8);aisle.position.set(veX-15.1,y+.16,z);scene.add(aisle);regLight('hood',aisle);}
   }
 
   for(const side of [-1,1]){const rearWing=new THREE.Mesh(new THREE.BoxGeometry((W-12)/2,H,.52),brick);rearWing.position.set(wx+side*(6+(W-12)/4),H/2,wz+D/2);scene.add(rearWing);}
@@ -6600,7 +6615,11 @@ function buildHood(){
   // side lighting reveals brick texture without flattening the art.
   for(let i=0;i<6;i++){
     const raft=new THREE.Mesh(new THREE.BoxGeometry(7.4,.14,3.2),new THREE.MeshBasicMaterial({color:0xffe8c8,toneMapped:false}));raft.position.set(wx,H-1.05,wz-D/2+9+i*8.0);scene.add(raft);
-    const pool=new THREE.RectAreaLight(0xffd9ae,4.8,7.2,3.0);pool.position.set(raft.position.x,H-1.18,raft.position.z);pool.rotation.x=-Math.PI/2;scene.add(pool);regLight('hood',pool);
+    // All six rafts keep their emissive fixture, but only every other one
+    // carries a RectAreaLight (brighter to compensate). RectAreaLight is by
+    // far the costliest light type in three.js, and six of them over one hall
+    // was the single heaviest item in the Hood's shading budget.
+    if(i%2===0){const pool=new THREE.RectAreaLight(0xffd9ae,7.6,7.2,3.0);pool.position.set(raft.position.x,H-1.18,raft.position.z);pool.rotation.x=-Math.PI/2;scene.add(pool);regLight('hood',pool);}
   }
   const gardenThreshold=new THREE.Mesh(new THREE.PlaneGeometry(8,28),limestone);gardenThreshold.rotation.x=-Math.PI/2;gardenThreshold.position.set(wx,.19,wz+45);scene.add(gardenThreshold);
   const gardenSign=new THREE.Mesh(new THREE.PlaneGeometry(8.5,.9),new THREE.MeshBasicMaterial({map:makeSignTexture('THE FORMAL GARDEN','lakes · pavilions · waterfall'),transparent:true}));gardenSign.position.set(wx,8.15,wz+D/2-.30);scene.add(gardenSign);
