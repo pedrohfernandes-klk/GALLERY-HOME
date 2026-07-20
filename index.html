@@ -2217,9 +2217,30 @@ const rpgCameraDirection = new THREE.Vector3();
 const rpgCameraRay = new THREE.Raycaster();
 const rpgAvatarParts = { leftLeg:null, rightLeg:null, leftArm:null, rightArm:null };
 function getVisitorPosition(){ return rpgMode ? rpgPlayerPosition : camera.position; }
+// Height of the Cave's raked seating bank at a point. The auditorium is built
+// as ten stepped tiers rising 0.34 m each, but the Hood's floor height was a
+// single flat number per level — so walking into the bank left the visitor
+// standing at stage level with the tiers passing through them ("sinking"),
+// eye-line below the seat backs and no view of the screen. hoodCaveLayout is
+// published by buildHood so this stays in step with the geometry.
+function caveFloorY(x,z){
+  const L=hoodCaveLayout;
+  if(!L) return 0;
+  if(Math.abs(x-L.veX) > L.halfW) return 0;
+  const rel=(z-L.frontZ)/L.gap;
+  if(rel < -.5 || rel > L.rows-.5) return 0;
+  const row=clamp(Math.round(rel),0,L.rows-1);
+  return L.base + row*L.rise;
+}
 function visitorFloorY(pos=getVisitorPosition()){
   if(currentRoom === 'theatre') return theatreFloorY(pos.z);
-  if(isHoodRoom(currentRoom)) return hoodFloorY(currentRoom);
+  if(isHoodRoom(currentRoom)){
+    if(currentRoom === 'hood'){
+      const cy=caveFloorY(pos.x,pos.z);
+      if(cy>0) return cy;
+    }
+    return hoodFloorY(currentRoom);
+  }
   return 0;
 }
 function markRpgAvatar(object){
@@ -2518,6 +2539,7 @@ function isHoodRoom(room=currentRoom){ return room==='hood' || String(room||'').
 let hoodLiftDoors = new Map();
 let hoodLiftPanel = null;
 let hoodLiftLayout = null;
+let hoodCaveLayout = null;   // raked-seating geometry, published by buildHood for caveFloorY
 let hoodWaterfallFX = null;
 let hoodLiftAutoKey = '';
 let hoodSky = null;
@@ -6193,16 +6215,12 @@ function buildOutdoorSpace(){
     const portalLight=new THREE.PointLight(0xd7f2ff,2.8,18,1.5);portalLight.position.set(0,3.2,1.6);portal.add(portalLight);regLight('outdoor',portalLight);
     registerPortal({
       mesh:field, room:'hood', fromRoom:'outdoor', label:'Headquarters',
-      // Arrival used to land ON the gate facing yaw=PI/2, which with
-      // camera.rotation.y=yaw means looking down -x — straight out at the
-      // district's empty western edge, with the west housing row's blank
-      // backs to one side. You now step clear of the gate onto the approach
-      // road and face north-northeast: the road runs ahead, the Cave's 21 m
-      // cliff and waterfall stand at the end of it, and the warehouse and
-      // tower rise beyond to the right. That sightline passes west of the
-      // housing row, so nothing blocks it.
-      targetPos:new THREE.Vector3(hoodOrigin.x-72, cameraHeight, hoodOrigin.z+80),
-      targetYaw:-2.90
+      // Step out onto the civic axis facing due north (yaw=PI gives forward
+      // (0,+1) under camera.rotation.y=yaw): straight up the shopfront street
+      // to the warehouse entrance, tower above it. The sightline runs between
+      // the two housing rows rather than behind them.
+      targetPos:new THREE.Vector3(hoodOrigin.x, cameraHeight, hoodOrigin.z+50),
+      targetYaw:Math.PI
     });
   }
 
@@ -6387,8 +6405,11 @@ function buildHood(){
 
   // Ten-kilometre road is represented by a convincing terminal spur; travel
   // itself remains vehicular and cinematic rather than a fake walkable strip.
-  const road=new THREE.Mesh(new THREE.PlaneGeometry(8,150),gravel);road.rotation.x=-Math.PI/2;road.position.set(x0-72,.035,z0+75);scene.add(road);
-  for(let i=0;i<42;i++){const stone=new THREE.Mesh(new THREE.DodecahedronGeometry(.10+Math.random()*.17,0),new THREE.MeshStandardMaterial({color:i%3?0x9b8c75:0x665d50,roughness:1}));stone.position.set(x0-76+Math.random()*8,.08,z0+4+Math.random()*144);scene.add(stone);}
+  // The approach road now runs east into the relocated gate on the civic axis,
+  // instead of north-south past the district's western edge where the gate
+  // used to stand.
+  const road=new THREE.Mesh(new THREE.PlaneGeometry(96,8),gravel);road.rotation.x=-Math.PI/2;road.position.set(x0-48,.035,z0+44);scene.add(road);
+  for(let i=0;i<42;i++){const stone=new THREE.Mesh(new THREE.DodecahedronGeometry(.10+Math.random()*.17,0),new THREE.MeshStandardMaterial({color:i%3?0x9b8c75:0x665d50,roughness:1}));stone.position.set(x0-96+Math.random()*96,.08,z0+40+Math.random()*8);scene.add(stone);}
 
   // Ocean horizon and project district.
   const seaC=document.createElement('canvas');seaC.width=1024;seaC.height=512;{const q=seaC.getContext('2d'),g=q.createLinearGradient(0,0,0,512);g.addColorStop(0,'#b7dceb');g.addColorStop(.42,'#efc7a2');g.addColorStop(.47,'#7aa7b5');g.addColorStop(1,'#244d5e');q.fillStyle=g;q.fillRect(0,0,1024,512);q.fillStyle='rgba(255,255,255,.54)';q.fillRect(0,242,1024,3);}
@@ -6455,7 +6476,12 @@ function buildHood(){
 
   // Return portal: broad, luminous and placed clear of every sightline.
   {
-    const px0=x0-72,pz0=z0+72,portal=new THREE.Group();portal.position.set(px0,0,pz0);portal.rotation.y=Math.PI/2;scene.add(portal);
+    // The gate sits on the civic axis at the foot of the street, facing north,
+    // so stepping through it puts the warehouse entrance dead ahead at the end
+    // of the street with the tower above it. It used to stand out on the west
+    // approach road at x0-72, behind the housing row — from there every view
+    // was of the backs of those buildings.
+    const px0=x0,pz0=z0+44,portal=new THREE.Group();portal.position.set(px0,0,pz0);scene.add(portal);
     const pStone=new THREE.MeshStandardMaterial({color:0xb9ad98,roughness:.76,metalness:.04});
     const pMetal=new THREE.MeshStandardMaterial({color:0x20262a,roughness:.32,metalness:.68});
     for(const sx of [-1,1]){const pier=new THREE.Mesh(new THREE.BoxGeometry(1.10,7.1,1.5),pStone);pier.position.set(sx*4.4,3.55,0);portal.add(pier);}
@@ -6549,21 +6575,71 @@ function buildHood(){
 
   const caveSeatMat=new THREE.MeshStandardMaterial({color:0x6d302d,roughness:.72});
   const caveSeatWood=new THREE.MeshStandardMaterial({color:0x6b4931,roughness:.76});
+  // Published so caveFloorY can raise the visitor onto the tiers. Kept next to
+  // the loop that builds them so the two cannot drift apart: base is the tier
+  // top surface (tier centre y-.34, half-height .14 => y-.20 => .28 + row*rise).
+  const CAVE_ROWS=10, CAVE_GAP=2.45, CAVE_RISE=.34, CAVE_FRONTZ=caveStageZ+6.0;
+  hoodCaveLayout={veX, halfW:15, rows:CAVE_ROWS, gap:CAVE_GAP, rise:CAVE_RISE, base:.28, frontZ:CAVE_FRONTZ, stageZ:caveStageZ};
+
+  // Proper entrance. The bank previously had no way in: you simply walked at
+  // it. Two side aisles now step up beside the seating, and a lit threshold
+  // marks the mouth, so arriving and climbing to a row is a real route.
+  for(const sx of [-1,1]){
+    const aisleX=veX+sx*16.6;
+    for(let step=0;step<CAVE_ROWS;step++){
+      const sy=.28+step*CAVE_RISE, sz=CAVE_FRONTZ+step*CAVE_GAP;
+      const tread=new THREE.Mesh(new THREE.BoxGeometry(2.6,.28,CAVE_GAP),new THREE.MeshStandardMaterial({color:step%2?0x5d554c:0x676056,roughness:1}));
+      tread.position.set(aisleX,sy-.14,sz);scene.add(tread);
+    }
+    const rail=new THREE.Mesh(new THREE.BoxGeometry(.09,.09,CAVE_ROWS*CAVE_GAP),steel);
+    rail.position.set(aisleX+sx*1.2,1.55,CAVE_FRONTZ+(CAVE_ROWS-1)*CAVE_GAP/2);
+    rail.rotation.x=Math.atan2(CAVE_ROWS*CAVE_RISE,CAVE_ROWS*CAVE_GAP);scene.add(rail);
+  }
+  {
+    const mouthZ=CAVE_FRONTZ-3.2;
+    const jambMat=new THREE.MeshStandardMaterial({color:0x1d2022,roughness:.5,metalness:.4});
+    for(const sx of [-1,1]){const j=new THREE.Mesh(new THREE.BoxGeometry(.7,4.6,.7),jambMat);j.position.set(veX+sx*17.4,2.3,mouthZ);scene.add(j);}
+    const head=new THREE.Mesh(new THREE.BoxGeometry(35.5,.7,.7),jambMat);head.position.set(veX,4.6,mouthZ);scene.add(head);
+    const sign=new THREE.Mesh(new THREE.PlaneGeometry(9.0,1.05),new THREE.MeshBasicMaterial({map:makeSignTexture('THE CAVE','auditorium · enter here'),transparent:true,toneMapped:false}));
+    sign.position.set(veX,5.5,mouthZ);sign.rotation.y=Math.PI;scene.add(sign);
+    const wash=new THREE.PointLight(0xffca8a,1.9,22,1.6);wash.position.set(veX,3.6,mouthZ+1.6);scene.add(wash);regLight('hood',wash);
+  }
+
+  // Instanced chair parts. 100 chairs previously meant 400 meshes and 100
+  // freshly-allocated seat geometries; the backs and armrests are identical
+  // and never interactive, so they collapse into two instanced draws.
+  const CAVE_SEATS=CAVE_ROWS*10;
+  const caveSeatGeo=new THREE.BoxGeometry(1.55,.32,1.02);
+  const caveBackInst=new THREE.InstancedMesh(new THREE.BoxGeometry(1.55,1.22,.26),caveSeatMat,CAVE_SEATS);
+  const caveArmInst=new THREE.InstancedMesh(new THREE.BoxGeometry(.12,.48,1.0),caveSeatWood,CAVE_SEATS*2);
+  const caveM4=new THREE.Matrix4(), caveV3=new THREE.Vector3(), caveScale=new THREE.Vector3(1,1,1);
+  const caveBackQ=new THREE.Quaternion().setFromEuler(new THREE.Euler(-.10,0,0));
+  const caveFlatQ=new THREE.Quaternion();
+  let caveInstI=0;
+
   for(let row=0;row<10;row++){
     const y=.48+row*.34,z=caveStageZ+6.0+row*2.45,curve=1+row*.018;
     const tier=new THREE.Mesh(new THREE.BoxGeometry(30,.28,2.18),new THREE.MeshStandardMaterial({color:row%2?0x595149:0x635b52,roughness:1}));tier.position.set(veX,y-.34,z);scene.add(tier);
     for(let col=0;col<10;col++){
       const x=veX+(col-4.5)*2.62*curve;
-      const chair=new THREE.Group();chair.position.set(x,y,z);scene.add(chair);
-      const seat=new THREE.Mesh(new THREE.BoxGeometry(1.55,.32,1.02),caveSeatMat);seat.position.y=.28;chair.add(seat);
-      const back=new THREE.Mesh(new THREE.BoxGeometry(1.55,1.22,.26),caveSeatMat);back.position.set(0,.84,.39);back.rotation.x=-.10;chair.add(back);
-      const armL=new THREE.Mesh(new THREE.BoxGeometry(.12,.48,1.0),caveSeatWood),armR=armL.clone();armL.position.set(-.82,.48,0);armR.position.set(.82,.48,0);chair.add(armL,armR);
+      // Only the seat pad stays a real mesh — it is what sitPoint registers as
+      // the interactable. Backs and armrests are instanced (see below): they
+      // are never picked, and as individual meshes they were 300 extra draw
+      // calls in the single heaviest room in the Hood.
+      const seat=new THREE.Mesh(caveSeatGeo,caveSeatMat);seat.position.set(x,y+.28,z);scene.add(seat);
+      caveM4.compose(caveV3.set(x,y+.84,z+.39),caveBackQ,caveScale);caveBackInst.setMatrixAt(caveInstI,caveM4);
+      caveM4.compose(caveV3.set(x-.82,y+.48,z),caveFlatQ,caveScale);caveArmInst.setMatrixAt(caveInstI*2,caveM4);
+      caveM4.compose(caveV3.set(x+.82,y+.48,z),caveFlatQ,caveScale);caveArmInst.setMatrixAt(caveInstI*2+1,caveM4);
+      caveInstI++;
       sitPoint('hood',seat,`Cave · row ${row+1}, seat ${col+1}`,new THREE.Vector3(x,y+1.05,z),0,-.04);
     }
     // Aisle markers every other row: ten dim 5 m point lights read the same as
     // five slightly stronger ones, at half the per-fragment cost.
     if(row%2===0){const aisle=new THREE.PointLight(0xffb76e,.46,6,1.8);aisle.position.set(veX-15.1,y+.16,z);scene.add(aisle);regLight('hood',aisle);}
   }
+  caveBackInst.instanceMatrix.needsUpdate=true;
+  caveArmInst.instanceMatrix.needsUpdate=true;
+  scene.add(caveBackInst,caveArmInst);
 
   for(const side of [-1,1]){const rearWing=new THREE.Mesh(new THREE.BoxGeometry((W-12)/2,H,.52),brick);rearWing.position.set(wx+side*(6+(W-12)/4),H/2,wz+D/2);scene.add(rearWing);}
   const rearLintel=new THREE.Mesh(new THREE.BoxGeometry(12,H-7,.52),brick);rearLintel.position.set(wx,(H+7)/2,wz+D/2);scene.add(rearLintel);
@@ -13190,7 +13266,9 @@ function updateMovement(dt){
   }
 
   const viewHeight = (currentRoom === 'studio' && seatedStudioView) ? 1.28 : (currentRoom==='outdoor'&&seatedAmphView) ? amphSeatEyeY : cameraHeight;
-  movePos.y = (currentRoom === 'theatre' ? theatreFloorY(movePos.z) : isHoodRoom(currentRoom) ? hoodFloorY(currentRoom) : 0) + viewHeight + bodyBob;
+  // visitorFloorY is position-aware (it raises you onto the Cave's tiers);
+  // the old inline expression only knew a single flat height per Hood level.
+  movePos.y = visitorFloorY(movePos) + viewHeight + bodyBob;
   if(rpgMode) updateRpgAvatar(dt,speed);
 }
 
