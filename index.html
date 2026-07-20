@@ -620,7 +620,7 @@ button:focus-visible,input:focus-visible{outline:2px solid rgba(169,76,68,.62);o
   top:104px;
   z-index:15;
   width:min(390px,calc(100vw - 32px));
-  max-height:calc(100vh - 250px);
+  max-height:calc(100svh - 250px);
   border-radius:20px;
   padding:14px;
   overflow:hidden;
@@ -660,7 +660,7 @@ button:focus-visible,input:focus-visible{outline:2px solid rgba(169,76,68,.62);o
 }
 #list{
   overflow:auto;
-  max-height:calc(100vh - 390px);
+  max-height:calc(100svh - 390px);
   display:grid;
   gap:8px;
   padding-right:4px;
@@ -688,7 +688,7 @@ button:focus-visible,input:focus-visible{outline:2px solid rgba(169,76,68,.62);o
   top:104px;
   z-index:16;
   width:min(760px,calc(100vw - 32px));
-  max-height:calc(100vh - 128px);
+  max-height:calc(100svh - 128px);
   border-radius:22px;
   padding:14px;
   overflow:hidden;
@@ -789,7 +789,7 @@ button:focus-visible,input:focus-visible{outline:2px solid rgba(169,76,68,.62);o
 }
 #archiveList{
   overflow:auto;
-  max-height:calc(100vh - 350px);
+  max-height:calc(100svh - 350px);
   display:grid;
   align-content:start;
   gap:8px;
@@ -814,7 +814,7 @@ button:focus-visible,input:focus-visible{outline:2px solid rgba(169,76,68,.62);o
 .archiveItem.active{border-color:rgba(169,76,68,.46);background:rgba(255,250,239,.90);box-shadow:0 10px 20px rgba(84,58,22,.10)}
 #archiveDetail{
   overflow:auto;
-  max-height:calc(100vh - 350px);
+  max-height:calc(100svh - 350px);
   border:1px solid rgba(23,18,13,.12);
   border-radius:17px;
   background:rgba(255,255,255,.30);
@@ -1196,7 +1196,7 @@ body.reduced *{animation:none!important;transition:none!important}
   top:104px;
   z-index:16;
   width:min(380px,calc(100vw - 32px));
-  max-height:calc(100vh - 156px);
+  max-height:calc(100svh - 156px);
   display:none;
   pointer-events:auto;
   border:1px solid rgba(23,18,13,.16);
@@ -1509,7 +1509,7 @@ body.reduced *{animation:none!important;transition:none!important}
 #miniMap{width:150px !important;height:118px !important}
 #catalogue,#helpPanel,#fastMapPanel{
   top:74px !important;
-  max-height:calc(100vh - 98px) !important;
+  max-height:calc(100svh - 98px) !important;
   width:min(330px,calc(100vw - 24px)) !important;
   padding:10px !important;
   border-radius:13px !important;
@@ -1518,7 +1518,7 @@ body.reduced *{animation:none!important;transition:none!important}
   top:74px !important;
   right:12px !important;
   width:min(560px,calc(100vw - 24px)) !important;
-  max-height:calc(100vh - 98px) !important;
+  max-height:calc(100svh - 98px) !important;
   border-radius:13px !important;
 }
 #archiveHead b{font-size:25px !important}
@@ -1526,7 +1526,7 @@ body.reduced *{animation:none!important;transition:none!important}
 .archiveProgressCard{padding:5px 6px !important}
 .archiveProgressCard b{font-size:14px !important}
 #archiveBody{min-height:280px !important;gap:8px !important}
-#archiveList,#archiveDetail{max-height:calc(100vh - 300px) !important}
+#archiveList,#archiveDetail{max-height:calc(100svh - 300px) !important}
 #hintBanner{top:70px !important;font-size:11px !important;padding:8px 12px !important}
 @media (max-width:920px){
   #brandSignature{display:none !important}
@@ -1545,7 +1545,7 @@ body.reduced *{animation:none!important;transition:none!important}
   top:104px;
   z-index:16;
   width:min(640px,calc(100vw - 32px));
-  max-height:calc(100vh - 128px);
+  max-height:calc(100svh - 128px);
   border-radius:18px;
   padding:14px;
   overflow:hidden;
@@ -1561,7 +1561,7 @@ body.reduced *{animation:none!important;transition:none!important}
 #researchQuery{height:40px}
 #notesActions,#researchQueryBar{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 #researchQueryBar{display:grid;grid-template-columns:1fr auto auto auto auto;align-items:center}
-#notesList,#researchResults{overflow:auto;max-height:calc(100vh - 340px);margin-top:10px;display:grid;gap:8px;padding-right:4px}
+#notesList,#researchResults{overflow:auto;max-height:calc(100svh - 340px);margin-top:10px;display:grid;gap:8px;padding-right:4px}
 .noteItem,.researchItem{border:1px solid rgba(23,18,13,.10);border-radius:13px;background:rgba(255,255,255,.30);padding:9px 10px}
 .noteItemMeta,.researchItemMeta{display:flex;justify-content:space-between;gap:8px;color:rgba(23,18,13,.48);font-size:9px;font-weight:850;letter-spacing:.10em;text-transform:uppercase}
 .noteItem p,.researchItem p{margin:7px 0 0;color:rgba(23,18,13,.76);font-size:12px;line-height:1.38;white-space:pre-wrap}
@@ -1692,7 +1692,7 @@ body.reduced #mobileInteractBtn.hasTarget{animation:none}
   right:16px;
   top:92px;
   width:min(520px,calc(100vw - 32px));
-  max-height:calc(100vh - 118px);
+  max-height:calc(100svh - 118px);
   padding:16px;
   border-radius:22px;
   background:rgba(250,246,236,.96);
@@ -1713,6 +1713,41 @@ body.reduced #mobileInteractBtn.hasTarget{animation:none}
 }
 .fastMapCurrent strong{font-size:12px;letter-spacing:.08em;text-transform:uppercase}
 .fastMapIntro{margin-bottom:15px!important}
+.journeyMap{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:6px;
+  margin:0 0 14px;
+}
+.journeyBeat{
+  border:1px solid rgba(23,18,13,.14);
+  border-radius:7px;
+  background:rgba(255,250,239,.44);
+  padding:7px 8px;
+  min-width:0;
+}
+.journeyBeat b{
+  display:block;
+  font-size:10px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--ink);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.journeyBeat span{
+  display:block;
+  margin-top:2px;
+  font-size:10px;
+  line-height:1.25;
+  color:var(--muted);
+}
+.journeyBeat.active{
+  border-color:rgba(194,47,47,.42);
+  background:rgba(255,240,221,.82);
+  box-shadow:0 10px 24px rgba(84,58,22,.08);
+}
 .fastMapSection{margin-top:13px}
 .fastMapSectionTitle{margin:0 0 7px;font-size:9px;font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:rgba(23,18,13,.50)}
 .fastMapGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -1757,7 +1792,7 @@ body.reduced #mobileInteractBtn.hasTarget{animation:none}
 #mobileLookHint{padding:7px 10px;border-radius:999px;background:rgba(10,10,12,.50);color:rgba(255,255,255,.82);font-size:9px;letter-spacing:.08em}
 
 @media (max-width:920px){
-  #fastMapPanel{left:10px;right:10px;top:72px;width:auto;max-height:calc(100vh - 84px);padding:14px}
+  #fastMapPanel{left:10px;right:10px;top:72px;width:auto;max-height:calc(100svh - 84px);padding:14px}
   .fastMapGrid{grid-template-columns:1fr 1fr}
   .fastMapGrid.compact{grid-template-columns:1fr 1fr}
   .fastMapBtn{min-height:64px}
@@ -1766,6 +1801,7 @@ body.reduced #mobileInteractBtn.hasTarget{animation:none}
   #studioNowPlaying button{flex:1}
   #studioBar input{min-width:100%;flex-basis:100%}
   #studioBar button{flex:1;padding:9px 10px}
+  .journeyMap{grid-template-columns:1fr}
 }
 @media (pointer:coarse){
   #mobileJoy{width:124px;height:124px;left:14px;bottom:calc(16px + env(safe-area-inset-bottom))}
@@ -1879,7 +1915,14 @@ body.rpgMode #rpgModeBadge{display:block}
       <button class="btn" id="fastMapCloseBtn" type="button">Close</button>
     </div>
     <div class="fastMapCurrent" id="fastMapCurrent">You are in <strong>Workshop Hall</strong></div>
-    <p class="fastMapIntro">Three districts. Smaller rooms remain discoverable through doors inside each wing.</p>
+    <p class="fastMapIntro">Five story beats. Three districts. Smaller rooms remain discoverable through doors inside each wing.</p>
+    <div class="journeyMap" id="journeyMap" aria-label="Narrative progress">
+      <div class="journeyBeat" data-beat="threshold"><b>Threshold</b><span>Workshop Hall</span></div>
+      <div class="journeyBeat" data-beat="search"><b>Search</b><span>Thinking, Maps, Lab</span></div>
+      <div class="journeyBeat" data-beat="projection"><b>Projection</b><span>Venue, Studio, Garden</span></div>
+      <div class="journeyBeat" data-beat="outside"><b>Outside</b><span>Grove</span></div>
+      <div class="journeyBeat" data-beat="return"><b>Return</b><span>Headquarters</span></div>
+    </div>
     <section class="fastMapDistrict">
       <h4 class="fastMapDistrictTitle">The Workshop<span>main building &amp; underground</span></h4>
       <div class="fastMapGrid">
@@ -11328,6 +11371,14 @@ function updateCameraRotation(){
 function updateRoomsPanel(){
   const current=$('fastMapCurrent');
   if(current) current.innerHTML=`You are in <strong>${esc(roomNameForNotes(currentRoom))}</strong>`;
+  const beatForRoom={
+    gallery:'threshold', tunnel:'search', maps:'search', thinking:'search', spark:'search', lab:'search',
+    theatre:'projection', studio:'projection', maze:'projection', night:'projection',
+    outdoor:'outside', hood:'return'
+  };
+  document.querySelectorAll('.journeyBeat').forEach(beat=>{
+    beat.classList.toggle('active', beat.dataset.beat === (beatForRoom[currentRoom] || 'threshold'));
+  });
   const primaryPlaces={
     gallery:['warehouse'], theatre:['venue'], lab:['lab'], maze:['garden'], outdoor:['outdoor'],
     studio:['studio'], tunnel:['the-tunnel','waiting-room'], night:['night-room'], maps:['maps'],
