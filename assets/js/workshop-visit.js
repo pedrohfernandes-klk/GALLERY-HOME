@@ -1,7 +1,16 @@
-export const VISIT_VERSION = 1;
+export const VISIT_VERSION = 2;
 export const VISIT_EVENT_LIMIT = 300;
 
 const EVENT_KINDS = new Set(['enter', 'move', 'target', 'interaction', 'arrival', 'rooms-opened']);
+const EVENT_ACTIONS = new Set([
+  'entered', 'moved', 'attended', 'used', 'arrived', 'opened',
+  'consulted', 'activated', 'created', 'saved', 'spoke', 'returned', 'started',
+]);
+const EVENT_SOURCES = new Set(['world', 'rooms', 'archive', 'notes']);
+const DEFAULT_ACTION = Object.freeze({
+  enter: 'entered', move: 'moved', target: 'attended', interaction: 'used',
+  arrival: 'arrived', 'rooms-opened': 'opened',
+});
 const STATE_TIMESTAMPS = ['enteredAt', 'firstMoveAt', 'firstLookAt', 'firstInteractionAt', 'roomsOpenedAt'];
 
 function timestamp(value) {
@@ -21,18 +30,43 @@ function roomToken(value) {
     : null;
 }
 
-function normalizeEvent(event, fallbackAt = null) {
+function eventIdToken(value) {
+  const id = token(value, 180);
+  return id && /^[a-z0-9:._-]+$/i.test(id) ? id : null;
+}
+
+function evidenceSlug(event) {
+  return String(event.id || event.room || event.kind || 'event')
+    .trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'event';
+}
+
+export function normalizeVisitEvent(event, fallbackAt = null, sequence = 0) {
   if (!event || !EVENT_KINDS.has(event.kind)) return null;
   const at = timestamp(event.at) ?? timestamp(fallbackAt);
   if (at === null) return null;
-  const normalized = { kind: event.kind };
+  const ordinal = Number.isSafeInteger(sequence) && sequence >= 0 ? sequence : 0;
+  const normalized = {
+    kind: event.kind,
+    action: EVENT_ACTIONS.has(event.action) ? event.action : DEFAULT_ACTION[event.kind],
+  };
   const room = roomToken(event.room);
   const type = token(event.type, 48);
   const id = token(event.id, 160);
+  const capability = token(event.capability, 64);
+  const label = token(event.label, 160);
+  const roomLabel = token(event.roomLabel, 80);
   if (room) normalized.room = room;
   if (type) normalized.type = type;
   if (id) normalized.id = id;
+  if (capability) normalized.capability = capability;
+  if (label) normalized.label = label;
+  if (roomLabel) normalized.roomLabel = roomLabel;
+  normalized.source = EVENT_SOURCES.has(event.source)
+    ? event.source
+    : event.kind === 'rooms-opened' ? 'rooms' : 'world';
   normalized.at = at;
+  normalized.eventId = eventIdToken(event.eventId)
+    || `visit-${at}-${ordinal}-${event.kind}-${evidenceSlug(event)}`;
   return normalized;
 }
 
@@ -46,6 +80,7 @@ function freshState() {
     roomsOpenedAt: null,
     rooms: {},
     events: [],
+    nextEventSequence: 0,
   };
 }
 
@@ -58,7 +93,8 @@ export function createVisitState(raw = null) {
       return freshState();
     }
   }
-  if (!source || typeof source !== 'object' || Array.isArray(source) || source.version !== VISIT_VERSION) {
+  const supportedVersion = source?.version === 1 || source?.version === VISIT_VERSION;
+  if (!source || typeof source !== 'object' || Array.isArray(source) || !supportedVersion) {
     return freshState();
   }
 
@@ -75,22 +111,27 @@ export function createVisitState(raw = null) {
 
   if (Array.isArray(source.events)) {
     state.events = source.events
-      .map(event => normalizeEvent(event))
+      .map((event, sequence) => normalizeVisitEvent(event, null, sequence))
       .filter(Boolean)
       .slice(-VISIT_EVENT_LIMIT);
+    const restoredSequence = Number.isSafeInteger(source.nextEventSequence) && source.nextEventSequence >= 0
+      ? source.nextEventSequence
+      : 0;
+    state.nextEventSequence = Math.max(source.events.length, restoredSequence);
   }
   return state;
 }
 
 export function recordVisitEvent(state, event, now = Date.now()) {
   const current = createVisitState(state);
-  const normalized = normalizeEvent(event, now);
+  const normalized = normalizeVisitEvent(event, now, current.nextEventSequence);
   if (!normalized) return current;
 
   const next = {
     ...current,
     rooms: { ...current.rooms },
     events: [...current.events, normalized].slice(-VISIT_EVENT_LIMIT),
+    nextEventSequence: current.nextEventSequence + 1,
   };
   const at = normalized.at;
   if (normalized.kind === 'enter' && next.enteredAt === null) next.enteredAt = at;
@@ -163,10 +204,11 @@ export function visitOrientationStatus(state) {
 }
 
 export function journeyGuidance(currentId, acts = [], stamps = {}) {
+  const isStamped=value=>Number.isFinite(value) || (!!value && typeof value==='object' && Number.isFinite(value.at));
   const ordered = Array.from(acts || []).filter(act=>act && typeof act.id==='string' && typeof act.label==='string');
   const current = ordered.find(act=>act.id===currentId) || ordered[0] || { id:'threshold', label:'Threshold' };
-  const next = ordered.find(act=>!Number.isFinite(stamps?.[act.id])) || null;
-  const currentStamped = Number.isFinite(stamps?.[current.id]);
+  const next = ordered.find(act=>!isStamped(stamps?.[act.id])) || null;
+  const currentStamped = isStamped(stamps?.[current.id]);
   if(!next){
     return {
       currentId:current.id,
