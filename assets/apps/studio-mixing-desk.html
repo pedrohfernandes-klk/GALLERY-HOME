@@ -351,6 +351,19 @@
     .deck-eq input { min-width: 0; }
     .crossfader { padding: 10px; border: 1px solid var(--line); border-radius: 9px; background: rgba(0,0,0,.2); }
     .crossfader label { display: flex; justify-content: space-between; color: #aaa397; font-size: 9px; letter-spacing: .12em; }
+    /* Live rig — playing the desk rather than drawing on it. */
+    .live-rig { margin-top: 12px; padding-top: 11px; border-top: 1px solid rgba(239,228,204,.13); display: grid; gap: 8px; }
+    .rig-row { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+    .rig-label { font: 800 8px/1 ui-monospace, monospace; letter-spacing: .18em; text-transform: uppercase; color: #857f75; min-width: 46px; }
+    .rig-note { font: 600 9px/1.3 ui-monospace, monospace; color: #7d776d; }
+    .btn.chip { padding: 6px 10px; font-size: 9px; letter-spacing: .1em; }
+    .btn.chip.on { background: var(--amber, #d47c55); border-color: var(--amber, #d47c55); color: #17120d; }
+    .btn.chip.bank { min-width: 30px; opacity: .55; }
+    .btn.chip.bank.filled { opacity: 1; }
+    .btn.chip.bank.active { background: var(--amber, #d47c55); border-color: var(--amber, #d47c55); color: #17120d; }
+    .rig-input { width: 92px; background: #0f0d0b; border: 1px solid rgba(239,228,204,.2); border-radius: 6px; color: #efe4cc;
+      padding: 6px 8px; font: 800 10px/1 ui-monospace, monospace; letter-spacing: .16em; text-transform: uppercase; }
+    .pad-wave { display: block; width: 100%; height: 15px; margin: 4px 0 2px; opacity: .9; }
     .sample-pads { display: grid; grid-template-columns: repeat(8, minmax(60px,1fr)); gap: 7px; margin-top: 12px; }
     .sample-pad { min-height: 58px; border: 1px solid rgba(239,228,204,.18); border-radius: 8px; background: linear-gradient(160deg,#333638,#181a1b); cursor: pointer; }
     .sample-pad strong { display: block; color: var(--amber); font: 800 13px/1 ui-monospace, monospace; }
@@ -560,6 +573,27 @@
           <div class="sequencer-scroll">
             <div class="step-numbers" id="stepNumbers"><span></span></div>
             <div id="tracks"></div>
+          </div>
+          <div class="live-rig" aria-label="Live rig">
+            <div class="rig-row">
+              <span class="rig-label">Play in</span>
+              <button class="btn chip" id="armBtn" type="button" title="Record live hits into the grid">● ARM</button>
+              <button class="btn chip" id="quantBtn" type="button" title="Snap live hits to the nearest step">QUANTISE</button>
+              <button class="btn chip" id="clickBtn" type="button" title="Metronome">CLICK</button>
+              <button class="btn chip" id="midiBtn" type="button" title="Connect a MIDI controller">MIDI</button>
+              <span class="rig-note" id="midiName">not connected</span>
+              <button class="btn chip" id="undoBtn" type="button" disabled title="Undo the last pattern change (Ctrl+Z)">UNDO</button>
+            </div>
+            <div class="rig-row">
+              <span class="rig-label">Song</span>
+              <button class="btn chip bank" data-bank="0" type="button" title="Click to load · Shift-click to capture">A</button>
+              <button class="btn chip bank" data-bank="1" type="button" title="Click to load · Shift-click to capture">B</button>
+              <button class="btn chip bank" data-bank="2" type="button" title="Click to load · Shift-click to capture">C</button>
+              <button class="btn chip bank" data-bank="3" type="button" title="Click to load · Shift-click to capture">D</button>
+              <input id="chainInput" class="rig-input" value="A" maxlength="16" aria-label="Pattern chain" title="Chain, e.g. AABC">
+              <button class="btn chip" id="songBtn" type="button" title="Play the chain">SONG</button>
+              <span class="rig-note">Keys 1-8 play tracks · Shift for accent</span>
+            </div>
           </div>
         </section>
 
@@ -835,8 +869,12 @@
       key:0, scale:'minor', strange:12, playing:false, step:0, nextNoteTime:0, timer:null, lastUiStep:-1,
       radio:false, ghost:false, panicSteps:0, sampleBuffer:null, reversedBuffer:null,
       sampleSlots:Array(8).fill(null), selectedSample:-1, voiceAssignments:Array(16).fill(-1), voiceMode:'Normal', recording:false,
-      mediaRecorder:null, chunks:[], tapes:[], bounceTimer:null, micRecorder:null, micStream:null, micChunks:[], yt:null, ytReady:false
+      mediaRecorder:null, chunks:[], tapes:[], bounceTimer:null, micRecorder:null, micStream:null, micChunks:[], yt:null, ytReady:false,
+      // Live rig: play the desk as an instrument rather than only drawing on it.
+      click:false, quantise:true, armed:false, midiName:'',
+      banks:[null,null,null,null], chain:'A', chainPos:0, song:false
     };
+    const undoStack=[];
 
     const deckState = {
       a:{slot:0,rate:1,volume:.78,playing:false,source:null,nodes:null},
@@ -993,6 +1031,118 @@
       schedulingVolume=1;
     }
 
+    // ===== LIVE RIG =====
+    // Undo. Patterns are the one thing you lose by accident (a stray click, a
+    // randomise, a preset load), so every mutation snapshots the grid first.
+    function pushUndo(label='edit'){
+      undoStack.push({label,tracks:state.tracks.map(t=>({steps:t.steps.slice(),accents:t.accents.slice()}))});
+      if(undoStack.length>40) undoStack.shift();
+      const b=$('#undoBtn'); if(b) b.disabled=!undoStack.length;
+    }
+    function undo(){
+      const snap=undoStack.pop();
+      if(!snap){ toast('Nothing left to undo'); return; }
+      snap.tracks.forEach((t,i)=>{ state.tracks[i].steps=t.steps.slice(); state.tracks[i].accents=t.accents.slice(); });
+      renderSteps(); saveProject();
+      const b=$('#undoBtn'); if(b) b.disabled=!undoStack.length;
+      toast(`Undo · ${snap.label}`);
+    }
+
+    // Metronome. Scheduled on the same clock as the tracks so it cannot drift,
+    // with the downbeat pitched up — you can hear where "one" is while playing in.
+    function playClick(time,downbeat){
+      if(!ctx) return;
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.type='square'; o.frequency.value=downbeat?1760:1174;
+      g.gain.setValueAtTime(0,time);
+      g.gain.linearRampToValueAtTime(downbeat?.16:.09,time+.002);
+      g.gain.exponentialRampToValueAtTime(.0006,time+.045);
+      o.connect(g); g.connect(masterIn||ctx.destination);
+      o.start(time); o.stop(time+.06);
+    }
+
+    // Quantise. A live hit lands on the step the sequencer is closest to, rather
+    // than wherever the transport happens to be mid-step — which is the
+    // difference between playing a part in and nudging cells afterwards.
+    function quantisedStep(){
+      if(!state.playing) return state.step;
+      if(!state.quantise) return state.step;
+      const secondsPerBeat=60/state.bpm, stepDur=.25*secondsPerBeat;
+      const ahead=(state.nextNoteTime-ctx.currentTime)/stepDur;   // 0..1 through the pending step
+      return (state.step + (ahead<.5?0:1) + 16) % 16;
+    }
+    function liveHit(trackIndex,accent=false){
+      if(trackIndex<0||trackIndex>=state.tracks.length) return;
+      const t=state.tracks[trackIndex];
+      if(ctx){ schedulingVolume=t.volume; scheduleTrack(trackIndex,ctx.currentTime+.001,state.step); schedulingVolume=1; }
+      const cell=$(`.step[data-track="${trackIndex}"][data-step="${state.step}"]`);
+      if(cell){ cell.classList.add('current'); setTimeout(()=>cell.classList.remove('current'),110); }
+      if(!state.armed) return;
+      const step=quantisedStep();
+      pushUndo('live take');
+      t.steps[step]=true; if(accent) t.accents[step]=true;
+      renderSteps(); saveProject();
+    }
+
+    // Song mode. Four banks and a chain string ("AABC") advance on the loop
+    // boundary, so a pattern sketch becomes an arrangement without leaving here.
+    function captureBank(i){
+      pushUndo('bank capture');
+      state.banks[i]=state.tracks.map(t=>({steps:t.steps.slice(),accents:t.accents.slice()}));
+      renderBanks(); saveProject(); toast(`Bank ${String.fromCharCode(65+i)} captured`);
+    }
+    function loadBank(i,quiet=false){
+      const b=state.banks[i]; if(!b){ if(!quiet) toast(`Bank ${String.fromCharCode(65+i)} is empty`); return false; }
+      b.forEach((t,n)=>{ state.tracks[n].steps=t.steps.slice(); state.tracks[n].accents=t.accents.slice(); });
+      renderSteps(); if(!quiet) toast(`Bank ${String.fromCharCode(65+i)}`);
+      return true;
+    }
+    function chainIndices(){
+      return (state.chain||'A').toUpperCase().split('').map(c=>c.charCodeAt(0)-65).filter(i=>i>=0&&i<4);
+    }
+    function advanceChain(){
+      const seq=chainIndices(); if(!state.song||seq.length<1) return;
+      state.chainPos=(state.chainPos+1)%seq.length;
+      loadBank(seq[state.chainPos],true);
+      renderBanks();
+    }
+    function renderBanks(){
+      $$('[data-bank]').forEach(b=>{
+        const i=+b.dataset.bank, seq=chainIndices();
+        b.classList.toggle('filled',!!state.banks[i]);
+        b.classList.toggle('active',state.song && seq[state.chainPos]===i);
+      });
+      const c=$('#chainInput'); if(c && c.value!==state.chain) c.value=state.chain;
+      const s=$('#songBtn'); if(s) s.classList.toggle('on',state.song);
+    }
+
+    // Web MIDI. Notes 36-43 map to the eight tracks (the standard pad row), so a
+    // real controller plays the desk; CC 1/7 ride reverb and master.
+    async function initMidi(){
+      if(!navigator.requestMIDIAccess){ toast('This browser has no Web MIDI'); return; }
+      try{
+        const access=await navigator.requestMIDIAccess();
+        const attach=()=>{
+          const names=[];
+          access.inputs.forEach(input=>{ names.push(input.name); input.onmidimessage=onMidi; });
+          state.midiName=names.join(', ');
+          const el=$('#midiName'); if(el) el.textContent=names.length?state.midiName:'no inputs';
+          const b=$('#midiBtn'); if(b) b.classList.toggle('on',!!names.length);
+        };
+        attach(); access.onstatechange=attach;
+        toast(state.midiName?`MIDI · ${state.midiName}`:'MIDI ready · no inputs found');
+      }catch(e){ toast('MIDI permission refused'); }
+    }
+    function onMidi(ev){
+      const [status,d1,d2]=ev.data, kind=status&0xf0;
+      if(kind===0x90 && d2>0){ ensureAudio().then(()=>liveHit(d1-36,d2>100)); }
+      else if(kind===0xb0){
+        const v=d2/127;
+        if(d1===1){ const r=$('#reverb'); if(r){ r.value=String(Math.round(v*65)); r.dispatchEvent(new Event('input')); } }
+        if(d1===7){ const m=$('#master'); if(m){ m.value=String(Math.round(v*100)); m.dispatchEvent(new Event('input')); } }
+      }
+    }
+
     function nextStep() {
       const secondsPerBeat=60/state.bpm;
       let duration=.25*secondsPerBeat;
@@ -1000,11 +1150,13 @@
       if(state.panicSteps>0) { duration*=.48; state.panicSteps--; }
       state.nextNoteTime+=duration;
       state.step=(state.step+1)%16;
+      if(state.step===0) advanceChain();
     }
     function scheduler() {
       if(!ctx||!state.playing) return;
       while(state.nextNoteTime<ctx.currentTime+.1){
         for(let i=0;i<state.tracks.length;i++) scheduleTrack(i,state.nextNoteTime,state.step);
+        if(state.click && state.step%4===0) playClick(state.nextNoteTime,state.step===0);
         const uiStep=state.step, wait=Math.max(0,(state.nextNoteTime-ctx.currentTime)*1000);
         setTimeout(()=>paintCurrent(uiStep),wait);
         nextStep();
@@ -1046,6 +1198,7 @@
               else {t.steps[si]=false;t.accents[si]=false;}
               last=now;renderSteps();
             } else {
+              pushUndo('grid edit');
               if(now-last<330&&t.steps[si])t.accents[si]=!t.accents[si];else{t.steps[si]=!t.steps[si];if(!t.steps[si])t.accents[si]=false;}last=now;b.classList.toggle('on',t.steps[si]);b.classList.toggle('accent',t.accents[si]);b.setAttribute('aria-pressed',t.steps[si]);
             }
             saveProject();
@@ -1056,7 +1209,7 @@
     }
 
     function loadPreset(name,quiet=false) {
-      const data=patterns[name]; if(!data)return; state.preset=name; const next=emptyPattern();
+      const data=patterns[name]; if(!data)return; if(!quiet) pushUndo('preset '+name); state.preset=name; const next=emptyPattern();
       data.forEach((s,i)=>{next[i].steps=[...s].map(c=>c==='1');next[i].accents=next[i].steps.map((on,j)=>on&&(j===0||Math.random()<.13));});
       if(state.sampleSlots.some(Boolean)){next[7].steps=state.tracks[7].steps.slice();next[7].accents=state.tracks[7].accents.slice();} state.tracks=next; $('#nowTitle').textContent=name;
       $$('.preset').forEach(x=>x.classList.toggle('active',x.dataset.name===name)); renderSteps();renderTrackMix();saveProject();postDeskState(); if(!quiet)toast(`${name} is now under consideration.`);
@@ -1064,7 +1217,7 @@
     function renderPresets(){
       $('#presetStrip').innerHTML=Object.keys(patterns).map(name=>`<button class="preset" data-name="${name}">${name}</button>`).join('')+'<button class="preset" id="anotherBtn">ANOTHER VERSION</button>';
       $$('.preset[data-name]').forEach(b=>b.onclick=()=>loadPreset(b.dataset.name));
-      $('#anotherBtn').onclick=()=>{state.tracks.forEach((t,i)=>{if(!t.lock)randomiseTrack(i,false)});renderSteps();saveProject();toast('A related but legally distinct version has appeared.');};
+      $('#anotherBtn').onclick=()=>{pushUndo('randomise');state.tracks.forEach((t,i)=>{if(!t.lock)randomiseTrack(i,false)});renderSteps();saveProject();toast('A related but legally distinct version has appeared.');};
     }
     function randomiseTrack(i,announce=true){
       const t=state.tracks[i];if(t.lock){if(announce)toast(`${t.name} is locked and refuses.`);return;}
@@ -1137,6 +1290,26 @@
       const source=ctx.createBufferSource(),gain=ctx.createGain();source.buffer=slot.buffer;gain.gain.value=.72;source.connect(gain);connectVoice(gain,.12);source.start();
       source.stop(ctx.currentTime+Math.min(slot.buffer.duration,8));button.classList.add('hit');setTimeout(()=>button.classList.remove('hit'),150);
     }
+    // Peak waveform for a loaded slot. Without this a sample is just a filename:
+    // you cannot see whether you grabbed a one-shot or thirty seconds of silence,
+    // where the transient is, or that a reversed take is actually reversed.
+    function drawWave(canvas,slot){
+      if(!canvas) return;
+      const g=canvas.getContext('2d'), w=canvas.width, h=canvas.height;
+      g.clearRect(0,0,w,h);
+      if(!slot||!slot.buffer){
+        g.strokeStyle='rgba(239,228,204,.16)'; g.beginPath(); g.moveTo(0,h/2); g.lineTo(w,h/2); g.stroke();
+        return;
+      }
+      const data=slot.buffer.getChannelData(0), block=Math.max(1,Math.floor(data.length/w));
+      g.fillStyle='rgba(212,124,85,.85)';
+      for(let x=0;x<w;x++){
+        let min=1,max=-1;
+        for(let i=0;i<block;i++){ const v=data[x*block+i]; if(v===undefined)break; if(v<min)min=v; if(v>max)max=v; }
+        const y1=(1-max)*h/2, y2=(1-min)*h/2;
+        g.fillRect(x,y1,1,Math.max(1,y2-y1));
+      }
+    }
     function renderDeckSources(){
       $$('[data-deck-source]').forEach(select=>{
         const id=select.dataset.deckSource,d=deckState[id];
@@ -1144,8 +1317,9 @@
         select.value=String(d.slot);
       });
       const pads=$('#samplePads');if(!pads)return;
-      pads.innerHTML=state.sampleSlots.map((slot,i)=>`<button class="sample-pad ${slot?'loaded':''}" data-sample-pad="${i}" type="button"><strong>${String.fromCharCode(65+i)}</strong><span>${slot?esc(slot.name):'EMPTY'}</span></button>`).join('');
+      pads.innerHTML=state.sampleSlots.map((slot,i)=>`<button class="sample-pad ${slot?'loaded':''}" data-sample-pad="${i}" type="button"><strong>${String.fromCharCode(65+i)}</strong><canvas class="pad-wave" data-wave="${i}" width="120" height="26"></canvas><span>${slot?esc(slot.name):'EMPTY'}</span></button>`).join('');
       $$('[data-sample-pad]',pads).forEach(button=>button.onclick=()=>hitSamplePad(+button.dataset.samplePad,button));
+      $$('[data-wave]',pads).forEach(cv=>drawWave(cv,state.sampleSlots[+cv.dataset.wave]));
     }
     function setupDecks(){
       renderDeckSources();
@@ -1247,10 +1421,10 @@
     }
 
     function saveProject(){
-      try{localStorage.setItem('studioDeskV1',JSON.stringify({preset:state.preset,bpm:state.bpm,swing:state.swing,master:state.master,reverb:state.reverb,delay:state.delay,tone:state.tone,key:state.key,scale:state.scale,strange:state.strange,tracks:state.tracks.map(t=>({steps:t.steps,accents:t.accents,mute:t.mute,solo:t.solo,lock:t.lock,volume:t.volume,sound:t.sound}))}));}catch(e){}
+      try{localStorage.setItem('studioDeskV1',JSON.stringify({preset:state.preset,bpm:state.bpm,swing:state.swing,master:state.master,reverb:state.reverb,delay:state.delay,tone:state.tone,key:state.key,scale:state.scale,strange:state.strange,click:state.click,quantise:state.quantise,armed:state.armed,song:state.song,chain:state.chain,banks:state.banks,tracks:state.tracks.map(t=>({steps:t.steps,accents:t.accents,mute:t.mute,solo:t.solo,lock:t.lock,volume:t.volume,sound:t.sound}))}));}catch(e){}
     }
     function restoreProject(){
-      try{const x=JSON.parse(localStorage.getItem('studioDeskV1'));if(!x||!Array.isArray(x.tracks)||x.tracks.length!==8)return false;Object.assign(state,{preset:x.preset||state.preset,bpm:x.bpm||108,swing:x.swing??8,master:x.master??.78,reverb:x.reverb??.22,delay:x.delay??.14,tone:x.tone||16000,key:x.key||0,scale:x.scale||'minor',strange:x.strange??12});const base=emptyPattern();state.tracks=base.map((t,i)=>Object.assign(t,x.tracks[i]));return true;}catch(e){return false;}
+      try{const x=JSON.parse(localStorage.getItem('studioDeskV1'));if(!x||!Array.isArray(x.tracks)||x.tracks.length!==8)return false;Object.assign(state,{preset:x.preset||state.preset,bpm:x.bpm||108,swing:x.swing??8,master:x.master??.78,reverb:x.reverb??.22,delay:x.delay??.14,tone:x.tone||16000,key:x.key||0,scale:x.scale||'minor',strange:x.strange??12,click:!!x.click,quantise:x.quantise!==false,armed:!!x.armed,song:!!x.song,chain:x.chain||'A',banks:Array.isArray(x.banks)&&x.banks.length===4?x.banks:[null,null,null,null]});const base=emptyPattern();state.tracks=base.map((t,i)=>Object.assign(t,x.tracks[i]));return true;}catch(e){return false;}
     }
 
     function enterWalk(){
@@ -1273,13 +1447,39 @@
       $('#sampleInput').onchange=async e=>{await importFiles(e.target.files);e.target.value='';};$('#micBtn').onclick=startMic;$('#urlImport').onclick=importSampleUrl;
       const drop=$('#dropZone');['dragenter','dragover'].forEach(type=>drop.addEventListener(type,e=>{e.preventDefault();drop.classList.add('dragging');}));['dragleave','drop'].forEach(type=>drop.addEventListener(type,e=>{e.preventDefault();drop.classList.remove('dragging');}));drop.addEventListener('drop',e=>importFiles(e.dataTransfer.files));
       $('#clearSamples').onclick=()=>{deckStop('a',true);deckStop('b',true);state.sampleSlots=Array(8).fill(null);state.selectedSample=-1;state.sampleBuffer=null;state.reversedBuffer=null;state.voiceAssignments=Array(16).fill(-1);renderSampleBank();renderSteps();updateTransport();$('#sampleName').textContent='Eight sample slots are available.';toast('The sample tray is empty.');};
+      // ===== Live rig wiring =====
+      const rigToggle=(id,key,label)=>{const b=$('#'+id);b.classList.toggle('on',!!state[key]);b.onclick=()=>{state[key]=!state[key];b.classList.toggle('on',state[key]);saveProject();toast(`${label} ${state[key]?'on':'off'}`);};};
+      rigToggle('armBtn','armed','Live record');
+      rigToggle('quantBtn','quantise','Quantise');
+      rigToggle('clickBtn','click','Metronome');
+      $('#midiBtn').onclick=initMidi;
+      $('#undoBtn').onclick=undo;
+      $$('[data-bank]').forEach(b=>b.onclick=e=>{const i=+b.dataset.bank;if(e.shiftKey)captureBank(i);else{if(loadBank(i))saveProject();}});
+      $('#chainInput').oninput=e=>{state.chain=e.target.value.toUpperCase().replace(/[^A-D]/g,'')||'A';state.chainPos=0;renderBanks();saveProject();};
+      $('#songBtn').onclick=()=>{state.song=!state.song;state.chainPos=0;if(state.song&&chainIndices().length){loadBank(chainIndices()[0],true);}renderBanks();saveProject();toast(`Song mode ${state.song?'on · '+state.chain:'off'}`);};
+      renderBanks();
       $$('.perf').forEach(b=>b.onclick=()=>performanceAction(b.dataset.action,b));
       $$('.tab').forEach(tab=>tab.onclick=()=>{$$('.tab').forEach(x=>{x.classList.toggle('active',x===tab);x.setAttribute('aria-selected',x===tab)});$$('.tool-page').forEach(x=>x.classList.toggle('active',x.id===`page-${tab.dataset.page}`));});
       const bind=(id,key,format,apply)=>{$('#'+id).value=key==='master'?Math.round(state[key]*100):key==='reverb'||key==='delay'?Math.round(state[key]*100):state[key];const run=e=>{let v=+e.target.value;state[key]=key==='master'||key==='reverb'||key==='delay'?v/100:v;$('#'+id+'Out').textContent=format(v);if(apply&&ctx)apply(state[key]);saveProject();};$('#'+id).oninput=run;run({target:$('#'+id)});};
       bind('bpm','bpm',v=>`${v} BPM`);bind('swing','swing',v=>`${v}%`);bind('master','master',v=>`${v}%`,v=>masterGain.gain.setTargetAtTime(v,ctx.currentTime,.03));bind('reverb','reverb',v=>`${v}%`,v=>reverbGain.gain.setTargetAtTime(v,ctx.currentTime,.05));bind('delay','delay',v=>`${v}%`,v=>delayGain.gain.setTargetAtTime(v,ctx.currentTime,.05));bind('tone','tone',v=>v>14000?'OPEN':`${(v/1000).toFixed(1)} kHz`,v=>{if(!state.radio)lowpass.frequency.setTargetAtTime(v,ctx.currentTime,.04)});
       $('#keySelect').selectedIndex=state.key;$('#keySelect').onchange=e=>{state.key=e.target.selectedIndex;saveProject();};$('#scaleSelect').value=state.scale;$('#scaleSelect').onchange=e=>{state.scale=e.target.value;saveProject();};
       $('#strangeRange').value=state.strange;const strange=e=>{state.strange=+e.target.value;$('#strangeValue').textContent=state.strange;$('#strangeDial').style.setProperty('--turn',`${-135+state.strange*2.7}deg`);saveProject();};$('#strangeRange').oninput=strange;strange({target:$('#strangeRange')});
-      window.addEventListener('keydown',e=>{if(e.key==='Escape'){enterWalk();return;}if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;if(e.code==='Space'){e.preventDefault();play();}if(e.key.toLowerCase()==='r')toggleRecording();});
+      window.addEventListener('keydown',e=>{
+        if(e.key==='Escape'){enterWalk();return;}
+        if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
+        // Ctrl/Cmd+Z undoes a pattern change.
+        if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();undo();return;}
+        if(e.ctrlKey||e.metaKey||e.altKey)return;
+        if(e.code==='Space'){e.preventDefault();play();}
+        if(e.key.toLowerCase()==='r')toggleRecording();
+        // Number row plays the eight tracks live; Shift accents. This is the
+        // keyboard equivalent of the MIDI pads, so the desk is playable even
+        // without hardware attached.
+        if(/^[1-8]$/.test(e.key)||/^Digit[1-8]$/.test(e.code)){
+          const n=(/^[1-8]$/.test(e.key)?+e.key:+e.code.slice(5))-1;
+          e.preventDefault(); ensureAudio().then(()=>liveHit(n,e.shiftKey));
+        }
+      });
     }
 
     let toastTimer;function toast(message){const t=$('#toast');t.textContent=message;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2600);}
