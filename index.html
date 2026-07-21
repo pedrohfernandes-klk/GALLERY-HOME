@@ -1531,6 +1531,7 @@ body.reduced #mobileInteractBtn.hasTarget{animation:none}
 }
 .journeyBeat{
   grid-column:span 2;
+  position:relative;
   border:1px solid rgba(23,18,13,.14);
   border-radius:7px;
   background:rgba(255,250,239,.44);
@@ -1554,10 +1555,26 @@ body.reduced #mobileInteractBtn.hasTarget{animation:none}
   color:var(--muted);
 }
 .journeyBeat.active{
-  border-color:rgba(194,47,47,.42);
+  border-color:rgba(23,18,13,.54);
   background:rgba(255,240,221,.82);
-  box-shadow:0 10px 24px rgba(84,58,22,.08);
+  box-shadow:inset 0 3px 0 #17120d,0 10px 24px rgba(84,58,22,.08);
 }
+.journeyBeat.available{background:rgba(255,250,239,.32)}
+.journeyBeat.next:not(.active):not(.stamped){
+  border-color:rgba(169,76,68,.52);
+  background:rgba(255,246,229,.88);
+}
+.journeyBeat.active::before,.journeyBeat.next:not(.active)::before{
+  position:absolute;
+  right:7px;
+  top:6px;
+  font-size:7px;
+  font-weight:900;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+}
+.journeyBeat.active::before{content:'Current';color:#17120d}
+.journeyBeat.next:not(.active)::before{content:'Next';color:#a94c44}
 .journeyBeat.stamped{
   border-color:rgba(74,104,72,.38);
   background:rgba(232,239,222,.86);
@@ -1571,6 +1588,15 @@ body.reduced #mobileInteractBtn.hasTarget{animation:none}
   font-weight:900;
   letter-spacing:.16em;
   text-transform:uppercase;
+}
+.journeyGuidance{
+  margin:-5px 0 13px;
+  padding:9px 10px 9px 12px;
+  border-left:3px solid rgba(169,76,68,.62);
+  background:rgba(255,255,255,.34);
+  color:rgba(23,18,13,.68);
+  font-size:10px;
+  line-height:1.42;
 }
 .passportSummary{
   display:flex;
@@ -1789,6 +1815,7 @@ body.rpgMode #rpgModeBadge{display:block}
       <div class="journeyBeat" data-beat="outside"><b>Outside</b><span>Grove</span></div>
       <div class="journeyBeat" data-beat="return"><b>Return</b><span>Headquarters</span></div>
     </div>
+    <p class="journeyGuidance" id="journeyGuidance" aria-live="polite">Threshold is current; look closely and use a work in the Hall.</p>
     <div class="passportSummary">
       <div id="passportProgress" aria-live="polite"><strong>Visitor Passport</strong> · 0 of 5 acts stamped</div>
       <button id="passportResetBtn" type="button">New visit</button>
@@ -1995,6 +2022,7 @@ body.rpgMode #rpgModeBadge{display:block}
 import * as THREE from 'three';
 import { CSS3DRenderer, CSS3DObject } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/renderers/CSS3DRenderer.js';
 import { PASSPORT_ACTS, createPassportState, recordPassportEvent, passportProgress, runIdleBuildQueue } from './assets/js/workshop-foundation.js';
+import { createResetVisitState, createVisitGuidanceScheduler, createVisitState, journeyGuidance, recordVisitEvent, visitOrientationStatus } from './assets/js/workshop-visit.js';
 const GUERNICA_IMAGE_SRC = 'assets/extracted/guernica-image.webp';
 const BULL_GUY_SRC = 'assets/extracted/bull-guy.webp';
 const CHARTRES_LIGHT_SRC = 'assets/extracted/chartres-light.webp';
@@ -2722,6 +2750,17 @@ let noteDraftContext = null;
 let researchState = { query:'', results:[], summary:'', lastUpdated:'' };
 let currentRoom = 'gallery'; // gallery | theatre | lab | maze | maps | spark | thinking | outdoor | hood | night
 
+const VISIT_STORAGE_KEY = 'workshop:visit-v1';
+let visitState = (()=>{
+  try{return createVisitState(localStorage.getItem(VISIT_STORAGE_KEY));}
+  catch(e){return createVisitState();}
+})();
+function recordVisitEvidence(event){
+  visitState=recordVisitEvent(visitState,event);
+  try{localStorage.setItem(VISIT_STORAGE_KEY,JSON.stringify(visitState));}catch(e){}
+  return visitOrientationStatus(visitState);
+}
+
 const PASSPORT_STORAGE_KEY = 'workshop:visitor-passport-v1';
 let passportState = (()=>{
   try{return createPassportState(localStorage.getItem(PASSPORT_STORAGE_KEY));}
@@ -2736,6 +2775,7 @@ function renderPassport(){
     beat.classList.toggle('stamped',stamped);
     beat.setAttribute('aria-label',`${beat.querySelector('b')?.textContent || beat.dataset.beat}: ${stamped?'stamped':'not yet stamped'}`);
   });
+  if(fastMapPanel?.classList.contains('open')) updateRoomsPanel();
 }
 function recordPassportEvidence(event){
   const previous=passportState;
@@ -2751,9 +2791,21 @@ function recordPassportEvidence(event){
   return after>before;
 }
 function resetPassport(){
+  const inside=!!poster?.classList.contains('hide');
   passportState=createPassportState();
+  visitState=createResetVisitState({inside,room:currentRoom});
   try{localStorage.removeItem(PASSPORT_STORAGE_KEY);}catch(e){}
+  try{
+    if(inside) localStorage.setItem(VISIT_STORAGE_KEY,JSON.stringify(visitState));
+    else localStorage.removeItem(VISIT_STORAGE_KEY);
+  }catch(e){}
+  visitGuidanceScheduler.cancelAll();
+  ['visit-move','visit-interaction','visit-rooms'].forEach(id=>hintsShown.delete(id));
+  dismissVisitGuidance();
   renderPassport();
+  if(inside) queueVisitGuidanceAfterPaint('visit-move',isCoarsePointer
+    ? 'Use the joystick to walk. Drag the view to look.'
+    : 'Walk with W A S D. Move the mouse to look.',5600);
   msg('New visit started');
 }
 
@@ -2894,6 +2946,8 @@ function getNearestInteractable({types=null}={}){
 function useInteractable(item, context={}){
   if(!interactionEnabled(item) || !item.onUse) return false;
   item.onUse(item, context);
+  recordVisitEvidence({kind:'interaction',room:item.room,type:item.type,id:item.id});
+  dismissVisitGuidance('visit-interaction');
   recordPassportEvidence({kind:'interaction',room:item.room,type:item.type,id:item.id});
   return true;
 }
@@ -3070,6 +3124,7 @@ function beginPosterOpen(){
   if(!poster || poster.classList.contains('hide')) return;
   if(posterOpening || !worldReady) return;
   posterOpening = true;
+  recordVisitEvidence({kind:'enter',room:'gallery'});
   recordPassportEvidence({kind:'enter',room:'gallery'});
   ensureAnimationStarted();
   exitScreenControl();
@@ -3084,6 +3139,11 @@ function beginPosterOpen(){
     poster.style.opacity = '';
     if(!isCoarsePointer && canvas.requestPointerLock) canvas.requestPointerLock();
     posterOpening = false;
+    if(visitOrientationStatus(visitState)==='move'){
+      queueVisitGuidanceAfterPaint('visit-move',isCoarsePointer
+        ? 'Use the joystick to walk. Drag the view to look.'
+        : 'Walk with W A S D. Move the mouse to look.',5600);
+    }
   }, 950);
 }
 
@@ -11668,8 +11728,19 @@ function updateRoomsPanel(){
     theatre:'projection', studio:'projection', maze:'projection', night:'projection',
     outdoor:'outside', hood:'return'
   };
+  const currentBeat=isHoodRoom(currentRoom)?'return':(beatForRoom[currentRoom] || 'threshold');
+  const guidance=journeyGuidance(currentBeat,PASSPORT_ACTS,passportState.stamps);
+  const guidanceEl=$('journeyGuidance');
+  if(guidanceEl) guidanceEl.textContent=guidance.text;
   document.querySelectorAll('.journeyBeat').forEach(beat=>{
-    beat.classList.toggle('active', beat.dataset.beat === (beatForRoom[currentRoom] || 'threshold'));
+    const active=beat.dataset.beat===guidance.currentId;
+    const stamped=Number.isFinite(passportState.stamps[beat.dataset.beat]);
+    const next=beat.dataset.beat===guidance.nextId;
+    beat.classList.toggle('active',active);
+    beat.classList.toggle('next',next);
+    beat.classList.toggle('available',!active && !stamped && !next);
+    const states=[active?'current':null,stamped?'stamped':null,next?'next':null].filter(Boolean);
+    beat.setAttribute('aria-label',`${beat.querySelector('b')?.textContent || beat.dataset.beat}: ${states.join(', ') || 'available'}`);
   });
   const primaryPlaces={
     gallery:['warehouse'], theatre:['venue'], lab:['lab'], maze:['garden'], outdoor:['outdoor'],
@@ -11689,6 +11760,9 @@ function toggleRoomsPanel(force){
   const open = typeof force==='boolean' ? force : !fastMapPanel.classList.contains('open');
   if(open){
     catalogue.classList.remove('open'); closeArchive(); closeNotes(); closeResearchPanel(); helpPanel.classList.remove('open');
+    visitGuidanceScheduler.cancel('visit-rooms');
+    dismissVisitGuidance('visit-rooms');
+    recordVisitEvidence({kind:'rooms-opened',room:currentRoom});
     updateRoomsPanel();
   }
   fastMapPanel.classList.toggle('open',open);
@@ -12471,6 +12545,14 @@ function setPlayerLocation(room, pos, newYaw, label, newPitch=0){
   seatedAmphView = false;
   if($('playOverlay').classList.contains('show')) closePlayOverlay();
   currentRoom = room;
+  const visitStatus=recordVisitEvidence({kind:'arrival',room});
+  if(visitStatus==='rooms'){
+    visitGuidanceScheduler.schedule('visit-rooms',{
+      delay:900,
+      status:'rooms',
+      payload:{text:'Rooms remembers where you have been and what kind of action comes next.',duration:5600},
+    });
+  }
   recordPassportEvidence({kind:'arrival',room});
   if(studioWallIframe && !studioMusicFollow){
     if(room !== 'studio'){
@@ -12994,6 +13076,10 @@ function updateMovement(dt){
 
   let targetX = 0, targetZ = 0;
   const moving = Math.abs(forward) + Math.abs(strafe) > 0;
+  if(moving && visitState.firstMoveAt===null){
+    recordVisitEvidence({kind:'move',room:currentRoom});
+    dismissVisitGuidance('visit-move');
+  }
   if(moving && seatedStudioView) seatedStudioView = false;
   if(moving && seatedAmphView) seatedAmphView = false;
 
@@ -13159,14 +13245,58 @@ function updateWorld(dt, t){
     o.art.material.transparent = opacity < 1;
   });
 }
-function showHint(id, text, duration=4200){
+function showHint(id, text, duration=4200, paintSafe=false){
   if(hintsShown.has(id)) return;
   hintsShown.add(id);
   const el = $('hintBanner');
   el.textContent = text;
   el.classList.add('show');
-  clearTimeout(showHint._t);
-  showHint._t = setTimeout(()=>el.classList.remove('show'), duration);
+  showHint.activeId=id;
+  ariaStatus.textContent=text;
+  const armDismissal=()=>{
+    if(showHint.activeId!==id) return;
+    clearTimeout(showHint._t);
+    showHint._t = setTimeout(()=>{
+      if(showHint.activeId===id){
+        el.classList.remove('show');
+        showHint.activeId=null;
+      }
+    }, duration);
+  };
+  if(paintSafe) requestAnimationFrame(()=>requestAnimationFrame(armDismissal));
+  else armDismissal();
+}
+function showVisitGuidance(id,text,duration=5200,paintSafe=false){showHint(id,text,duration,paintSafe);}
+const visitGuidanceScheduler=createVisitGuidanceScheduler({
+  getStatus:()=>visitOrientationStatus(visitState),
+  show:(id,payload={})=>showVisitGuidance(id,payload.text || '',payload.duration || 5200),
+});
+function queueVisitGuidanceAfterPaint(id,text,duration=5200){
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(id!=='visit-move' || visitOrientationStatus(visitState)==='move') showVisitGuidance(id,text,duration,true);
+  }));
+}
+function dismissVisitGuidance(id=null){
+  if(id) visitGuidanceScheduler.cancel(id);
+  else visitGuidanceScheduler.cancelAll();
+  if(!id || showHint.activeId===id){
+    clearTimeout(showHint._t);
+    $('hintBanner').classList.remove('show');
+    showHint.activeId=null;
+  }
+}
+function scheduleInteractionGuidance(){
+  if(visitGuidanceScheduler.has('visit-interaction') || visitState.firstInteractionAt!==null) return;
+  visitGuidanceScheduler.schedule('visit-interaction',{
+    delay:14000,
+    status:'interact',
+    payload:{
+      text:isCoarsePointer
+        ? 'Face an object, then tap Enter to use it.'
+        : 'Face an object, then press Enter or click to use it.',
+      duration:5600,
+    },
+  });
 }
 
 function updateLookRay(){
@@ -13175,6 +13305,10 @@ function updateLookRay(){
   const target = getCenterInteractable();
   const item = target?.interactable || null;
   lookingAtInteractable = item;
+  if(item){
+    if(visitState.firstLookAt===null) recordVisitEvidence({kind:'target',room:item.room,type:item.type,id:item.id});
+    if(visitState.firstInteractionAt===null) scheduleInteractionGuidance();
+  }
 
   const activePortals = portals.filter(p=>p.fromRoom===currentRoom);
   const activeScreens = screens.filter(screen=>screen.room===currentRoom);
@@ -13201,7 +13335,7 @@ function updateLookRay(){
     el.textContent = interactionPrompt(item);
     el.classList.add('show');
     reticle.classList.add('hit');
-    if(item.hintText) showHint(item.hintId || item.type, item.hintText);
+    if(item.hintText && visitState.firstInteractionAt!==null) showHint(item.hintId || item.type, item.hintText);
   }else{
     el.classList.remove('show');
     reticle.classList.remove('hit');
