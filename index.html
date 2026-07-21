@@ -1537,6 +1537,9 @@ body.reduced #mobileInteractBtn.hasTarget{animation:none}
   background:rgba(255,250,239,.44);
   padding:7px 8px;
   min-width:0;
+  text-align:left;
+  color:inherit;
+  font:inherit;
 }
 .journeyBeat:nth-child(n+4){grid-column:span 3}
 .journeyBeat b{
@@ -1559,6 +1562,7 @@ body.reduced #mobileInteractBtn.hasTarget{animation:none}
   background:rgba(255,240,221,.82);
   box-shadow:inset 0 3px 0 #17120d,0 10px 24px rgba(84,58,22,.08);
 }
+.journeyBeat.evidenceSelected{outline:1px solid rgba(74,104,72,.58);outline-offset:1px}
 .journeyBeat.available{background:rgba(255,250,239,.32)}
 .journeyBeat.next:not(.active):not(.stamped){
   border-color:rgba(169,76,68,.52);
@@ -1597,6 +1601,18 @@ body.reduced #mobileInteractBtn.hasTarget{animation:none}
   color:rgba(23,18,13,.68);
   font-size:10px;
   line-height:1.42;
+}
+.passportEvidence{
+  min-height:30px;
+  margin:-5px 0 12px;
+  padding:8px 10px;
+  border:1px solid rgba(74,104,72,.22);
+  border-radius:7px;
+  background:rgba(232,239,222,.42);
+  color:rgba(23,18,13,.72);
+  font-size:9px;
+  line-height:1.42;
+  letter-spacing:.035em;
 }
 .passportSummary{
   display:flex;
@@ -1809,13 +1825,14 @@ body.rpgMode #rpgModeBadge{display:block}
     <div class="fastMapCurrent" id="fastMapCurrent">You are in <strong>Workshop Hall</strong></div>
     <p class="fastMapIntro">Five story beats. Three districts. Smaller rooms remain discoverable through doors inside each wing.</p>
     <div class="journeyMap" id="journeyMap" aria-label="Narrative progress">
-      <div class="journeyBeat" data-beat="threshold"><b>Threshold</b><span>Workshop Hall</span></div>
-      <div class="journeyBeat" data-beat="search"><b>Search</b><span>Thinking, Maps, Lab</span></div>
-      <div class="journeyBeat" data-beat="projection"><b>Projection</b><span>Venue, Studio, Garden</span></div>
-      <div class="journeyBeat" data-beat="outside"><b>Outside</b><span>Grove</span></div>
-      <div class="journeyBeat" data-beat="return"><b>Return</b><span>Headquarters</span></div>
+      <button class="journeyBeat" type="button" data-beat="threshold"><b>Threshold</b><span>Workshop Hall</span></button>
+      <button class="journeyBeat" type="button" data-beat="search"><b>Search</b><span>Thinking, Maps, Lab</span></button>
+      <button class="journeyBeat" type="button" data-beat="projection"><b>Projection</b><span>Venue, Studio, Garden</span></button>
+      <button class="journeyBeat" type="button" data-beat="outside"><b>Outside</b><span>Grove</span></button>
+      <button class="journeyBeat" type="button" data-beat="return"><b>Return</b><span>Headquarters</span></button>
     </div>
     <p class="journeyGuidance" id="journeyGuidance" aria-live="polite">Threshold is current; look closely and use a work in the Hall.</p>
+    <p class="passportEvidence" id="passportEvidence" aria-live="polite">THRESHOLD — Not yet stamped.</p>
     <div class="passportSummary">
       <div id="passportProgress" aria-live="polite"><strong>Visitor Passport</strong> · 0 of 5 acts stamped</div>
       <button id="passportResetBtn" type="button">New visit</button>
@@ -1930,7 +1947,7 @@ body.rpgMode #rpgModeBadge{display:block}
     <p><code>A/D</code>: left / right strafe.</p>
     <p><code>←/→</code> or <code>Q/E</code>: turn. Drag the view on touch devices.</p>
     <p>Click the gallery to capture the mouse. Move mouse to look. Wheel zooms.</p>
-    <p><code>G</code>: Rooms. <code>F</code>: focus nearest work. <code>C</code>: Catalogue. <code>A</code>: Archive. <code>N</code>: Notes. <code>L</code>: brighten room. <code>Esc</code>: release / close.</p>
+    <p><code>G</code>: Rooms. <code>F</code>: focus nearest work. <code>C</code>: Catalogue. <code>O</code>: Archive. <code>N</code>: Notes. <code>L</code>: brighten room. <code>Esc</code>: release / close.</p>
     <p>Doors behave as portals: aim at a portal and click to pass through. The Experiment Garden now leads down to MANY MAPS, a permanent basement gallery curated by HrM. Projection screens open in a stable player with <code>R</code>.</p>
   </aside>
 
@@ -1961,7 +1978,7 @@ body.rpgMode #rpgModeBadge{display:block}
   <div id="toast"></div>
   <div id="fadeOverlay"></div>
 
-  <div id="playOverlay">
+  <div id="playOverlay" role="dialog" aria-modal="true" aria-label="Projection player" aria-hidden="true">
     <div id="playOverlayCard">
       <div id="playOverlayHead">
         <span id="playTitle">SAYWHAT</span>
@@ -2021,8 +2038,9 @@ body.rpgMode #rpgModeBadge{display:block}
 <script type="module">
 import * as THREE from 'three';
 import { CSS3DRenderer, CSS3DObject } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/renderers/CSS3DRenderer.js';
-import { PASSPORT_ACTS, createPassportState, recordPassportEvent, passportProgress, runIdleBuildQueue } from './assets/js/workshop-foundation.js';
-import { createResetVisitState, createVisitGuidanceScheduler, createVisitState, journeyGuidance, recordVisitEvent, visitOrientationStatus } from './assets/js/workshop-visit.js';
+import { PASSPORT_ACTS, createPassportState, isPassportStamped, passportEvidenceLine, passportProgress, runIdleBuildQueue } from './assets/js/workshop-foundation.js';
+import { createResetVisitState, createVisitGuidanceScheduler, createVisitState, journeyGuidance, visitOrientationStatus } from './assets/js/workshop-visit.js';
+import { recordWorkshopEventState } from './assets/js/workshop-record.js';
 const GUERNICA_IMAGE_SRC = 'assets/extracted/guernica-image.webp';
 const BULL_GUY_SRC = 'assets/extracted/bull-guy.webp';
 const CHARTRES_LIGHT_SRC = 'assets/extracted/chartres-light.webp';
@@ -2761,44 +2779,62 @@ let visitState = (()=>{
   try{return createVisitState(localStorage.getItem(VISIT_STORAGE_KEY));}
   catch(e){return createVisitState();}
 })();
-function recordVisitEvidence(event){
-  visitState=recordVisitEvent(visitState,event);
-  try{localStorage.setItem(VISIT_STORAGE_KEY,JSON.stringify(visitState));}catch(e){}
-  return visitOrientationStatus(visitState);
-}
 
 const PASSPORT_STORAGE_KEY = 'workshop:visitor-passport-v1';
 let passportState = (()=>{
   try{return createPassportState(localStorage.getItem(PASSPORT_STORAGE_KEY));}
   catch(e){return createPassportState();}
 })();
+let passportEvidenceAct=PASSPORT_ACTS.find(act=>isPassportStamped(passportState.stamps[act.id]))?.id || 'threshold';
+function renderPassportEvidence(){
+  const el=$('passportEvidence');
+  if(el) el.textContent=passportEvidenceLine(passportState,passportEvidenceAct);
+  document.querySelectorAll('.journeyBeat[data-beat]').forEach(beat=>{
+    const selected=beat.dataset.beat===passportEvidenceAct;
+    beat.classList.toggle('evidenceSelected',selected);
+    beat.setAttribute('aria-pressed',String(selected));
+  });
+}
+document.querySelectorAll('.journeyBeat[data-beat]').forEach(beat=>{
+  const selectEvidence=()=>{passportEvidenceAct=beat.dataset.beat;renderPassportEvidence();};
+  beat.addEventListener('click',selectEvidence);
+  beat.addEventListener('focus',selectEvidence);
+});
 function renderPassport(){
   const progress=passportProgress(passportState);
   const el=$('passportProgress');
   if(el) el.innerHTML=`<strong>Visitor Passport</strong> · ${progress.completed} of ${progress.total} acts stamped`;
   document.querySelectorAll('.journeyBeat[data-beat]').forEach(beat=>{
-    const stamped=Number.isFinite(passportState.stamps[beat.dataset.beat]);
+    const stamped=isPassportStamped(passportState.stamps[beat.dataset.beat]);
     beat.classList.toggle('stamped',stamped);
     beat.setAttribute('aria-label',`${beat.querySelector('b')?.textContent || beat.dataset.beat}: ${stamped?'stamped':'not yet stamped'}`);
   });
+  renderPassportEvidence();
   if(fastMapPanel?.classList.contains('open')) updateRoomsPanel();
 }
-function recordPassportEvidence(event){
-  const previous=passportState;
-  const before=passportProgress(previous).completed;
-  passportState=recordPassportEvent(previous,event);
-  const after=passportProgress(passportState).completed;
-  try{localStorage.setItem(PASSPORT_STORAGE_KEY,JSON.stringify(passportState));}catch(e){}
-  renderPassport();
-  if(after>before && poster?.classList.contains('hide')){
-    const fresh=PASSPORT_ACTS.find(act=>!Number.isFinite(previous.stamps[act.id]) && Number.isFinite(passportState.stamps[act.id]));
-    msg(fresh ? `Passport stamped · ${fresh.label}` : 'Visitor Passport stamped');
+function recordWorkshopEvidence(event,now=Date.now()){
+  const previousPassport=passportState;
+  const result=recordWorkshopEventState({visitState,passportState},event,now);
+  visitState=result.visitState;
+  passportState=result.passportState;
+  if(result.accepted){
+    try{localStorage.setItem(VISIT_STORAGE_KEY,JSON.stringify(visitState));}catch(e){}
+    try{localStorage.setItem(PASSPORT_STORAGE_KEY,JSON.stringify(passportState));}catch(e){}
   }
-  return after>before;
+  if(result.stamped){
+    const fresh=PASSPORT_ACTS.find(act=>!isPassportStamped(previousPassport.stamps[act.id]) && isPassportStamped(passportState.stamps[act.id]));
+    if(fresh) passportEvidenceAct=fresh.id;
+    renderPassport();
+    if(poster?.classList.contains('hide')){
+      msg(fresh ? `Passport stamped · ${fresh.label}` : 'Visitor Passport stamped');
+    }
+  }
+  return result;
 }
 function resetPassport(){
   const inside=!!poster?.classList.contains('hide');
   passportState=createPassportState();
+  passportEvidenceAct='threshold';
   visitState=createResetVisitState({inside,room:currentRoom});
   try{localStorage.removeItem(PASSPORT_STORAGE_KEY);}catch(e){}
   try{
@@ -2822,6 +2858,19 @@ const interactables = [];
 const interactableByMesh = new WeakMap();
 let interactionSerial = 0;
 let lookingAtInteractable = null;
+const VISIT_ROOM_LABELS=Object.freeze({
+  gallery:'Workshop Hall',theatre:'The Venue',lab:'Laboratory',maze:'Experiment Garden',
+  maps:'Many Maps',spark:'SPARK Tools Labs',thinking:'Thinking Room',outdoor:'The Grove',
+  hood:'Headquarters',night:'Nocturne',studio:'The Studio',tunnel:'The Tunnel',
+});
+function stableInteractionId(prefix,...parts){
+  const slug=value=>String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,72);
+  return [prefix,...parts].map(slug).filter(Boolean).join(':');
+}
+function visitRoomLabel(room){
+  if(String(room || '').startsWith('hood')) return VISIT_ROOM_LABELS.hood;
+  return VISIT_ROOM_LABELS[room] || String(room || 'Workshop');
+}
 
 function registerInteractable(cfg={}){
   const mesh = cfg.mesh;
@@ -2835,6 +2884,9 @@ function registerInteractable(cfg={}){
     mesh,
     source: cfg.source || null,
     label: cfg.label || 'Interact',
+    action: cfg.action || 'used',
+    capability: cfg.capability || null,
+    roomLabel: cfg.roomLabel || visitRoomLabel(cfg.room),
     prompt: cfg.prompt || null,
     hintId: cfg.hintId || cfg.type || 'interaction',
     hintText: cfg.hintText || '',
@@ -2884,6 +2936,67 @@ const groveGuideChoices={
   ],tips:['Choose a path confidently. Confidence will not help, but it photographs well.','If two routes seem equally odd, take the one with worse signage.']}
 };
 const grovePick=list=>list[(Math.random()*list.length)|0];
+const accessibleDialogState={panel:null,opener:null,inertTargets:[],onEscape:null};
+function dialogFocusables(panel){
+  return [...panel.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),iframe:not([tabindex="-1"]),[tabindex]:not([tabindex="-1"])')]
+    .filter(el=>!el.hidden && el.getClientRects().length);
+}
+function restoreDialogInertness(){
+  accessibleDialogState.inertTargets.forEach(target=>{ target.inert=false; });
+  accessibleDialogState.inertTargets=[];
+  const app=$('app');
+  if(app) app.inert=false;
+}
+function closeAccessibleDialog(panel){
+  if(!panel || accessibleDialogState.panel!==panel) return;
+  const opener=accessibleDialogState.opener;
+  restoreDialogInertness();
+  document.removeEventListener('keydown',handleAccessibleDialogKeydown,true);
+  accessibleDialogState.panel=null;
+  accessibleDialogState.opener=null;
+  accessibleDialogState.onEscape=null;
+  if(opener?.isConnected) opener.focus();
+}
+function handleAccessibleDialogKeydown(e){
+  const panel=accessibleDialogState.panel;
+  if(!panel) return;
+  if(e.key==='Escape'){
+    e.preventDefault(); e.stopPropagation();
+    accessibleDialogState.onEscape?.();
+    return;
+  }
+  if(e.key!=='Tab') return;
+  const focusables=dialogFocusables(panel);
+  if(!focusables.length){ e.preventDefault(); panel.focus(); return; }
+  const first=focusables[0], last=focusables[focusables.length-1];
+  if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+}
+function openAccessibleDialog(panel,{initialFocus=null,onEscape=null}={}){
+  if(!panel) return;
+  if(accessibleDialogState.panel && accessibleDialogState.panel!==panel) closeAccessibleDialog(accessibleDialogState.panel);
+  const opener=document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  panel.setAttribute('role',panel.getAttribute('role')||'dialog');
+  panel.setAttribute('aria-modal','true');
+  panel.tabIndex=-1;
+  const inertTargets=[];
+  let node=panel;
+  while(node?.parentElement){
+    const parent=node.parentElement;
+    [...parent.children].forEach(sibling=>{
+      if(sibling!==node && !sibling.contains(node)){ sibling.inert=true; inertTargets.push(sibling); }
+    });
+    node=parent;
+  }
+  const app=$('app');
+  if(panel.parentElement===document.body && app) app.inert = true;
+  accessibleDialogState.panel=panel;
+  accessibleDialogState.opener=opener;
+  accessibleDialogState.inertTargets=inertTargets;
+  accessibleDialogState.onEscape=onEscape;
+  document.addEventListener('keydown',handleAccessibleDialogKeydown,true);
+  requestAnimationFrame(()=>{ (initialFocus || dialogFocusables(panel)[0] || panel)?.focus(); });
+}
 function openGroveGuide(){
   document.exitPointerLock?.();
   let panel=document.getElementById('groveGuideDialog');
@@ -2892,18 +3005,20 @@ function openGroveGuide(){
     Object.assign(panel.style,{position:'fixed',left:'50%',top:'50%',transform:'translate(-50%,-50%)',width:'min(520px,calc(100vw - 32px))',zIndex:'10020',padding:'22px',borderRadius:'18px',background:'rgba(239,235,225,.97)',color:'#191715',border:'1px solid rgba(30,25,20,.3)',boxShadow:'0 24px 80px rgba(0,0,0,.42)',fontFamily:'Arial,sans-serif'});
     document.body.appendChild(panel);
   }
+  const closeGuide=()=>{ closeAccessibleDialog(panel); panel.remove(); };
   const showChoices=()=>{
     panel.innerHTML=`<button data-close aria-label="Close" style="float:right;border:0;background:transparent;font-size:22px;cursor:pointer">×</button><div style="font:600 13px Georgia,serif;letter-spacing:.18em;text-transform:uppercase;color:#9a533d">HrM · Grove oracle</div><h2 style="font:500 30px Georgia,serif;margin:12px 0 8px">Hey! What's up?</h2><p style="line-height:1.5;margin:0 0 10px">I am the welcome figure: part concierge, part oracle, entirely without pockets. What kind of visit are we having?</p><p style="line-height:1.45;margin:0 0 17px;padding:10px 12px;background:#e5ddcf;border-radius:10px"><b>Today's unnecessary prophecy:</b> ${grovePick(groveOracleMurmurs)}</p><div data-options style="display:grid;gap:9px"></div><button data-omen style="margin-top:10px;padding:9px 12px;border:0;background:transparent;color:#7c4838;text-decoration:underline;cursor:pointer">Give me a different omen</button>`;
     const options=panel.querySelector('[data-options]');
     Object.entries(groveGuideChoices).forEach(([key,c])=>{ const b=document.createElement('button'); b.textContent=c.label; b.dataset.choice=key; Object.assign(b.style,{padding:'12px 14px',borderRadius:'11px',border:'1px solid #8d7c6d',background:'#fffaf0',color:'#211d19',textAlign:'left',cursor:'pointer',fontWeight:'700'}); options.appendChild(b); });
-    panel.querySelector('[data-close]').onclick=()=>panel.remove();
+    panel.querySelector('[data-close]').onclick=closeGuide;
     panel.querySelector('[data-omen]').onclick=showChoices;
     options.onclick=e=>{ const c=groveGuideChoices[e.target.dataset.choice]; if(!c)return;
       panel.innerHTML=`<button data-close aria-label="Close" style="float:right;border:0;background:transparent;font-size:22px;cursor:pointer">×</button><div style="font:600 13px Georgia,serif;letter-spacing:.18em;text-transform:uppercase;color:#9a533d">I suggest ${c.destination}</div><h2 style="font:500 27px Georgia,serif;margin:12px 0 9px">Good choice. Probably.</h2><p style="line-height:1.5">${grovePick(c.replies)}</p><p style="line-height:1.45;padding:10px 12px;background:#e5ddcf;border-radius:10px"><b>Small advice:</b> ${grovePick(c.tips)} ${grovePick(groveGeneralAdvice)}</p><div style="display:flex;gap:9px;flex-wrap:wrap"><button data-go style="padding:11px 15px;border:0;border-radius:10px;background:#191715;color:white;font-weight:800;cursor:pointer">Take me to ${c.destination}</button><button data-back style="padding:11px 15px;border:1px solid #8d7c6d;border-radius:10px;background:transparent;font-weight:700;cursor:pointer">Ask again</button></div>`;
-      panel.querySelector('[data-close]').onclick=()=>panel.remove(); panel.querySelector('[data-back]').onclick=showChoices; panel.querySelector('[data-go]').onclick=()=>{panel.remove();fastTravel(c.place);};
+      panel.querySelector('[data-close]').onclick=closeGuide; panel.querySelector('[data-back]').onclick=showChoices; panel.querySelector('[data-go]').onclick=()=>{closeGuide();fastTravel(c.place);};
     };
   };
   showChoices();
+  openAccessibleDialog(panel,{initialFocus:panel.querySelector('[data-close]'),onEscape:closeGuide});
 }
 function interactionEnabled(item){
   return !!item && (!item.enabled || item.enabled(item) !== false) && item.mesh && item.mesh.visible !== false;
@@ -2951,15 +3066,21 @@ function getNearestInteractable({types=null}={}){
 }
 function useInteractable(item, context={}){
   if(!interactionEnabled(item) || !item.onUse) return false;
-  item.onUse(item, context);
-  recordVisitEvidence({kind:'interaction',room:item.room,type:item.type,id:item.id});
+  const outcome=item.onUse(item, context);
+  if(outcome===false) return false;
+  const evidence=outcome && typeof outcome==='object' ? outcome : {};
+  recordWorkshopEvidence({kind:'interaction',
+    action:evidence.action || item.action,
+    capability:evidence.capability || item.capability,
+    room:item.room,roomLabel:item.roomLabel,type:item.type,id:item.id,label:item.label,source:'world',
+  });
   dismissVisitGuidance('visit-interaction');
-  recordPassportEvidence({kind:'interaction',room:item.room,type:item.type,id:item.id});
   return true;
 }
 function registerPortal(portal){
   portals.push(portal);
   portal.interactable = registerInteractable({
+    id:portal.id || stableInteractionId('portal',portal.fromRoom,portal.room,portal.label),
     type:'portal', room:portal.fromRoom, mesh:portal.mesh, source:portal,
     label:portal.label || 'Portal', priority:30,
     prompt:()=>`Click / Enter to enter · ${portal.label || 'Portal'}`,
@@ -2978,8 +3099,11 @@ function registerScreen(screen){
   // console. Radius is tunable per screen via screen.activeRadius.
   const gateR = Number.isFinite(screen.activeRadius) ? screen.activeRadius : 6.5;
   screen.interactable = registerInteractable({
+    id:screen.id || stableInteractionId('screen',screen.room,screen.title),
     type:'screen', room:screen.room, mesh:screen.mesh, source:screen,
     label:screen.title || 'Screen', priority:40,
+    action:screen.action==='research'?'consulted':'activated',
+    capability:screen.action==='research'?'research':'projection',
     enabled:()=>{
       if(!camera) return false;
       screen.mesh.getWorldPosition(_screenGateVec);
@@ -2999,8 +3123,10 @@ function registerScreen(screen){
 function registerArchiveHotspot(hotspot){
   archiveHotspots.push(hotspot);
   hotspot.interactable = registerInteractable({
+    id:hotspot.id || stableInteractionId('archive',hotspot.room,hotspot.title),
     type:'archive', room:hotspot.room, mesh:hotspot.mesh, source:hotspot,
     label:hotspot.title || 'Archive', priority:35,
+    action:'consulted',capability:'archive',
     prompt:()=>`Click / Enter to open · ${hotspot.title || 'Archive'}`,
     hintId:'archive', hintText:'Archive entries connect rooms, works, maps, projections and exhibitions.',
     onUse:()=>{ openArchive(hotspot.tab || 'rooms', hotspot.id || null); msg(hotspot.title || 'Archive'); }
@@ -3010,8 +3136,10 @@ function registerArchiveHotspot(hotspot){
 function registerArtworkObject(entry){
   artworkObjects.push(entry);
   entry.interactable = registerInteractable({
+    id:entry.data?.id || stableInteractionId('artwork',entry.room || 'gallery',entry.data?.title),
     type:'artwork', room:entry.room || 'gallery', mesh:entry.art, source:entry,
     label:entry.data?.title || 'Artwork', priority:20,
+    action:'attended',capability:'attention',
     prompt:()=>`Looking at · ${entry.data?.title || 'Artwork'}`,
     hintId:'artwork', hintText:'Click or press Enter to step up close and read about the work.',
     onUse:()=>moveToArtwork(entry.index)
@@ -3130,8 +3258,7 @@ function beginPosterOpen(){
   if(!poster || poster.classList.contains('hide')) return;
   if(posterOpening || !worldReady) return;
   posterOpening = true;
-  recordVisitEvidence({kind:'enter',room:'gallery'});
-  recordPassportEvidence({kind:'enter',room:'gallery'});
+  recordWorkshopEvidence({kind:'enter',action:'entered',room:'gallery',roomLabel:visitRoomLabel('gallery'),id:'visit:entry',label:'Workshop entrance',source:'world'});
   ensureAnimationStarted();
   exitScreenControl();
   poster.classList.add('opening');
@@ -6127,7 +6254,8 @@ function buildOutdoorSpace(){
     for(const r of [.27,.38,.49]){const groove=new THREE.Mesh(new THREE.TorusGeometry(r,.012,10,64),statueMaskFrameMat);groove.position.set(0,.01,-.555);groove.rotation.y=Math.PI;headGroup.add(groove);}
     const backSeal=new THREE.Mesh(new THREE.CylinderGeometry(.10,.10,.024,32),statueBronze);backSeal.position.set(0,.01,-.584);backSeal.rotation.x=Math.PI/2;headGroup.add(backSeal);
     const unifiedHead=cranium;
-    registerInteractable({type:'guide',room:'outdoor',mesh:faceCap,label:'HrM welcome figure',hintId:'grove-guide',priority:5,
+    registerInteractable({id:'grove:guide',type:'guide',room:'outdoor',mesh:faceCap,label:'HrM welcome figure',
+      action:'spoke',capability:'guidance',hintId:'grove-guide',priority:5,
       hintText:'The Grove figure has directions, opinions and no sense of urgency.',prompt:()=>'Talk to the Grove guide',onUse:openGroveGuide});
 
 
@@ -6474,7 +6602,7 @@ function hoodFloorBounds(room){
 }
 function ensureHoodLiftPanel(){
   if(hoodLiftPanel) return hoodLiftPanel;
-  hoodLiftPanel=document.createElement('div'); hoodLiftPanel.id='hoodLiftPanel'; hoodLiftPanel.setAttribute('aria-label','Warehouse lift controls');
+  hoodLiftPanel=document.createElement('div'); hoodLiftPanel.id='hoodLiftPanel'; hoodLiftPanel.setAttribute('role','dialog'); hoodLiftPanel.setAttribute('aria-modal','true'); hoodLiftPanel.setAttribute('aria-label','Warehouse lift controls');
   document.body.appendChild(hoodLiftPanel);
   hoodLiftPanel.addEventListener('click',e=>{ if(e.target===hoodLiftPanel) closeHoodLift(); });
   return hoodLiftPanel;
@@ -6487,7 +6615,7 @@ function animateHoodLiftDoors(room,open=true,mode=null){
   function frame(now){const p=clamp((now-start)/duration,0,1),e=from+(to-from)*(1-Math.pow(1-p,3));d.left.position.x=d.leftBase-e*1.18;d.right.position.x=d.rightBase+e*1.18;if(p<1)requestAnimationFrame(frame);}
   requestAnimationFrame(frame);
 }
-function closeHoodLift(){ if(!hoodLiftPanel)return; const mode=hoodLiftPanel.dataset.mode||'main';hoodLiftPanel.classList.remove('show','travelling'); animateHoodLiftDoors(currentRoom,false,mode); }
+function closeHoodLift(){ if(!hoodLiftPanel)return; const mode=hoodLiftPanel.dataset.mode||'main'; closeAccessibleDialog(hoodLiftPanel); hoodLiftPanel.classList.remove('show','travelling'); animateHoodLiftDoors(currentRoom,false,mode); }
 function openHoodLift(mode='main'){
   if(!isHoodRoom()) return;
   const panel=ensureHoodLiftPanel(); const floors=mode==='private'?HOOD_PRIVATE_FLOORS:HOOD_MAIN_FLOORS;
@@ -6495,7 +6623,9 @@ function openHoodLift(mode='main'){
   panel.innerHTML=`<div class="liftCabinet"><div class="liftHead"><div><b>${mode==='private'?'PENTHOUSE LIFT':'WAREHOUSE LIFT'}</b><span>${mode==='private'?'private five-level residence':'passenger / freight · basement to tower'}</span></div><button class="liftClose" type="button">Close</button></div><div class="liftIndicator"><span class="liftArrow up">&#9650;</span><span class="liftCode">${hoodFloorDefinition(currentRoom).code}</span><span class="liftArrow down">&#9660;</span></div><div class="liftGrid">${floors.map(f=>`<button class="liftFloor${f.id===currentRoom?' current':''}" type="button" data-floor="${f.id}"><i>${f.code}</i><small>${f.label}</small></button>`).join('')}</div><div class="liftStatus">At ${hoodFloorDefinition(currentRoom).label} · select a destination</div></div>`;
   panel.querySelector('.liftClose').onclick=closeHoodLift;
   panel.querySelectorAll('[data-floor]').forEach(b=>b.onclick=()=>hoodLiftTravel(b.dataset.floor,mode));
-  panel.classList.add('show'); animateHoodLiftDoors(currentRoom,true,mode);
+  panel.classList.add('show');
+  openAccessibleDialog(panel,{initialFocus:panel.querySelector('.liftClose'),onEscape:closeHoodLift});
+  animateHoodLiftDoors(currentRoom,true,mode);
   if(document.pointerLockElement)document.exitPointerLock();
 }
 function hoodLiftTravel(room,mode='main'){
@@ -8604,7 +8734,8 @@ function buildMazeGarden(){
     for(const dx of [-1.16,1.16]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.12,.9,.76),trimMat);leg.position.set(x0+7.2+dx,.46,zFront-8.1);scene.add(leg);}
     const maker=new THREE.Mesh(new THREE.BoxGeometry(1.75,1.05,.10),new THREE.MeshBasicMaterial({map:makeSignTexture('MAKE','paint · collage · save'),toneMapped:false}));
     maker.position.set(x0+7.2,1.63,zFront-8.05); maker.rotation.x=-.32; scene.add(maker);
-    registerInteractable({type:'maker',room:'maze',mesh:maker,label:'Garden making table',hintId:'garden-maker',priority:5,
+    registerInteractable({id:'garden:making-table',type:'maker',room:'maze',mesh:maker,label:'Garden making table',
+      action:'created',capability:'making',hintId:'garden-maker',priority:5,
       hintText:'An in-memory studio for painterly drawing and collage.',prompt:()=>'Open painting & collage desk',onUse:openGardenMaker});
   }
 
@@ -10541,7 +10672,8 @@ function buildStudio(){
   const deskGlow=new THREE.PointLight(0x9d6de2,.85,7,1.9); deskGlow.position.set(x0+7,1.9,z0+17); scene.add(deskGlow); regLight('studio',deskGlow);
   const deskSign=new THREE.Mesh(new THREE.PlaneGeometry(1.5,.9),new THREE.MeshBasicMaterial({map:makeSignTexture('MIX','8 tracks · decks · samples · record'),toneMapped:false}));
   deskSign.position.set(x0+7,1.62,z0+16.38); deskSign.rotation.x=-.34; scene.add(deskSign);
-  registerInteractable({type:'maker',room:'studio',mesh:deskSign,label:'Studio mixing desk',hintId:'studio-maker',priority:5,
+  registerInteractable({id:'studio:mixing-desk',type:'maker',room:'studio',mesh:deskSign,label:'Studio mixing desk',
+    action:'created',capability:'making',hintId:'studio-maker',priority:5,
     hintText:'A full workstation with instant mixes, dual sample decks, voice recording, effects, export and the Studio YouTube wall.',prompt:()=>'Open the mixing desk',onUse:openStudioMaker});
 
   studioFX = {tiles:null, tileN:0, speakerRings, orbs, ball, tileTimer:0};
@@ -11360,7 +11492,7 @@ function researchGoogleUrl(q){
 }
 function syncResearchExternalLinks(){
   const q = (researchQuery?.value || researchState.query || '').trim();
-  syncResearchExternalLinks();
+  if(researchOpenLink) researchOpenLink.href = researchOpenUrl(q);
   if(researchGoogleHomeLink) researchGoogleHomeLink.href = 'https://www.google.com/';
   if(researchGoogleSearchLink) researchGoogleSearchLink.href = researchGoogleUrl(q);
 }
@@ -11779,7 +11911,7 @@ function updateRoomsPanel(){
   if(guidanceEl) guidanceEl.textContent=guidance.text;
   document.querySelectorAll('.journeyBeat').forEach(beat=>{
     const active=beat.dataset.beat===guidance.currentId;
-    const stamped=Number.isFinite(passportState.stamps[beat.dataset.beat]);
+    const stamped=isPassportStamped(passportState.stamps[beat.dataset.beat]);
     const next=beat.dataset.beat===guidance.nextId;
     beat.classList.toggle('active',active);
     beat.classList.toggle('next',next);
@@ -11807,7 +11939,7 @@ function toggleRoomsPanel(force){
     catalogue.classList.remove('open'); closeArchive(); closeNotes(); closeResearchPanel(); helpPanel.classList.remove('open');
     visitGuidanceScheduler.cancel('visit-rooms');
     dismissVisitGuidance('visit-rooms');
-    recordVisitEvidence({kind:'rooms-opened',room:currentRoom});
+    recordWorkshopEvidence({kind:'rooms-opened',action:'opened',room:currentRoom,roomLabel:visitRoomLabel(currentRoom),id:'rooms:panel',label:'Rooms',source:'rooms'});
     updateRoomsPanel();
   }
   fastMapPanel.classList.toggle('open',open);
@@ -12059,6 +12191,12 @@ const CHANNEL_URLS = {
 let overlayMode = null;           // 'studio' | 'venue' | 'thinking-tv' | 'channels' | null
 let selectedProjectionChannel = 'youtube';
 let studioMusicFollow = true;     // keep the wall player audible in other rooms
+function showPlayOverlay(){
+  const panel=$('playOverlay');
+  panel.classList.add('show');
+  panel.setAttribute('aria-hidden','false');
+  openAccessibleDialog($('playOverlay'),{initialFocus:$('playCloseBtn'),onEscape:closePlayOverlay});
+}
 function studioEmbedFrom(text, forWall=false){
   const v = (text||'').trim();
   if(!v) return null;
@@ -12083,11 +12221,17 @@ function projectionEmbedFrom(text,forWall=false){
 
 // Small, dependency-free creative desk for the Experiment Garden. Everything
 // remains in memory until the visitor explicitly saves a PNG.
+function closeGardenMaker(){
+  const panel=$('gardenMakerPanel');
+  if(!panel) return;
+  closeAccessibleDialog(panel);
+  panel.style.display='none';
+}
 function openGardenMaker(){
   if(document.pointerLockElement) document.exitPointerLock();
   let panel=$('gardenMakerPanel');
   if(!panel){
-    panel=document.createElement('div'); panel.id='gardenMakerPanel';
+    panel=document.createElement('div'); panel.id='gardenMakerPanel'; panel.setAttribute('role','dialog'); panel.setAttribute('aria-modal','true'); panel.setAttribute('aria-label','Garden making desk');
     panel.style.cssText='position:fixed;inset:0;z-index:12000;background:rgba(12,10,8,.94);display:grid;grid-template-rows:auto 1fr;padding:18px;gap:12px;color:#f4ead8;font:13px Arial,sans-serif';
     panel.innerHTML=`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="font:26px Georgia,serif;margin-right:12px">GARDEN MAKING DESK</b><button data-mode="paint">PAINT</button><button data-mode="collage">COLLAGE</button><label>colour <input type="color" value="#a42f25"></label><label>brush <input type="range" min="2" max="70" value="18"></label><label>add image <input type="file" accept="image/*"></label><button data-act="undo">UNDO</button><button data-act="clear">CLEAR</button><button data-act="save">SAVE PNG</button><button data-act="close" style="margin-left:auto">CLOSE</button><span>Draw, or click to layer torn-paper shapes and your own image.</span></div><div style="min-height:0;display:grid;place-items:center"><canvas width="1200" height="760" style="max-width:100%;max-height:100%;background:#eee2cb;box-shadow:0 16px 60px #000;touch-action:none"></canvas></div>`;
     document.body.appendChild(panel);
@@ -12102,14 +12246,24 @@ function openGardenMaker(){
     c.onpointermove=e=>{if(!down)return;const p=pos(e);q.strokeStyle=color.value;q.lineWidth=+size.value;q.lineCap='round';q.lineJoin='round';q.globalAlpha=.76;q.beginPath();q.moveTo(last.x,last.y);q.lineTo(p.x,p.y);q.stroke();q.globalAlpha=1;last=p;};
     c.onpointerup=()=>{down=false;last=null;};
     file.onchange=()=>{const f=file.files[0];if(!f)return;const im=new Image();im.onload=()=>{stamp=im;mode='collage';};im.src=URL.createObjectURL(f);};
-    panel.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.mode){mode=b.dataset.mode;return;}const a=b.dataset.act;if(a==='close'){panel.style.display='none';return;}if(a==='clear'){snapshot();paper();}if(a==='undo'&&history.length){const im=new Image();im.onload=()=>{q.clearRect(0,0,c.width,c.height);q.drawImage(im,0,0);};im.src=history.pop();}if(a==='save'){const link=document.createElement('a');link.download='hrm-garden-collage.png';link.href=c.toDataURL('image/png');link.click();}};
+    panel.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.mode){mode=b.dataset.mode;return;}const a=b.dataset.act;if(a==='close'){closeGardenMaker();return;}if(a==='clear'){snapshot();paper();}if(a==='undo'&&history.length){const im=new Image();im.onload=()=>{q.clearRect(0,0,c.width,c.height);q.drawImage(im,0,0);};im.src=history.pop();}if(a==='save'){const link=document.createElement('a');link.download='hrm-garden-collage.png';link.href=c.toDataURL('image/png');link.click();}};
   }
   panel.style.display='grid';
+  openAccessibleDialog(panel,{initialFocus:panel.querySelector('[data-act="close"]'),onEscape:closeGardenMaker});
 }
 // The Studio workstation lives in its own lightweight same-origin document.
 // Keeping the iframe mounted while this overlay is hidden lets Web Audio and
 // recording continue as the visitor walks; the host bridge supplies compact
 // transport controls and can move the desk's YouTube source to the room wall.
+function closeStudioMaker(){
+  const panel=$('studioMakerPanel');
+  const mini=$('studioDeskMini');
+  if(!panel) return;
+  closeAccessibleDialog(panel);
+  panel.classList.remove('open');
+  panel.setAttribute('aria-hidden','true');
+  if(mini) mini.classList.add('show');
+}
 function openStudioMaker(){
   if(document.pointerLockElement) document.exitPointerLock();
   let panel=$('studioMakerPanel');
@@ -12162,14 +12316,10 @@ function openStudioMaker(){
       panel.classList.add('open');
       panel.setAttribute('aria-hidden','false');
       mini.classList.remove('show');
+      openAccessibleDialog(panel,{initialFocus:frame,onEscape:closeStudioMaker});
       setTimeout(()=>{frame.focus();send('state-request');},40);
     };
-    const closeDesk=()=>{
-      panel.classList.remove('open');
-      panel.setAttribute('aria-hidden','true');
-      mini.classList.add('show');
-      try{renderer.domElement.focus();}catch(e){}
-    };
+    const closeDesk=closeStudioMaker;
 
     mini.querySelectorAll('[data-desk-action]').forEach(button=>{
       button.onclick=()=>{
@@ -12216,6 +12366,7 @@ function openStudioMaker(){
   panel.setAttribute('aria-hidden','false');
   mini.classList.remove('show');
   const frame=$('studioMakerFrame');
+  openAccessibleDialog(panel,{initialFocus:frame,onEscape:closeStudioMaker});
   setTimeout(()=>{frame?.focus();try{frame?.contentWindow.postMessage({type:'workshop-studio-desk',action:'state-request'},'*');}catch(e){}},40);
 }
 function updateStudioNowPlaying(show=true){
@@ -12281,7 +12432,7 @@ function openPlayOverlay(screen){
     $('studioBar').classList.add('show');
     $('channelBar').classList.add('show');
     setChannelActive(studioProjectedChannel||'youtube');
-    $('playOverlay').classList.add('show');
+    showPlayOverlay();
     updateStudioNowPlaying(true);
     setTimeout(()=>{ const inp = $('studioInput'); if(inp){ try{ inp.value=localStorage.getItem('workshopStudioSourceV1')||''; }catch(e){} inp.focus(); } }, 250);
     return;
@@ -12294,7 +12445,7 @@ function openPlayOverlay(screen){
     $('channelBar').classList.add('show');
     $('studioBar').classList.add('show');
     setChannelActive(gardenCurrentChannel);
-    $('playOverlay').classList.add('show');
+    showPlayOverlay();
     return;
   }
   if(screen.action === 'venue'){
@@ -12305,7 +12456,7 @@ function openPlayOverlay(screen){
     $('channelBar').classList.add('show');
     $('studioBar').classList.toggle('show', venueCurrentChannel === 'youtube');
     setChannelActive(venueCurrentChannel);
-    $('playOverlay').classList.add('show');
+    showPlayOverlay();
     return;
   }
   if(screen.action === 'amph'){
@@ -12316,7 +12467,7 @@ function openPlayOverlay(screen){
     $('channelBar').classList.add('show');
     $('studioBar').classList.toggle('show',amphCurrentChannel==='youtube');
     setChannelActive(amphCurrentChannel);
-    $('playOverlay').classList.add('show');
+    showPlayOverlay();
     return;
   }
   if(screen.action === 'cave'){
@@ -12327,7 +12478,7 @@ function openPlayOverlay(screen){
     $('channelBar').classList.add('show');
     $('studioBar').classList.toggle('show',caveCurrentChannel==='youtube');
     setChannelActive(caveCurrentChannel);
-    $('playOverlay').classList.add('show');
+    showPlayOverlay();
     return;
   }
   if(screen.action === 'thinking-tv'){
@@ -12339,7 +12490,7 @@ function openPlayOverlay(screen){
     $('studioBar').classList.toggle('show',thinkingCurrentChannel === 'youtube');
     setChannelActive(thinkingCurrentChannel);
     $('playFrame').src = CHANNEL_URLS[thinkingCurrentChannel] || CHANNEL_URLS.saywhat;
-    $('playOverlay').classList.add('show');
+    showPlayOverlay();
     return;
   }
   if(screen.action === 'channels'){
@@ -12350,7 +12501,7 @@ function openPlayOverlay(screen){
     $('studioBar').classList.remove('show');
     $('playFrame').src = CHANNEL_URLS.saywhat;
     setChannelActive('saywhat');
-    $('playOverlay').classList.add('show');
+    showPlayOverlay();
     return;
   }
   const directChannel = screen.url===CHANNEL_URLS.noworries ? 'noworries' : (screen.url===CHANNEL_URLS.saywhat ? 'saywhat' : null);
@@ -12362,17 +12513,20 @@ function openPlayOverlay(screen){
     $('studioBar').classList.remove('show');
     $('playFrame').src=CHANNEL_URLS[directChannel];
     setChannelActive(directChannel);
-    $('playOverlay').classList.add('show');
+    showPlayOverlay();
     return;
   }
   overlayMode = null;
   $('playTitle').textContent = screen.room === 'spark' ? `${screen.title} \u00b7 SPARK TOOLS` : `${screen.title} Projection`;
   $('playOpenLink').href = screen.url;
   $('playFrame').src = screen.url;
-  $('playOverlay').classList.add('show');
+  showPlayOverlay();
 }
 function closePlayOverlay(){
-  $('playOverlay').classList.remove('show');
+  const panel=$('playOverlay');
+  closeAccessibleDialog(panel);
+  panel.classList.remove('show');
+  panel.setAttribute('aria-hidden','true');
   $('playOverlayCard').classList.remove('studioMode');
   $('studioBar').classList.remove('show');
   $('channelBar').classList.remove('show');
@@ -12590,15 +12744,18 @@ function setPlayerLocation(room, pos, newYaw, label, newPitch=0){
   seatedAmphView = false;
   if($('playOverlay').classList.contains('show')) closePlayOverlay();
   currentRoom = room;
-  const visitStatus=recordVisitEvidence({kind:'arrival',room});
-  if(visitStatus==='rooms'){
+  const visitResult=recordWorkshopEvidence({kind:'arrival',
+    action:isHoodRoom(room)?'returned':'arrived',capability:isHoodRoom(room)?'return':null,
+    room,roomLabel:visitRoomLabel(room),id:stableInteractionId('arrival',room,label),
+    label:label || visitRoomLabel(room),source:'world',
+  });
+  if(visitResult.status==='rooms'){
     visitGuidanceScheduler.schedule('visit-rooms',{
       delay:900,
       status:'rooms',
       payload:{text:'Rooms remembers where you have been and what kind of action comes next.',duration:5600},
     });
   }
-  recordPassportEvidence({kind:'arrival',room});
   if(studioWallIframe && !studioMusicFollow){
     if(room !== 'studio'){
       studioPlaybackRequested=false;
@@ -12744,7 +12901,7 @@ function fastTravel(place){
 function travelTo(portal){
   if(!roomBuildReady(portal.room)){
     msg('Preparing this district…');
-    return;
+    return false;
   }
   exitScreenControl();
   seatedStudioView = false;
@@ -12769,7 +12926,16 @@ function travelTo(portal){
     overlay.classList.add('show');
     setTimeout(()=>{
       currentRoom = portal.room;
-      recordPassportEvidence({kind:'arrival',room:currentRoom});
+      const arrival=recordWorkshopEvidence({kind:'arrival',
+        action:isHoodRoom(currentRoom)?'returned':'arrived',capability:isHoodRoom(currentRoom)?'return':null,
+        room:currentRoom,roomLabel:visitRoomLabel(currentRoom),
+        id:stableInteractionId('arrival',currentRoom,portal.label),label:portal.label || visitRoomLabel(currentRoom),source:'world',
+      });
+      if(arrival.status==='rooms') visitGuidanceScheduler.schedule('visit-rooms',{
+        delay:900,status:'rooms',
+        payload:{text:'Rooms remembers where you have been and what kind of action comes next.',duration:5600},
+      });
+      noteArchiveRoom(currentRoom);
       applyRoomLighting();
       if(studioWallIframe && !studioMusicFollow){
         if(currentRoom !== 'studio'){
@@ -12801,6 +12967,7 @@ function travelTo(portal){
     }, reducedMotion ? 0 : 210);
   };
   setTimeout(jump, reducedMotion ? 0 : 480);
+  return true;
 }
 
 function resize(){
@@ -13011,9 +13178,10 @@ const moveKeySet = new Set(['w','a','s','d','arrowup','arrowdown','arrowleft','a
 window.addEventListener('keydown', e=>{
   const k = e.key.toLowerCase();
   const typingTarget = e.target && (e.target.isContentEditable || ['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName));
-  // Text fields own their keystrokes. This prevents G/R/A/C and movement keys
-  // from opening panels or moving the visitor while entering a URL or note.
-  if(typingTarget && e.key !== 'Escape') return;
+  const interactiveTarget = e.target instanceof Element && e.target.closest('button,a[href],[role="button"],[role="dialog"],aside');
+  // Browser controls and panels own their keystrokes; the world only responds
+  // while focus is on the canvas/body, apart from Escape closing a dialog.
+  if((typingTarget || interactiveTarget) && e.key !== 'Escape') return;
   keys.add(k);
   if(moveKeySet.has(k)){
     cameraTransition.active = false;
@@ -13030,7 +13198,7 @@ window.addEventListener('keydown', e=>{
   if(k==='enter' && !typingTarget){ e.preventDefault(); interactAtCenter({requestLock:false}); }
   if(k==='f') focusNearest();
   if(k==='c') catalogue.classList.toggle('open');
-  if(k==='a') openArchive('rooms');
+  if(k==='o') openArchive('rooms');
   if(k==='g') toggleRoomsPanel();
   if(k==='n') openNotes();
   if(k==='h') helpPanel.classList.toggle('open');
@@ -13122,7 +13290,7 @@ function updateMovement(dt){
   let targetX = 0, targetZ = 0;
   const moving = Math.abs(forward) + Math.abs(strafe) > 0;
   if(moving && visitState.firstMoveAt===null){
-    recordVisitEvidence({kind:'move',room:currentRoom});
+    recordWorkshopEvidence({kind:'move',action:'moved',room:currentRoom,roomLabel:visitRoomLabel(currentRoom),id:'visit:first-move',label:'First movement',source:'world'});
     dismissVisitGuidance('visit-move');
   }
   if(moving && seatedStudioView) seatedStudioView = false;
@@ -13351,7 +13519,7 @@ function updateLookRay(){
   const item = target?.interactable || null;
   lookingAtInteractable = item;
   if(item){
-    if(visitState.firstLookAt===null) recordVisitEvidence({kind:'target',room:item.room,type:item.type,id:item.id});
+    if(visitState.firstLookAt===null) recordWorkshopEvidence({kind:'target',action:'attended',room:item.room,roomLabel:item.roomLabel,type:item.type,id:item.id,label:item.label,source:'world'});
     if(visitState.firstInteractionAt===null) scheduleInteractionGuidance();
   }
 

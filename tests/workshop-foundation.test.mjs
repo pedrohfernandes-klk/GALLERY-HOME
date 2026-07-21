@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 
 import {
   PASSPORT_ACTS,
+  PASSPORT_VERSION,
   createPassportState,
+  isPassportStamped,
+  passportEvidenceLine,
   recordPassportEvent,
   passportProgress,
   runIdleBuildQueue,
@@ -20,15 +23,40 @@ test('passport starts with five unstamped acts', () => {
 
 test('passport records the five kinds of meaningful evidence', () => {
   let state = createPassportState();
-  state = recordPassportEvent(state, { kind: 'enter' });
-  state = recordPassportEvent(state, { kind: 'interaction', room: 'thinking', type: 'screen' });
-  state = recordPassportEvent(state, { kind: 'interaction', room: 'studio', type: 'screen' });
-  state = recordPassportEvent(state, { kind: 'interaction', room: 'outdoor', type: 'guide' });
-  state = recordPassportEvent(state, { kind: 'arrival', room: 'hood' });
+  state = recordPassportEvent(state, {
+    kind:'interaction',action:'attended',capability:'attention',room:'gallery',roomLabel:'Workshop Hall',
+    type:'artwork',id:'hall:work-1',label:'Untitled 01',eventId:'visit-10-0-interaction-hall-work-1',at:10,
+  });
+  state = recordPassportEvent(state, {
+    kind:'interaction',action:'consulted',capability:'research',room:'thinking',roomLabel:'Thinking Room',
+    type:'screen',id:'thinking:research-desk',label:'Research Desk',eventId:'visit-20-1-interaction-thinking-research-desk',at:20,
+  });
+  state = recordPassportEvent(state, {
+    kind:'interaction',action:'activated',capability:'projection',room:'studio',roomLabel:'The Studio',
+    type:'screen',id:'studio:mixing-desk',label:'Mixing Desk',eventId:'visit-30-2-interaction-studio-mixing-desk',at:30,
+  });
+  state = recordPassportEvent(state, {
+    kind:'interaction',action:'spoke',capability:'guidance',room:'outdoor',roomLabel:'The Grove',
+    type:'guide',id:'grove:guide',label:'Grove Guide',eventId:'visit-40-3-interaction-grove-guide',at:40,
+  });
+  state = recordPassportEvent(state, {
+    kind:'arrival',action:'returned',capability:'return',room:'hood',roomLabel:'Headquarters',
+    id:'headquarters:arrival',label:'Headquarters',eventId:'visit-50-4-arrival-headquarters-arrival',at:50,
+  });
 
   assert.deepEqual(Object.keys(state.stamps), [
     'threshold', 'search', 'projection', 'outside', 'return',
   ]);
+  assert.deepEqual(state.stamps.search,{
+    at:20,
+    eventId:'visit-20-1-interaction-thinking-research-desk',
+    legacy:false,
+    evidence:{
+      action:'consulted',capability:'research',room:'thinking',roomLabel:'Thinking Room',
+      type:'screen',id:'thinking:research-desk',label:'Research Desk',
+    },
+  });
+  assert.equal(passportEvidenceLine(state,'search'),'SEARCH — Consulted Research Desk, Thinking Room.');
   assert.deepEqual(passportProgress(state), { completed: 5, total: 5, percent: 100 });
 });
 
@@ -49,12 +77,39 @@ test('unrelated interactions do not award room acts', () => {
   assert.deepEqual(state.stamps, {});
 });
 
-test('passport restores valid saved progress and rejects malformed data', () => {
+test('entry and empty Headquarters arrival do not create false evidence', () => {
+  let state=createPassportState();
+  state=recordPassportEvent(state,{kind:'enter',room:'gallery'},10);
+  state=recordPassportEvent(state,{kind:'arrival',room:'hood'},20);
+  assert.deepEqual(state.stamps,{});
+});
+
+test('first qualifying evidence wins and later use cannot rewrite the stamp', () => {
+  let state=createPassportState();
+  const first={
+    kind:'interaction',action:'consulted',capability:'research',room:'thinking',
+    id:'thinking:research-desk',label:'Research Desk',eventId:'event:first',at:10,
+  };
+  const later={...first,id:'maps:archive-table',label:'Archive Table',eventId:'event:later',at:20};
+  state=recordPassportEvent(state,first);
+  state=recordPassportEvent(state,later);
+  assert.equal(state.stamps.search.eventId,'event:first');
+  assert.equal(state.stamps.search.evidence.label,'Research Desk');
+  assert.equal(isPassportStamped(state.stamps.search),true);
+});
+
+test('passport restores legacy timestamps as truthful fallback evidence', () => {
   const restored = createPassportState(JSON.stringify({
     version: 1,
     stamps: { threshold: 10, search: 20, nonsense: 30 },
   }));
-  assert.deepEqual(restored.stamps, { threshold: 10, search: 20 });
+  assert.equal(restored.version,PASSPORT_VERSION);
+  assert.deepEqual(restored.stamps, {
+    threshold:{at:10,eventId:null,legacy:true,evidence:null},
+    search:{at:20,eventId:null,legacy:true,evidence:null},
+  });
+  assert.equal(passportEvidenceLine(restored,'search'),'SEARCH — Legacy stamp; detailed evidence unavailable.');
+  assert.equal(passportEvidenceLine(restored,'outside'),'OUTSIDE — Not yet stamped.');
   assert.deepEqual(createPassportState('{bad json').stamps, {});
 });
 
