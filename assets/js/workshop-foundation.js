@@ -1,9 +1,9 @@
 export const PASSPORT_ACTS = Object.freeze([
-  { id: 'threshold', label: 'Threshold', detail: 'Enter and look closely.' },
-  { id: 'search', label: 'Search', detail: 'Use a thinking, archive, map or laboratory tool.' },
-  { id: 'projection', label: 'Projection', detail: 'Activate a screen, studio tool or garden machine.' },
-  { id: 'outside', label: 'Outside', detail: 'Meet something in the Grove.' },
-  { id: 'return', label: 'Return', detail: 'Reach Headquarters carrying the record of the visit.' },
+  { id: 'threshold', label: 'Threshold', detail: 'Enter and look closely.', guidance: 'look closely and use a work in the Hall' },
+  { id: 'search', label: 'Search', detail: 'Use a thinking, archive, map or laboratory tool.', guidance: 'use a thinking, archive, map or laboratory tool' },
+  { id: 'projection', label: 'Projection', detail: 'Activate a screen, studio tool or garden machine.', guidance: 'activate a screen, Studio tool or Garden machine' },
+  { id: 'outside', label: 'Outside', detail: 'Meet something in the Grove.', guidance: 'meet the guide in the Grove' },
+  { id: 'return', label: 'Return', detail: 'Reach Headquarters carrying the record of the visit.', guidance: 'reach Headquarters carrying the record of the visit' },
 ]);
 
 const ACT_IDS = new Set(PASSPORT_ACTS.map(act => act.id));
