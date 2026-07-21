@@ -7,8 +7,13 @@ export const PASSPORT_ACTS = Object.freeze([
 ]);
 
 const ACT_IDS = new Set(PASSPORT_ACTS.map(act => act.id));
-const SEARCH_ROOMS = new Set(['tunnel', 'thinking', 'maps', 'lab', 'spark']);
+const SEARCH_INTERACTIONS = new Map([
+  ['thinking', new Set(['screen', 'archive'])],
+  ['maps', new Set(['archive'])],
+  ['lab', new Set(['screen', 'switch'])],
+]);
 const PROJECTION_ROOMS = new Set(['theatre', 'studio', 'maze', 'night']);
+const PROJECTION_INTERACTIONS = new Set(['screen', 'maker']);
 
 export function createPassportState(raw = null) {
   let source = raw;
@@ -33,9 +38,9 @@ function actsForEvent(event = {}) {
   if (event.kind === 'enter') acts.push('threshold');
   if (event.kind === 'interaction') {
     if (room === 'gallery' && event.type === 'artwork') acts.push('threshold');
-    if (SEARCH_ROOMS.has(room)) acts.push('search');
-    if (PROJECTION_ROOMS.has(room)) acts.push('projection');
-    if (room === 'outdoor') acts.push('outside');
+    if (SEARCH_INTERACTIONS.get(room)?.has(event.type)) acts.push('search');
+    if (PROJECTION_ROOMS.has(room) && PROJECTION_INTERACTIONS.has(event.type)) acts.push('projection');
+    if (room === 'outdoor' && event.type === 'guide') acts.push('outside');
   }
   if (event.kind === 'arrival' && (room === 'hood' || room.startsWith('hood-'))) acts.push('return');
   return acts;
@@ -75,40 +80,83 @@ export function runIdleBuildQueue(tasks, options = {}) {
 
   return new Promise((resolve, reject) => {
     let index = 0;
+    let settled = false;
+    let scheduling = 0;
+    let finishPending = false;
+    const errors = [];
+    const record = (task, error) => errors.push({ task, error });
     const finish = () => {
+      if (settled) return;
+      if (scheduling) {
+        finishPending = true;
+        return;
+      }
+      settled = true;
+      finishPending = false;
       try {
-        if (typeof options.onDone === 'function') options.onDone();
-        resolve();
+        if (typeof options.onDone === 'function') options.onDone(errors.slice());
       } catch (error) {
-        reject(error);
+        record(null, error);
+      }
+      if (errors.length) {
+        const message = errors.map(({ task, error }) => `${task?.id || 'finalisation'}: ${error?.message || error}`).join('; ');
+        reject(new AggregateError(errors.map(entry => entry.error), message));
+      } else resolve();
+    };
+    let step;
+    const scheduleStep = () => {
+      let started = false;
+      const scheduledStep = () => {
+        if (started || settled) return;
+        started = true;
+        step();
+      };
+      scheduling += 1;
+      try {
+        schedule(scheduledStep);
+      } catch (error) {
+        record(queue[index] || null, error);
+        scheduledStep();
+      } finally {
+        scheduling -= 1;
+        if (!scheduling && finishPending) finish();
       }
     };
-    const step = () => {
+    step = () => {
+      if (settled) return;
       if (index >= queue.length) {
         finish();
         return;
       }
 
       const task = queue[index++];
+      let built = false;
       try {
         task.build();
-        onTask(task.id, index, queue.length);
+        built = true;
       } catch (error) {
-        reject(error);
-        return;
+        record(task, error);
+        if (typeof options.onError === 'function') {
+          try {
+            options.onError(task, error, index, queue.length);
+          } catch (reporterError) {
+            record(task, reporterError);
+          }
+        }
+      }
+      if (built) {
+        try {
+          onTask(task.id, index, queue.length);
+        } catch (error) {
+          record(task, error);
+        }
       }
 
-      if (index >= queue.length) {
-        finish();
-      } else {
-        schedule(step);
-      }
+      if (index >= queue.length) finish();
+      else scheduleStep();
     };
 
-    if (!queue.length) {
-      finish();
-    } else {
-      schedule(step);
-    }
+    if (!queue.length) finish();
+    else scheduleStep();
   });
 }

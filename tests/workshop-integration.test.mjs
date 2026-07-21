@@ -21,8 +21,10 @@ test('entry is enabled before the deferred room queue finishes', () => {
   const opening = html.slice(html.indexOf('function beginPosterOpen(){'), html.indexOf('function makeGridTexture'));
   assert.match(opening, /ensureAnimationStarted\(\)/,
     'animation begins on demand when the visitor enters');
-  assert.match(html, /if\(!worldFullyReady && !ENTRY_READY_PLACES\.has\(place\)\)/,
+  assert.match(html, /if\(!placeBuildReady\(place\)\)/,
     'fast travel blocks distant destinations until their geometry exists');
+  assert.match(html, /if\(!roomBuildReady\(portal\.room\)\)/,
+    'physical portals block destinations until their geometry exists');
 });
 
 test('visitor passport is visible and records entry, interactions and arrivals', () => {

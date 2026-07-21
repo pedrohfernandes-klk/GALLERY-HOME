@@ -3024,7 +3024,23 @@ function msg(t){
 let posterOpening = false;
 let worldReady = false;
 let worldFullyReady = false;
-const ENTRY_READY_PLACES = new Set(['warehouse','guernica','end-gallery','the-tunnel','waiting-room']);
+const builtDistricts = new Set(['threshold']);
+const ROOM_BUILD_IDS = Object.freeze({
+  gallery:'threshold', tunnel:'threshold', theatre:'venue', lab:'laboratory',
+  maze:'experiment-garden', maps:'many-maps', spark:'spark-tools',
+  thinking:'thinking-room', night:'sunset-lounge', studio:'studio',
+  outdoor:'grove', hood:'headquarters'
+});
+const PLACE_BUILD_IDS = Object.freeze({
+  warehouse:'threshold', guernica:'threshold', 'end-gallery':'threshold',
+  'the-tunnel':'threshold', 'waiting-room':'threshold', venue:'venue',
+  lab:'laboratory', garden:'experiment-garden', maps:'many-maps',
+  spark:'spark-tools', thinking:'thinking-room', 'night-room':'sunset-lounge',
+  studio:'studio', outdoor:'grove', headquarters:'headquarters'
+});
+function roomBuildId(room){return String(room||'').startsWith('hood-')?'headquarters':ROOM_BUILD_IDS[room];}
+function roomBuildReady(room){const id=roomBuildId(room);return !id || builtDistricts.has(id);}
+function placeBuildReady(place){const id=PLACE_BUILD_IDS[place];return !id || builtDistricts.has(id);}
 let animationStarted = false;
 function ensureAnimationStarted(){
   if(animationStarted) return;
@@ -4234,16 +4250,17 @@ function init(){
     {id:'headquarters',build:buildHood}
   ];
   runIdleBuildQueue(deferredBuilds,{
-    onTask:id=>window.__workshopMetrics.built.push(id),
-    onDone:()=>{
+    onTask:id=>{builtDistricts.add(id);window.__workshopMetrics.built.push(id);},
+    onDone:errors=>{
       applyGlobalTuning();
       buildParticles();
       applyRoomLighting();
       updateRoomUI();
       window.__workshopMetrics.fullyReady=performance.now()-initStarted;
       window.__workshopMetrics.resources=performance.getEntriesByType('resource').length;
-      worldFullyReady=true;
-      msg('All districts ready');
+      window.__workshopMetrics.failures=errors.map(({task,error})=>({id:task?.id||'finalisation',message:String(error?.message||error)}));
+      worldFullyReady=errors.length===0;
+      msg(worldFullyReady?'All districts ready':'Some districts remain unavailable');
       if(/[?&#]selftest/.test(location.href)) setTimeout(runWorkshopSelfTest, 120);
     }
   }).catch(err=>{
@@ -12493,7 +12510,7 @@ function setPlayerLocation(room, pos, newYaw, label, newPitch=0){
   msg(label || 'Moved');
 }
 function fastTravel(place){
-  if(!worldFullyReady && !ENTRY_READY_PLACES.has(place)){
+  if(!placeBuildReady(place)){
     msg('Preparing this district…');
     return;
   }
@@ -12598,6 +12615,10 @@ function fastTravel(place){
 }
 
 function travelTo(portal){
+  if(!roomBuildReady(portal.room)){
+    msg('Preparing this district…');
+    return;
+  }
   exitScreenControl();
   seatedStudioView = false;
   seatedAmphView = false;
