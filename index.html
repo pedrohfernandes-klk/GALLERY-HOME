@@ -2903,42 +2903,6 @@ function registerInteractable(cfg={}){
   return item;
 }
 
-// Local Grove oracle. No network request or model call: the repertoire ships
-// in the file, but varied replies keep repeat encounters pleasantly unstable.
-const groveOracleMurmurs=[
-  'The pond says you are early. The pond is famously bad with clocks.',
-  'A useful omen: the room you nearly skipped is probably the room you need.',
-  'Today favours long looking, short captions and one unnecessary detour.',
-  'The trees recommend curiosity. They also recommend becoming a tree, so use judgement.',
-  'You may be lost. Excellent. Certainty is a very small exhibition.',
-  'Something good is hiding two rooms past the thing you already like.'
-];
-const groveGeneralAdvice=[
-  'Do not rush the first impression; it has not finished introducing itself.',
-  'If a work annoys you, give it another minute. Irritation is attention wearing a cheap coat.',
-  'Sit when a room offers a chair. Architecture changes when your knees stop negotiating.',
-  'Look behind you occasionally. Curators are shameless about rewarding this.',
-  'Choose one detail to remember instead of trying to remember the whole room.',
-  'A screen is a window with opinions. Use the controls, then keep looking around it.'
-];
-const groveGuideChoices={
-  spectacle:{label:'Show me something loud',place:'venue',destination:'The Venue',replies:[
-    'Excellent. Subtlety has taken the evening off. The Venue has scale, sound and enough drama to make a curtain nervous.',
-    'Go where the screen is large enough to argue back. The Venue is theatrical, seated and entirely unapologetic.',
-    'A large room for a large mood. The Venue will take it from here; try not to upstage it.'
-  ],tips:['Stand near the centre aisle first—the room reveals itself before the screen does.','Choose a seat, then look around before pressing play. Anticipation is part of the architecture.']},
-  ideas:{label:'I need a good idea',place:'thinking',destination:'Thinking Room',replies:[
-    'A dangerous request, but I respect it. Try the Thinking Room: fewer notifications, better furniture, and several ideas pretending to be books.',
-    'The Thinking Room cannot guarantee an idea, but it provides excellent conditions for one to make an entrance.',
-    'Go sit with the television, the art and your unfinished thought. One of them may improve the others.'
-  ],tips:['Sit down before deciding what anything means. Meaning dislikes being chased.','Begin with the largest work. Small thoughts often need a large door.']},
-  strange:{label:'Take me somewhere strange',place:'garden',destination:'Experiment Garden',replies:[
-    'Now we are speaking properly. The Experiment Garden is organised confusion—like a filing cabinet designed by weather.',
-    'The Experiment Garden is the correct address for beautiful mistakes and suspiciously confident paths.',
-    'Go toward the room that sounds least sensible. Sensible rooms already have enough visitors.'
-  ],tips:['Choose a path confidently. Confidence will not help, but it photographs well.','If two routes seem equally odd, take the one with worse signage.']}
-};
-const grovePick=list=>list[(Math.random()*list.length)|0];
 const accessibleDialogState={panel:null,opener:null,inertTargets:[],onEscape:null};
 function dialogFocusables(panel){
   return [...panel.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),iframe:not([tabindex="-1"]),[tabindex]:not([tabindex="-1"])')]
@@ -2999,29 +2963,6 @@ function openAccessibleDialog(panel,{initialFocus=null,onEscape=null}={}){
   accessibleDialogState.onEscape=onEscape;
   document.addEventListener('keydown',handleAccessibleDialogKeydown,true);
   requestAnimationFrame(()=>{ (initialFocus || dialogFocusables(panel)[0] || panel)?.focus(); });
-}
-function openGroveGuide(){
-  document.exitPointerLock?.();
-  let panel=document.getElementById('groveGuideDialog');
-  if(!panel){
-    panel=document.createElement('div'); panel.id='groveGuideDialog'; panel.setAttribute('role','dialog'); panel.setAttribute('aria-modal','true');
-    Object.assign(panel.style,{position:'fixed',left:'50%',top:'50%',transform:'translate(-50%,-50%)',width:'min(520px,calc(100vw - 32px))',zIndex:'10020',padding:'22px',borderRadius:'18px',background:'rgba(239,235,225,.97)',color:'#191715',border:'1px solid rgba(30,25,20,.3)',boxShadow:'0 24px 80px rgba(0,0,0,.42)',fontFamily:'Arial,sans-serif'});
-    document.body.appendChild(panel);
-  }
-  const closeGuide=()=>{ closeAccessibleDialog(panel); panel.remove(); };
-  const showChoices=()=>{
-    panel.innerHTML=`<button data-close aria-label="Close" style="float:right;border:0;background:transparent;font-size:22px;cursor:pointer">×</button><div style="font:600 13px Georgia,serif;letter-spacing:.18em;text-transform:uppercase;color:#9a533d">HrM · Grove oracle</div><h2 style="font:500 30px Georgia,serif;margin:12px 0 8px">Hey! What's up?</h2><p style="line-height:1.5;margin:0 0 10px">I am the welcome figure: part concierge, part oracle, entirely without pockets. What kind of visit are we having?</p><p style="line-height:1.45;margin:0 0 17px;padding:10px 12px;background:#e5ddcf;border-radius:10px"><b>Today's unnecessary prophecy:</b> ${grovePick(groveOracleMurmurs)}</p><div data-options style="display:grid;gap:9px"></div><button data-omen style="margin-top:10px;padding:9px 12px;border:0;background:transparent;color:#7c4838;text-decoration:underline;cursor:pointer">Give me a different omen</button>`;
-    const options=panel.querySelector('[data-options]');
-    Object.entries(groveGuideChoices).forEach(([key,c])=>{ const b=document.createElement('button'); b.textContent=c.label; b.dataset.choice=key; Object.assign(b.style,{padding:'12px 14px',borderRadius:'11px',border:'1px solid #8d7c6d',background:'#fffaf0',color:'#211d19',textAlign:'left',cursor:'pointer',fontWeight:'700'}); options.appendChild(b); });
-    panel.querySelector('[data-close]').onclick=closeGuide;
-    panel.querySelector('[data-omen]').onclick=showChoices;
-    options.onclick=e=>{ const c=groveGuideChoices[e.target.dataset.choice]; if(!c)return;
-      panel.innerHTML=`<button data-close aria-label="Close" style="float:right;border:0;background:transparent;font-size:22px;cursor:pointer">×</button><div style="font:600 13px Georgia,serif;letter-spacing:.18em;text-transform:uppercase;color:#9a533d">I suggest ${c.destination}</div><h2 style="font:500 27px Georgia,serif;margin:12px 0 9px">Good choice. Probably.</h2><p style="line-height:1.5">${grovePick(c.replies)}</p><p style="line-height:1.45;padding:10px 12px;background:#e5ddcf;border-radius:10px"><b>Small advice:</b> ${grovePick(c.tips)} ${grovePick(groveGeneralAdvice)}</p><div style="display:flex;gap:9px;flex-wrap:wrap"><button data-go style="padding:11px 15px;border:0;border-radius:10px;background:#191715;color:white;font-weight:800;cursor:pointer">Take me to ${c.destination}</button><button data-back style="padding:11px 15px;border:1px solid #8d7c6d;border-radius:10px;background:transparent;font-weight:700;cursor:pointer">Ask again</button></div>`;
-      panel.querySelector('[data-close]').onclick=closeGuide; panel.querySelector('[data-back]').onclick=showChoices; panel.querySelector('[data-go]').onclick=()=>{closeGuide();fastTravel(c.place);};
-    };
-  };
-  showChoices();
-  openAccessibleDialog(panel,{initialFocus:panel.querySelector('[data-close]'),onEscape:closeGuide});
 }
 function interactionEnabled(item){
   return !!item && (!item.enabled || item.enabled(item) !== false) && item.mesh && item.mesh.visible !== false;
@@ -4656,27 +4597,6 @@ function runWorkshopSelfTest(){
   return failed.length === 0;
 }
 
-function buildWorkshopChaperone({x,z}){
-  const g=new THREE.Group(); g.name='workshop-chaperone'; g.position.set(x,0,z);
-  const back=new THREE.MeshStandardMaterial({color:0x181a19,roughness:.93,metalness:.04});
-  const plaster=new THREE.MeshStandardMaterial({color:0x554b3d,roughness:.96,metalness:.01});
-  const steel=new THREE.MeshStandardMaterial({color:0x1c2c2e,roughness:.70,metalness:.58});
-  const bayBack=new THREE.Mesh(new THREE.BoxGeometry(4.15,7.3,.34),back); bayBack.position.set(0,3.65,-.52); g.add(bayBack);
-  for(const sx of [-1,1]){ const returnWall=new THREE.Mesh(new THREE.BoxGeometry(.34,7.3,1.34),steel); returnWall.position.set(sx*2.07,3.65,.05); g.add(returnWall); }
-  const lintel=new THREE.Mesh(new THREE.BoxGeometry(4.48,.34,1.34),steel); lintel.position.set(0,7.14,.05); g.add(lintel);
-  const traceTex=new THREE.TextureLoader().load('assets/extracted/cadavre-expat.webp'); traceTex.colorSpace=THREE.SRGBColorSpace;
-  const traceMat=new THREE.MeshStandardMaterial({map:traceTex,roughness:.94,metalness:.01});
-  for(const sx of [-1,1]){ const trace=new THREE.Mesh(new THREE.PlaneGeometry(.52,2.65),traceMat); trace.position.set(sx*1.55,3.88,-.32); trace.rotation.y=sx*.08; g.add(trace); }
-  const faceTex=new THREE.TextureLoader().load('assets/extracted/mask-garden-face.webp');
-  faceTex.colorSpace=THREE.SRGBColorSpace;
-  const relief=new THREE.Mesh(new THREE.CircleGeometry(2.02,80),new THREE.MeshStandardMaterial({map:faceTex,roughness:.91,metalness:.01}));
-  relief.position.set(-.84,4.34,.37); relief.scale.set(.86,1.18,1); g.add(relief);
-  const aperture=new THREE.Mesh(new THREE.CircleGeometry(.22,40),new THREE.MeshBasicMaterial({color:0x491314})); aperture.position.set(-.84,3.76,.40); aperture.scale.y=.30; aperture.name='chaperone-mouth'; g.add(aperture);
-  scene.add(g);
-  registerInteractable({id:'workshop:chaperone',type:'guide',room:'gallery',mesh:relief,label:'HrM chaperone',action:'spoke',capability:'guidance',hintId:'workshop-chaperone',priority:7,hintText:'The Workshop chaperone has noticed you.',prompt:()=> 'Speak with the chaperone',onUse:openGroveGuide});
-  return g;
-}
-
 function buildHall(){
   const hw = hallHalfWidth;
   const z0 = tunnelMouthZ;
@@ -5281,29 +5201,6 @@ function buildHall(){
   }
   }
 
-  // ===== Entry rite and off-axis Workshop chaperone =====
-  {
-    const entry = new THREE.Group(); entry.name='workshop-entry-threshold';
-    const steel = new THREE.MeshStandardMaterial({color:0x1c2c2e,roughness:.68,metalness:.62});
-    const timber = new THREE.MeshStandardMaterial({color:0x3d2b1e,roughness:.88,metalness:.02});
-    const glass = new THREE.MeshStandardMaterial({color:0x83aeb3,transparent:true,opacity:.25,roughness:.34,metalness:.16,side:THREE.DoubleSide});
-    const cx=0, cz=midZ-5.15;
-    // A low, broad rise makes the forward passage a change of state, not a stage.
-    for(let i=0;i<3;i++){
-      const step=new THREE.Mesh(new THREE.BoxGeometry(5.4,.18,1.05),timber);
-      step.position.set(cx,.09+i*.18,cz+1.1-i*.82); entry.add(step);
-    }
-    const frameY=3.35, frameZ=cz-1.6;
-    for(const x of [-2.55,2.55]){
-      const upright=new THREE.Mesh(new THREE.BoxGeometry(.16,6.5,.18),steel); upright.position.set(x,frameY,frameZ); entry.add(upright);
-    }
-    const lintel=new THREE.Mesh(new THREE.BoxGeometry(5.25,.18,.18),steel); lintel.position.set(cx,6.52,frameZ); entry.add(lintel);
-    const transom=new THREE.Mesh(new THREE.PlaneGeometry(4.92,2.0),glass); transom.position.set(cx,5.35,frameZ+.02); entry.add(transom);
-    for(let x=-2.1;x<=2.1;x+=.7){ const mullion=new THREE.Mesh(new THREE.BoxGeometry(.045,2.0,.06),steel); mullion.position.set(x,5.35,frameZ+.04); entry.add(mullion); }
-    const practical=new THREE.RectAreaLight(0xd5f3ff,5.8,4.6,.22); practical.position.set(cx,5.95,frameZ+.35); practical.rotation.x=-Math.PI/2; entry.add(practical);
-    scene.add(entry);
-    buildWorkshopChaperone({x:-5.55,z:cz-2.72});
-  }
 }
 
 const NIGHT_ROOM_VIEW_SRC = 'assets/extracted/night-room-view.webp';
@@ -6213,11 +6110,6 @@ function buildOutdoorSpace(){
     for(const r of [.27,.38,.49]){const groove=new THREE.Mesh(new THREE.TorusGeometry(r,.012,10,64),statueMaskFrameMat);groove.position.set(0,.01,-.555);groove.rotation.y=Math.PI;headGroup.add(groove);}
     const backSeal=new THREE.Mesh(new THREE.CylinderGeometry(.10,.10,.024,32),statueBronze);backSeal.position.set(0,.01,-.584);backSeal.rotation.x=Math.PI/2;headGroup.add(backSeal);
     const unifiedHead=cranium;
-    /* retired garden guide; the sole chaperone lives in the Hall
-    registerInteractable({id:'grove:guide',type:'guide',room:'outdoor',mesh:faceCap,label:'HrM welcome figure',
-      action:'spoke',capability:'guidance',hintId:'grove-guide',priority:5,
-      hintText:'The Grove figure has directions, opinions and no sense of urgency.',prompt:()=>'Talk to the Grove guide',onUse:openGroveGuide}); */
-
 
     // Roundabout ring bed: rosemary and lavender clipped low around the plinth.
     const ringBed = new THREE.Mesh(new THREE.RingGeometry(1.65,2.55,48), new THREE.MeshStandardMaterial({color:0x5d4936, roughness:.97, metalness:0}));

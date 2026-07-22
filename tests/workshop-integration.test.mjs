@@ -163,6 +163,23 @@ test('Hall recess doors use a visual-only presentation contract', () => {
   assert.match(builder, /return \{group, slab:hitbox, doorParts:leafGroups, openAxis, field\}/);
 });
 
+test('Hall entry remains a plain threshold without a chaperone apparatus', () => {
+  const hallStart=html.indexOf('function buildHall(){');
+  const hallEnd=html.indexOf('const NIGHT_ROOM_VIEW_SRC', hallStart);
+  const hall=html.slice(hallStart,hallEnd);
+  assert.doesNotMatch(html, /function buildWorkshopChaperone\(/);
+  assert.doesNotMatch(html, /workshop-chaperone/);
+  assert.doesNotMatch(html, /workshop:chaperone/);
+  assert.doesNotMatch(html, /workshop-entry-threshold/);
+  assert.doesNotMatch(html, /Entry rite and off-axis Workshop chaperone/);
+  assert.doesNotMatch(html, /function openGroveGuide\(/,
+    'the now-unreachable chaperone guide is removed');
+  assert.doesNotMatch(html, /groveGuideChoices|groveOracleMurmurs|groveGeneralAdvice|grovePick/,
+    'the now-unreachable guide dialogue state is removed');
+  assert.match(hall, /const floor = new THREE\.Mesh\(/,
+    'the ordinary Hall floor remains the arrival surface');
+});
+
 test('Garden Study capture is explicit, metadata-rich and safe around dialogs', () => {
   assert.match(html, /from ['"]\.\/assets\/js\/workshop-garden-study\.js['"]/,
     'Garden Studies use a focused local-only module');
