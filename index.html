@@ -4096,7 +4096,7 @@ function updateArchitecturalWindowMedia(){
     }
   });
 }
-function makeHologramMaterial(speed=6.0){
+function makeHologramMaterial(speed=6.0, opacity=1){
   if(THREE.ShaderMaterial){
     return new THREE.ShaderMaterial({
       transparent:true,
@@ -4106,6 +4106,7 @@ function makeHologramMaterial(speed=6.0){
       uniforms:{
         uTime:{value:0},
         uSpeed:{value:speed},
+        uOpacity:{value:opacity},
         uColorA:{value:new THREE.Color(0x61f6ff)},
         uColorB:{value:new THREE.Color(0xffd27a)}
       },
@@ -4120,6 +4121,7 @@ function makeHologramMaterial(speed=6.0){
       fragmentShader:`
         uniform float uTime;
         uniform float uSpeed;
+        uniform float uOpacity;
         uniform vec3 uColorA;
         uniform vec3 uColorB;
         varying vec2 vUv;
@@ -4127,7 +4129,7 @@ function makeHologramMaterial(speed=6.0){
           float bands = sin((vUv.y * 34.0) + uTime * uSpeed) * .5 + .5;
           float edge = smoothstep(0.0,.08,vUv.x) * smoothstep(1.0,.92,vUv.x) * smoothstep(0.0,.08,vUv.y) * smoothstep(1.0,.92,vUv.y);
           vec3 col = mix(uColorA,uColorB,bands*.38);
-          float alpha = (.18 + bands*.22) * edge;
+          float alpha = ((.18 + bands*.22) * edge) * uOpacity;
           gl_FragColor = vec4(col, alpha);
         }
       `
@@ -4136,7 +4138,7 @@ function makeHologramMaterial(speed=6.0){
   return new THREE.MeshBasicMaterial({
     color:0x83f7ff,
     transparent:true,
-    opacity:.30,
+    opacity:.30 * opacity,
     blending:THREE.AdditiveBlending,
     depthWrite:false,
     side:THREE.DoubleSide
@@ -4204,8 +4206,10 @@ function addEmpirePortalDoor({x=0,y=4,z=0,width=6.5,height=9.8,title='MANY MAPS'
   return {group, slab:hitbox, doorParts:[], openAxis:'x', field};
 }
 
-function addPremiumPortalDoor({x=0,y=3,z=0,width=4,height=6,orientation='front',title='Door',subtitle='',accent=0xcaa869,dark=0x17120d,ceilingY=null}){
+function addPremiumPortalDoor({x=0,y=3,z=0,width=4,height=6,orientation='front',title='Door',subtitle='',accent=0xcaa869,dark=0x17120d,ceilingY=null,hallRecess=null}){
   const group = new THREE.Group();
+  const recessDepth = hallRecess?.depth ?? 0;
+  const fieldOpacity = hallRecess?.fieldOpacity ?? 1;
   doorFootprints.push({title,x,y,z,width,height,orientation});
   const darkMat = new THREE.MeshStandardMaterial({color:dark, roughness:.58, metalness:.10});
   const accentMat = new THREE.MeshStandardMaterial({color:accent, roughness:.46, metalness:.34});
@@ -4236,7 +4240,7 @@ function addPremiumPortalDoor({x=0,y=3,z=0,width=4,height=6,orientation='front',
 
   // Visible portal skin: every door now reads as an active threshold, not just a flat door.
   const fieldGeom = new THREE.PlaneGeometry(width*.82, height*.74, 18, 18);
-  const fieldMat = makeHologramMaterial((width+height)*.37);
+  const fieldMat = makeHologramMaterial((width+height)*.37, fieldOpacity);
   fieldMat.side = THREE.DoubleSide;
   const field = new THREE.Mesh(fieldGeom, fieldMat);
   field.position.set(x, y, z + (face==='z' ? .075 : 0));

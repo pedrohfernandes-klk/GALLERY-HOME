@@ -153,6 +153,16 @@ test('blocking overlays share focus lifecycle and background isolation', () => {
     'projection player uses the shared dialog helper');
 });
 
+test('Hall recess doors use a visual-only presentation contract', () => {
+  const start = html.indexOf('function addPremiumPortalDoor(');
+  const end = html.indexOf('function fallbackTextureWide', start);
+  const builder = html.slice(start, end);
+  assert.match(builder, /hallRecess\s*=\s*null/);
+  assert.match(builder, /const recessDepth\s*=\s*hallRecess\?\.depth/);
+  assert.match(html, /function makeHologramMaterial\(speed=6\.0, opacity=1\)/);
+  assert.match(builder, /return \{group, slab:hitbox, doorParts:leafGroups, openAxis, field\}/);
+});
+
 test('known runtime regressions remain removed', () => {
   assert.doesNotMatch(html, /color:\['0xc94145','0xe9c856','0xe7d8ca'\]/);
   const animateBlock = html.slice(html.indexOf('function animate(){'), html.indexOf("document.addEventListener('visibilitychange'"));
