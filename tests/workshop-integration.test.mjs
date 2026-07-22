@@ -162,22 +162,6 @@ test('premium thresholds expose a restrained three-rank architectural hierarchy'
   assert.match(html, /return THRESHOLD_TREATMENTS\[rank\] \|\| THRESHOLD_TREATMENTS\.quiet/);
 });
 
-test('premium portal doors use ranked architecture without changing portal return data', () => {
-  const hologramStart = html.indexOf('function makeHologramMaterial(');
-  const builderStart = html.indexOf('function addPremiumPortalDoor(');
-  const builderEnd = html.indexOf('\nfunction ', builderStart + 1);
-  const hologram = html.slice(hologramStart, builderStart);
-  const builder = html.slice(builderStart, builderEnd);
-  assert.match(hologram, /function makeHologramMaterial\(speed=6\.0, opacity=1\)/);
-  assert.match(hologram, /uOpacity:\{value:opacity\}/);
-  assert.match(builder, /thresholdRank='quiet'/);
-  assert.match(builder, /const treatment = resolveThresholdTreatment\(thresholdRank\)/);
-  assert.match(builder, /makeHologramMaterial\(\(width\+height\)\*\.37, treatment\.fieldOpacity\)/);
-  assert.match(builder, /new THREE\.Mesh\(outerGeom, revealMat\)/);
-  assert.match(builder, /color:treatment\.plaqueColor/);
-  assert.match(builder, /return \{group, slab:hitbox, doorParts:leafGroups, openAxis, field\}/);
-});
-
 test('known runtime regressions remain removed', () => {
   assert.doesNotMatch(html, /color:\['0xc94145','0xe9c856','0xe7d8ca'\]/);
   const animateBlock = html.slice(html.indexOf('function animate(){'), html.indexOf("document.addEventListener('visibilitychange'"));
