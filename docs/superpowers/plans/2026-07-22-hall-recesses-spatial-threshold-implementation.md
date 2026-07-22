@@ -4,7 +4,7 @@
 
 **Goal:** Rebuild the Hall’s six destination thresholds as quiet recessed bays that reveal their rooms only after a visitor leaves the central axis.
 
-**Architecture:** Extend `addPremiumPortalDoor()` with an explicit `hallRecess` presentation configuration that changes visual geometry only. The portal’s existing `slab`, `doorParts`, `openAxis` and `field` return contract remains unchanged. The Hall’s six door records opt into the configuration; other premium doors retain their current presentation.
+**Architecture:** Extend `addPremiumPortalDoor()` with an explicit `hallRecess` presentation configuration that changes visual geometry only. Extend the existing hologram material with an explicit opacity multiplier so recessed fields can be quiet without a second shader. The portal’s existing `slab`, `doorParts`, `openAxis` and `field` return contract remains unchanged. The Hall’s six door records opt into the configuration; other premium doors retain their current presentation.
 
 **Tech Stack:** Static HTML, inline Three.js ES module, Node’s built-in test runner, Playwright.
 
@@ -23,7 +23,7 @@
 ### Task 1: Define the Hall-recess presentation contract
 
 **Files:**
-- Modify: `index.html:4207-4335`
+- Modify: `index.html:4099-4144`, `index.html:4207-4335`
 - Modify: `tests/workshop-integration.test.mjs`
 
 **Interfaces:**
@@ -43,6 +43,7 @@ test('Hall recess doors have a visual-only presentation contract', () => {
   assert.match(builder, /hallRecess\s*=\s*null/);
   assert.match(builder, /const recessDepth\s*=\s*hallRecess\?\.depth/);
   assert.match(builder, /const fieldOpacity\s*=\s*hallRecess\?\.fieldOpacity/);
+  assert.match(html, /function makeHologramMaterial\(speed=6\.0, opacity=1\)/);
   assert.match(builder, /return \{group, slab:hitbox, doorParts:leafGroups, openAxis, field\}/);
 });
 ```
@@ -59,7 +60,22 @@ Expected: FAIL because `hallRecess` and its derived values do not yet exist.
 
 - [ ] **Step 3: Add the optional presentation configuration**
 
-Extend the builder signature and resolve conservative defaults without changing the normal-door path:
+First extend the existing shader/fallback material with one safe opacity multiplier:
+
+```js
+function makeHologramMaterial(speed=6.0, opacity=1){
+  // existing ShaderMaterial branch
+  uniforms: {
+    uTime:{value:0}, uSpeed:{value:speed}, uOpacity:{value:opacity},
+    uColorA:{value:new THREE.Color(0x61f6ff)}, uColorB:{value:new THREE.Color(0xffd27a)}
+  }
+  // fragment shader declarations: uniform float uOpacity;
+  // fragment alpha: float alpha = ((.18 + bands*.22) * edge) * uOpacity;
+  // fallback MeshBasicMaterial opacity: .30 * opacity
+}
+```
+
+Then extend the builder signature and resolve conservative defaults without changing the normal-door path:
 
 ```js
 function addPremiumPortalDoor({
@@ -150,7 +166,7 @@ if (hallRecess) {
 }
 ```
 
-Replace the coloured `outer` material with `hallWallMat` only when `hallRecess` is present. Keep `accentMat` for the low-luminance inner handles. Set the hologram shader material’s existing `uOpacity` uniform to `fieldOpacity` only when the uniform exists. Move the plaque’s visual backing and sign plane by `plaqueInset` into the bay, orienting it toward the lateral approach rather than the entry axis.
+Replace the coloured `outer` material with `hallWallMat` only when `hallRecess` is present. Keep `accentMat` for the low-luminance inner handles. Create the field as `makeHologramMaterial((width+height)*.37, fieldOpacity)`. Move the plaque’s visual backing and sign plane by `plaqueInset` into the bay, orienting it toward the lateral approach rather than the entry axis.
 
 - [ ] **Step 4: Run the focused test and verify builder syntax**
 
