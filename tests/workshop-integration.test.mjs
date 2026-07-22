@@ -153,6 +153,42 @@ test('blocking overlays share focus lifecycle and background isolation', () => {
     'projection player uses the shared dialog helper');
 });
 
+test('premium thresholds expose a restrained three-rank architectural hierarchy', () => {
+  assert.match(html, /const THRESHOLD_TREATMENTS\s*=\s*Object\.freeze\(/);
+  assert.match(html, /quiet:\s*Object\.freeze\(/);
+  assert.match(html, /destination:\s*Object\.freeze\(/);
+  assert.match(html, /major:\s*Object\.freeze\(/);
+  assert.match(html, /function resolveThresholdTreatment\(rank='quiet'\)/);
+  assert.match(html, /return THRESHOLD_TREATMENTS\[rank\] \|\| THRESHOLD_TREATMENTS\.quiet/);
+});
+
+test('premium portal doors use ranked architecture without changing portal return data', () => {
+  const hologramStart = html.indexOf('function makeHologramMaterial(');
+  const builderStart = html.indexOf('function addPremiumPortalDoor(');
+  const builderEnd = html.indexOf('\nfunction ', builderStart + 1);
+  const hologram = html.slice(hologramStart, builderStart);
+  const builder = html.slice(builderStart, builderEnd);
+  assert.match(hologram, /function makeHologramMaterial\(speed=6\.0, opacity=1\)/);
+  assert.match(hologram, /uOpacity:\{value:opacity\}/);
+  assert.match(builder, /thresholdRank='quiet'/);
+  assert.match(builder, /const treatment = resolveThresholdTreatment\(thresholdRank\)/);
+  assert.match(builder, /makeHologramMaterial\(\(width\+height\)\*\.37, treatment\.fieldOpacity\)/);
+  assert.match(builder, /new THREE\.Mesh\(outerGeom, revealMat\)/);
+  assert.match(builder, /color:treatment\.plaqueColor/);
+  assert.match(builder, /return \{group, slab:hitbox, doorParts:leafGroups, openAxis, field\}/);
+});
+
+test('major Workshop acts declare major threshold treatment at their existing doors', () => {
+  for (const title of ['The Studio', 'The Venue', 'Thinking Room', 'Experiment Garden', 'THE RESERVE']) {
+    const titleAt = html.indexOf(`title:'${title}'`);
+    assert.ok(titleAt > -1, `${title} premium door exists`);
+    const call = html.slice(titleAt, titleAt + 420);
+    assert.match(call, /thresholdRank:'major'/, `${title} has major threshold rank`);
+  }
+  assert.match(html, /thresholdRank:d\.thresholdRank/, 'hall door builder consumes the authored rank');
+  assert.match(html, /thresholdRank:'destination'/, 'secondary destinations have a dedicated rank');
+});
+
 test('known runtime regressions remain removed', () => {
   assert.doesNotMatch(html, /color:\['0xc94145','0xe9c856','0xe7d8ca'\]/);
   const animateBlock = html.slice(html.indexOf('function animate(){'), html.indexOf("document.addEventListener('visibilitychange'"));

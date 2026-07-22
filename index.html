@@ -4096,7 +4096,7 @@ function updateArchitecturalWindowMedia(){
     }
   });
 }
-function makeHologramMaterial(speed=6.0){
+function makeHologramMaterial(speed=6.0, opacity=1){
   if(THREE.ShaderMaterial){
     return new THREE.ShaderMaterial({
       transparent:true,
@@ -4107,7 +4107,8 @@ function makeHologramMaterial(speed=6.0){
         uTime:{value:0},
         uSpeed:{value:speed},
         uColorA:{value:new THREE.Color(0x61f6ff)},
-        uColorB:{value:new THREE.Color(0xffd27a)}
+        uColorB:{value:new THREE.Color(0xffd27a)},
+        uOpacity:{value:opacity}
       },
       vertexShader:`
         varying vec2 vUv;
@@ -4122,12 +4123,13 @@ function makeHologramMaterial(speed=6.0){
         uniform float uSpeed;
         uniform vec3 uColorA;
         uniform vec3 uColorB;
+        uniform float uOpacity;
         varying vec2 vUv;
         void main(){
           float bands = sin((vUv.y * 34.0) + uTime * uSpeed) * .5 + .5;
           float edge = smoothstep(0.0,.08,vUv.x) * smoothstep(1.0,.92,vUv.x) * smoothstep(0.0,.08,vUv.y) * smoothstep(1.0,.92,vUv.y);
           vec3 col = mix(uColorA,uColorB,bands*.38);
-          float alpha = (.18 + bands*.22) * edge;
+          float alpha = (.18 + bands*.22) * edge * uOpacity;
           gl_FragColor = vec4(col, alpha);
         }
       `
@@ -4136,7 +4138,7 @@ function makeHologramMaterial(speed=6.0){
   return new THREE.MeshBasicMaterial({
     color:0x83f7ff,
     transparent:true,
-    opacity:.30,
+    opacity:.30 * opacity,
     blending:THREE.AdditiveBlending,
     depthWrite:false,
     side:THREE.DoubleSide
@@ -4204,11 +4206,43 @@ function addEmpirePortalDoor({x=0,y=4,z=0,width=6.5,height=9.8,title='MANY MAPS'
   return {group, slab:hitbox, doorParts:[], openAxis:'x', field};
 }
 
-function addPremiumPortalDoor({x=0,y=3,z=0,width=4,height=6,orientation='front',title='Door',subtitle='',accent=0xcaa869,dark=0x17120d,ceilingY=null}){
+const THRESHOLD_TREATMENTS = Object.freeze({
+  quiet: Object.freeze({
+    revealColor: 0xd9d0bd,
+    trimColor: 0x4a4034,
+    plaqueColor: 0xb28b52,
+    revealDepth: 0.18,
+    interiorLight: 0.38,
+    fieldOpacity: 0.025
+  }),
+  destination: Object.freeze({
+    revealColor: 0xcabda5,
+    trimColor: 0x322b24,
+    plaqueColor: 0xb58b4d,
+    revealDepth: 0.28,
+    interiorLight: 0.60,
+    fieldOpacity: 0.018
+  }),
+  major: Object.freeze({
+    revealColor: 0xbeb097,
+    trimColor: 0x211c17,
+    plaqueColor: 0xc19a5a,
+    revealDepth: 0.38,
+    interiorLight: 0.86,
+    fieldOpacity: 0.010
+  })
+});
+function resolveThresholdTreatment(rank='quiet'){
+  return THRESHOLD_TREATMENTS[rank] || THRESHOLD_TREATMENTS.quiet;
+}
+
+function addPremiumPortalDoor({x=0,y=3,z=0,width=4,height=6,orientation='front',title='Door',subtitle='',accent=0xcaa869,dark=0x17120d,ceilingY=null,thresholdRank='quiet'}){
   const group = new THREE.Group();
+  const treatment = resolveThresholdTreatment(thresholdRank);
   doorFootprints.push({title,x,y,z,width,height,orientation});
   const darkMat = new THREE.MeshStandardMaterial({color:dark, roughness:.58, metalness:.10});
   const accentMat = new THREE.MeshStandardMaterial({color:accent, roughness:.46, metalness:.34});
+  const revealMat = new THREE.MeshStandardMaterial({color:treatment.revealColor, roughness:.72, metalness:.05});
   const insetMat = new THREE.MeshStandardMaterial({color:0x2b211a, roughness:.70, metalness:.06});
   const glowMat = new THREE.MeshBasicMaterial({color:0xfff0c7, transparent:true, opacity:.12, blending:THREE.AdditiveBlending, depthWrite:false});
   const hitMat = new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:.001, depthWrite:false});
@@ -4216,8 +4250,8 @@ function addPremiumPortalDoor({x=0,y=3,z=0,width=4,height=6,orientation='front',
   const face = orientation === 'front' ? 'z' : 'x';
   const openAxis = face === 'z' ? 'x' : 'z';
 
-  const outerGeom = face === 'z' ? new THREE.BoxGeometry(width+.92,height+.92,.18) : new THREE.BoxGeometry(.18,height+.92,width+.92);
-  const outer = new THREE.Mesh(outerGeom, accentMat);
+  const outerGeom = face === 'z' ? new THREE.BoxGeometry(width+.92,height+.92,treatment.revealDepth) : new THREE.BoxGeometry(treatment.revealDepth,height+.92,width+.92);
+  const outer = new THREE.Mesh(outerGeom, revealMat);
   outer.position.set(x, y, z + (face==='z' ? -.10 : 0));
   if(face==='x') outer.position.x += orientation === 'left' ? .10 : -.10;
   group.add(outer);
@@ -4236,7 +4270,7 @@ function addPremiumPortalDoor({x=0,y=3,z=0,width=4,height=6,orientation='front',
 
   // Visible portal skin: every door now reads as an active threshold, not just a flat door.
   const fieldGeom = new THREE.PlaneGeometry(width*.82, height*.74, 18, 18);
-  const fieldMat = makeHologramMaterial((width+height)*.37);
+  const fieldMat = makeHologramMaterial((width+height)*.37, treatment.fieldOpacity);
   fieldMat.side = THREE.DoubleSide;
   const field = new THREE.Mesh(fieldGeom, fieldMat);
   field.position.set(x, y, z + (face==='z' ? .075 : 0));
@@ -4308,7 +4342,7 @@ function addPremiumPortalDoor({x=0,y=3,z=0,width=4,height=6,orientation='front',
     signY = ceilingY - .12 - signH/2;   // keep the plaque off low ceilings
   }
   const plaqueMat = new THREE.MeshStandardMaterial({color:0xf4ecdd, roughness:.72, metalness:.05});
-  const plaqueEdgeMat = new THREE.MeshStandardMaterial({color:0x8d7047, roughness:.56, metalness:.16});
+  const plaqueEdgeMat = new THREE.MeshStandardMaterial({color:treatment.plaqueColor, roughness:.56, metalness:.16});
   const signBackGeom = face === 'z' ? new THREE.BoxGeometry(signW+.20, signH+.16, .12) : new THREE.BoxGeometry(.12, signH+.16, signW+.20);
   const signBack = new THREE.Mesh(signBackGeom, plaqueEdgeMat);
   signBack.position.set(x, signY, z + (face==='z' ? .015 : 0));
@@ -5141,17 +5175,17 @@ function buildHall(){
     const doorH = 6.8;
     const doorW = 3.9;
     const doorZs = [
-      {z:z0 + depth*.09, title:'The Venue', subtitle:'SAYWHAT · cinema', room:'theatre', label:'The Venue', accent:0xd5b56d, dark:0x1d1511,
+      {z:z0 + depth*.09, title:'The Venue', subtitle:'SAYWHAT · cinema', room:'theatre', label:'The Venue', accent:0xd5b56d, dark:0x1d1511, thresholdRank:'major',
        targetPos:new THREE.Vector3(theatreOrigin.x, theatreCameraY(theatreOrigin.z+theatreDepth-10), theatreOrigin.z+theatreDepth-10), targetYaw:0},
-      {z:z0 + depth*.255, title:'The Studio', subtitle:'YouTube listening room', room:'studio', label:'The Studio', accent:0x9d6de2, dark:0x130d1c,
+      {z:z0 + depth*.255, title:'The Studio', subtitle:'YouTube listening room', room:'studio', label:'The Studio', accent:0x9d6de2, dark:0x130d1c, thresholdRank:'major',
        targetPos:new THREE.Vector3(studioOrigin.x, cameraHeight, studioOrigin.z + studioDepth - 3.2), targetYaw:0},
-      {z:z0 + depth*.42, title:'The Laboratory', subtitle:'NO WORRIES', room:'lab', label:'The Laboratory', accent:0x88aeb4, dark:0x162022,
+      {z:z0 + depth*.42, title:'The Laboratory', subtitle:'NO WORRIES', room:'lab', label:'The Laboratory', accent:0x88aeb4, dark:0x162022, thresholdRank:'destination',
        targetPos:new THREE.Vector3(labOrigin.x, cameraHeight, labOrigin.z+labDepth-3), targetYaw:0},
-      {z:z0 + depth*.585, title:'Thinking Room', subtitle:'reading · research', room:'thinking', label:'Thinking Room', accent:0xa4c6d8, dark:0x14181a,
+      {z:z0 + depth*.585, title:'Thinking Room', subtitle:'reading · research', room:'thinking', label:'Thinking Room', accent:0xa4c6d8, dark:0x14181a, thresholdRank:'major',
        targetPos:new THREE.Vector3(thinkingOrigin.x, cameraHeight, thinkingOrigin.z+4.4), targetYaw:Math.PI},
-      {z:z0 + depth*.75, title:'Experiment Garden', subtitle:'temporary shows', room:'maze', label:'Experiment Garden', accent:0x53693a, dark:0x211913,
+      {z:z0 + depth*.75, title:'Experiment Garden', subtitle:'temporary shows', room:'maze', label:'Experiment Garden', accent:0x53693a, dark:0x211913, thresholdRank:'major',
        targetPos:new THREE.Vector3(mazeOrigin.x, cameraHeight, mazeOrigin.z + mazeCell*.92), targetYaw:0},
-      {z:z0 + depth*.915, title:'SPARK TOOLS LABS', subtitle:'retropunk arcade', room:'spark', label:'SPARK TOOLS LABS', accent:0xd24fe5, dark:0x120714,
+      {z:z0 + depth*.915, title:'SPARK TOOLS LABS', subtitle:'retropunk arcade', room:'spark', label:'SPARK TOOLS LABS', accent:0xd24fe5, dark:0x120714, thresholdRank:'destination',
        targetPos:new THREE.Vector3(sparkOrigin.x, cameraHeight, sparkOrigin.z+4.2), targetYaw:Math.PI}
     ];
     doorZs.forEach(d=>{
@@ -5159,7 +5193,7 @@ function buildHall(){
         x:-hw+.13, y:doorH/2, z:d.z,
         width:doorW, height:doorH, orientation:'left',
         title:d.title, subtitle:d.subtitle,
-        accent:d.accent, dark:d.dark
+        accent:d.accent, dark:d.dark, thresholdRank:d.thresholdRank
       });
       registerPortal({
         mesh:built.slab, field:built.field, doorParts:built.doorParts, openAxis:built.openAxis,
@@ -7182,7 +7216,7 @@ function buildHood(){
   const reserveLanding=new THREE.Mesh(new THREE.BoxGeometry(5.0,.20,1.4),darkConcrete);reserveLanding.position.set(wx+27,-3.0,wz+27.7);scene.add(reserveLanding);
   const reserveSign=new THREE.Mesh(new THREE.PlaneGeometry(5.6,.72),new THREE.MeshBasicMaterial({map:makeSignTexture('THE RESERVE ↓','basement archive · ramp'),transparent:true}));reserveSign.position.set(wx+27,3.6,wz+18);reserveSign.rotation.y=Math.PI;scene.add(reserveSign);
   const reserveGlow=new THREE.PointLight(0xcfe6ee,1.7,14,1.7);reserveGlow.position.set(wx+27,.4,wz+24);scene.add(reserveGlow);regLight('hood',reserveGlow);
-  const reserveDoor=addPremiumPortalDoor({x:wx+27,y:-1.2,z:wz+28.6,width:3.6,height:3.6,orientation:'front',title:'THE RESERVE',subtitle:'basement archive',accent:0x8a9295,dark:0x14171a});
+  const reserveDoor=addPremiumPortalDoor({x:wx+27,y:-1.2,z:wz+28.6,width:3.6,height:3.6,orientation:'front',title:'THE RESERVE',subtitle:'basement archive',accent:0x8a9295,dark:0x14171a,thresholdRank:'major'});
   registerPortal({
     mesh:reserveDoor.slab, field:reserveDoor.field, doorParts:reserveDoor.doorParts, openAxis:reserveDoor.openAxis,
     room:'hood-basement', fromRoom:'hood', label:'The Reserve',
