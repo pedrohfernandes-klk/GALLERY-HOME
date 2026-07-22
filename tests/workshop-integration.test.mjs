@@ -153,6 +153,15 @@ test('blocking overlays share focus lifecycle and background isolation', () => {
     'projection player uses the shared dialog helper');
 });
 
+test('premium thresholds expose a restrained three-rank architectural hierarchy', () => {
+  assert.match(html, /const THRESHOLD_TREATMENTS\s*=\s*Object\.freeze\(/);
+  assert.match(html, /quiet:\s*Object\.freeze\(/);
+  assert.match(html, /destination:\s*Object\.freeze\(/);
+  assert.match(html, /major:\s*Object\.freeze\(/);
+  assert.match(html, /function resolveThresholdTreatment\(rank='quiet'\)/);
+  assert.match(html, /return THRESHOLD_TREATMENTS\[rank\] \|\| THRESHOLD_TREATMENTS\.quiet/);
+});
+
 test('known runtime regressions remain removed', () => {
   assert.doesNotMatch(html, /color:\['0xc94145','0xe9c856','0xe7d8ca'\]/);
   const animateBlock = html.slice(html.indexOf('function animate(){'), html.indexOf("document.addEventListener('visibilitychange'"));

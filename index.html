@@ -4204,6 +4204,36 @@ function addEmpirePortalDoor({x=0,y=4,z=0,width=6.5,height=9.8,title='MANY MAPS'
   return {group, slab:hitbox, doorParts:[], openAxis:'x', field};
 }
 
+const THRESHOLD_TREATMENTS = Object.freeze({
+  quiet: Object.freeze({
+    revealColor: 0xd9d0bd,
+    trimColor: 0x4a4034,
+    plaqueColor: 0xb28b52,
+    revealDepth: 0.18,
+    interiorLight: 0.38,
+    fieldOpacity: 0.025
+  }),
+  destination: Object.freeze({
+    revealColor: 0xcabda5,
+    trimColor: 0x322b24,
+    plaqueColor: 0xb58b4d,
+    revealDepth: 0.28,
+    interiorLight: 0.60,
+    fieldOpacity: 0.018
+  }),
+  major: Object.freeze({
+    revealColor: 0xbeb097,
+    trimColor: 0x211c17,
+    plaqueColor: 0xc19a5a,
+    revealDepth: 0.38,
+    interiorLight: 0.86,
+    fieldOpacity: 0.010
+  })
+});
+function resolveThresholdTreatment(rank='quiet'){
+  return THRESHOLD_TREATMENTS[rank] || THRESHOLD_TREATMENTS.quiet;
+}
+
 function addPremiumPortalDoor({x=0,y=3,z=0,width=4,height=6,orientation='front',title='Door',subtitle='',accent=0xcaa869,dark=0x17120d,ceilingY=null}){
   const group = new THREE.Group();
   doorFootprints.push({title,x,y,z,width,height,orientation});
