@@ -6672,7 +6672,24 @@ function buildHood(){
   // instead of north-south past the district's western edge where the gate
   // used to stand.
   const road=new THREE.Mesh(new THREE.PlaneGeometry(110,8),gravel);road.rotation.x=-Math.PI/2;road.position.set(x0-43,.035,z0+78);scene.add(road);
-  for(let i=0;i<42;i++){const stone=new THREE.Mesh(new THREE.DodecahedronGeometry(.10+Math.random()*.17,0),new THREE.MeshStandardMaterial({color:i%3?0x9b8c75:0x665d50,roughness:1}));stone.position.set(x0-98+Math.random()*110,.08,z0+74+Math.random()*8);scene.add(stone);}
+  // Approach-road gravel: 42 loose stones in two tones. A unit dodecahedron
+  // carries the random radius as instance scale; two draws, not 42 meshes.
+  {
+    const gravelGeo=new THREE.DodecahedronGeometry(1,0);
+    const gravelLight=new THREE.InstancedMesh(gravelGeo,new THREE.MeshStandardMaterial({color:0x9b8c75,roughness:1}),42);
+    const gravelDark=new THREE.InstancedMesh(gravelGeo,new THREE.MeshStandardMaterial({color:0x665d50,roughness:1}),42);
+    const gd=new THREE.Object3D(); let gl=0,gk=0;
+    for(let i=0;i<42;i++){
+      const r=.10+Math.random()*.17;
+      gd.position.set(x0-98+Math.random()*110,.08,z0+74+Math.random()*8);
+      gd.rotation.set(Math.random()*3,Math.random()*3,Math.random()*3);
+      gd.scale.set(r,r,r); gd.updateMatrix();
+      if(i%3) gravelLight.setMatrixAt(gl++,gd.matrix); else gravelDark.setMatrixAt(gk++,gd.matrix);
+    }
+    gravelLight.count=gl; gravelDark.count=gk;
+    gravelLight.instanceMatrix.needsUpdate=true; gravelDark.instanceMatrix.needsUpdate=true;
+    scene.add(gravelLight,gravelDark);
+  }
 
   // Ocean horizon and project district.
   // (The painted sea+sky gradient canvas is gone with the billboard it fed;
@@ -6865,7 +6882,21 @@ function buildHood(){
   const caveCeil=new THREE.Mesh(new THREE.PlaneGeometry(caveW,caveD),new THREE.MeshStandardMaterial({map:caveCeilTex,roughness:1,side:THREE.DoubleSide}));caveCeil.rotation.x=Math.PI/2;caveCeil.position.set(veX,12.8,caveZ);scene.add(caveCeil);
   const caveRockTex=makeStoneTexture('#4b443d','rgba(96,86,72,.16)','rgba(30,26,20,.14)');caveRockTex.repeat.set(2,2);
   const caveRockMat=new THREE.MeshStandardMaterial({map:caveRockTex,roughness:1,metalness:0});
-  for(let i=0;i<56;i++){const side=i%2?-1:1,rock=new THREE.Mesh(new THREE.DodecahedronGeometry(2.1+(i%5)*.38,1),caveRockMat);rock.scale.set(1.1,1.45+(i%3)*.12,1.35);rock.position.set(veX+side*(caveW/2-.8+(i%3)*.35),2.1+(i%4)*2.25,caveZ-caveD/2+1+(i%28)*(caveD-2)/27);rock.rotation.set(i*.17,i*.31,i*.11);scene.add(rock);}
+  // Cave-mouth boulders: 56 rocks, one shared material. Their radius varied
+  // per rock (a fresh DodecahedronGeometry each), so the geometry is a unit
+  // dodecahedron and the radius is folded into per-instance scale — one draw.
+  {
+    const caveRockInst=new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1,1),caveRockMat,56);
+    const rd=new THREE.Object3D();
+    for(let i=0;i<56;i++){
+      const side=i%2?-1:1, R=2.1+(i%5)*.38;
+      rd.position.set(veX+side*(caveW/2-.8+(i%3)*.35),2.1+(i%4)*2.25,caveZ-caveD/2+1+(i%28)*(caveD-2)/27);
+      rd.rotation.set(i*.17,i*.31,i*.11);
+      rd.scale.set(R*1.1,R*(1.45+(i%3)*.12),R*1.35);
+      rd.updateMatrix(); caveRockInst.setMatrixAt(i,rd.matrix);
+    }
+    caveRockInst.instanceMatrix.needsUpdate=true; scene.add(caveRockInst);
+  }
   // Curved entrance passage at the waterfall's eastern shoulder — the side
   // that already faces back toward the hall.
   const passage=new THREE.Mesh(new THREE.PlaneGeometry(6,31),limestone);passage.rotation.x=-Math.PI/2;passage.position.set(veX+17,.17,cliffZ+12);scene.add(passage);
@@ -7264,8 +7295,25 @@ function buildHood(){
   }
   function lake(cx,cz,sx,sz){const rim=new THREE.Mesh(new THREE.CircleGeometry(8.9,64),limestone);rim.rotation.x=-Math.PI/2;rim.scale.set(sx,sz,1);rim.position.set(cx,.085,cz);scene.add(rim);const water=new THREE.Mesh(new THREE.CircleGeometry(8.1,64),new THREE.MeshStandardMaterial({color:0x4d91a0,roughness:.18,metalness:.22,transparent:true,opacity:.88}));water.rotation.x=-Math.PI/2;water.scale.set(sx,sz,1);water.position.set(cx,.11,cz);scene.add(water);return water;}
   lake(gx-44,gz+18,1.8,1);lake(gx+44,gz+18,1.8,1);
-  // Woodland rooms around the formal geometry.
-  for(let i=0;i<54;i++){const side=i%2?-1:1,txx=gx+side*(58+Math.random()*16),tzz=gz-48+Math.random()*100;const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.22,.34,3.4,8),wood);trunk.position.set(txx,1.7,tzz);scene.add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(1.7+Math.random()*.7,14,10),new THREE.MeshStandardMaterial({color:i%3?0x315735:0x486d3d,roughness:1}));crown.scale.y=.74;crown.position.set(txx,4.1,tzz);scene.add(crown);}
+  // Woodland rooms around the formal geometry. 54 trees were 108 individual
+  // meshes; trunks share one material and crowns use two greens, so the whole
+  // woodland is three instanced draws with two shared geometries.
+  {
+    const forestTrunk=new THREE.InstancedMesh(new THREE.CylinderGeometry(.22,.34,3.4,8),wood,54);
+    const crownGeo=new THREE.SphereGeometry(1,14,10);
+    const crownA=new THREE.InstancedMesh(crownGeo,new THREE.MeshStandardMaterial({color:0x315735,roughness:1}),54);
+    const crownB=new THREE.InstancedMesh(crownGeo,new THREE.MeshStandardMaterial({color:0x486d3d,roughness:1}),54);
+    const ft=new THREE.Object3D(); let ti=0,ai=0,bi=0;
+    for(let i=0;i<54;i++){
+      const side=i%2?-1:1, txx=gx+side*(58+Math.random()*16), tzz=gz-48+Math.random()*100;
+      ft.position.set(txx,1.7,tzz); ft.scale.set(1,1,1); ft.updateMatrix(); forestTrunk.setMatrixAt(ti++,ft.matrix);
+      const cr=1.7+Math.random()*.7;
+      ft.position.set(txx,4.1,tzz); ft.scale.set(cr,cr*.74,cr); ft.updateMatrix();
+      if(i%3) crownA.setMatrixAt(ai++,ft.matrix); else crownB.setMatrixAt(bi++,ft.matrix);
+    }
+    forestTrunk.count=ti; crownA.count=ai; crownB.count=bi;
+    [forestTrunk,crownA,crownB].forEach(m=>{m.instanceMatrix.needsUpdate=true;scene.add(m);});
+  }
   // Pavilions and a range of sit points at lakes, terraces and hidden rooms.
   for(const sx of [-1,1]){const pg=new THREE.Group();pg.position.set(gx+sx*59,0,gz-38);scene.add(pg);const roof=new THREE.Mesh(new THREE.CylinderGeometry(5.2,5.2,.55,8),limestone);roof.position.y=4.8;pg.add(roof);for(let a=0;a<8;a++){const col=new THREE.Mesh(new THREE.CylinderGeometry(.18,.24,4.4,12),paleStone);col.position.set(Math.cos(a*Math.PI/4)*4.1,2.2,Math.sin(a*Math.PI/4)*4.1);pg.add(col);}const seat=new THREE.Mesh(new THREE.CylinderGeometry(3.1,3.1,.45,32),wood);seat.position.y=.45;pg.add(seat);sitPoint('hood',seat,'Garden pavilion',new THREE.Vector3(gx+sx*59,1.35,gz-38),sx<0?-Math.PI/2:Math.PI/2);}
   [[-44,18,0],[44,18,0],[-30,45,Math.PI],[30,45,Math.PI],[-67,5,-Math.PI/2],[67,5,Math.PI/2]].forEach(([dx,dz,ry],i)=>{const bench=new THREE.Mesh(new THREE.BoxGeometry(4.2,.34,1.0),wood);bench.position.set(gx+dx,.55,gz+dz);bench.rotation.y=ry;scene.add(bench);sitPoint('hood',bench,i<2?'Lake edge':'Garden terrace',new THREE.Vector3(gx+dx,1.28,gz+dz),ry);});
