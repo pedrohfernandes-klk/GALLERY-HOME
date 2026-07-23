@@ -6650,24 +6650,66 @@ function buildHood(){
   const surf=new THREE.Mesh(new THREE.PlaneGeometry(2600,7),new THREE.MeshBasicMaterial({color:0xdCEaEa,transparent:true,opacity:.5,depthWrite:false}));
   surf.rotation.x=-Math.PI/2;surf.position.set(x0,-.03,z0-12);scene.add(surf);
   function graffitiTexture(seed,word){const c=document.createElement('canvas');c.width=1024;c.height=512;const q=c.getContext('2d');q.fillStyle='#5c5b56';q.fillRect(0,0,1024,512);let r=seed*983+11;const rnd=()=>{r=Math.sin(r*12.9898)*43758.5453;return Math.abs(r)%1;};q.globalAlpha=.34;for(let i=0;i<170;i++){q.fillStyle=['#d64337','#258e9d','#e6bd45','#181719'][i%4];q.fillRect(rnd()*1024,rnd()*512,30+rnd()*180,4+rnd()*17);}q.globalAlpha=1;q.translate(512,275);q.rotate((seed-.5)*.14);q.textAlign='center';q.font='900 170px Arial Black';q.lineWidth=21;q.strokeStyle='#171719';q.strokeText(word,0,0);q.fillStyle=seed>.5?'#e64b3d':'#e9cf45';q.fillText(word,0,0);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;}
+  // Project-housing windows are instanced. Built individually this was the
+  // single heaviest thing in the district: 176 windows meant 176 meshes, 176
+  // PlaneGeometries and 176 materials, all for two repeated looks (dark glass
+  // and lit glass). They now cost two draws and one shared geometry.
+  const projWinGeo=new THREE.PlaneGeometry(1.55,1.28);
+  const projWinDark=new THREE.MeshBasicMaterial({color:0x233139});
+  const projWinLit=new THREE.MeshBasicMaterial({color:0xe4b866});
+  let projWinTotal=0;
+  for(const side of [-1,1])for(let i=0;i<5;i++){ projWinTotal+=Math.floor((12+(i%3)*4.1)/3.1)*4; }
+  const projWinDarkInst=new THREE.InstancedMesh(projWinGeo,projWinDark,projWinTotal);
+  const projWinLitInst=new THREE.InstancedMesh(projWinGeo,projWinLit,projWinTotal);
+  let pwDark=0,pwLit=0;
+  const pwM=new THREE.Matrix4(), pwPos=new THREE.Vector3(), pwQuat=new THREE.Quaternion(), pwScale=new THREE.Vector3(1,1,1), pwEuler=new THREE.Euler();
+
   for(const side of [-1,1])for(let i=0;i<5;i++){
     const h=12+(i%3)*4.1,w=15+(i%2)*4,d=13;const bx=x0+side*(31+i*4.3),bz=z0+22+i*14.2;
     const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),i%2?brick:darkConcrete);b.position.set(bx,h/2,bz);scene.add(b);
-    for(let f=0;f<Math.floor(h/3.1);f++)for(let k=0;k<4;k++){const win=new THREE.Mesh(new THREE.PlaneGeometry(1.55,1.28),new THREE.MeshBasicMaterial({color:(f+k+i)%4?0x233139:0xe4b866}));win.position.set(bx-side*(w/2+.012),2.35+f*2.7,bz-3.8+k*2.45);win.rotation.y=side>0?-Math.PI/2:Math.PI/2;scene.add(win);}
+    for(let f=0;f<Math.floor(h/3.1);f++)for(let k=0;k<4;k++){
+      pwPos.set(bx-side*(w/2+.012),2.35+f*2.7,bz-3.8+k*2.45);
+      pwEuler.set(0,side>0?-Math.PI/2:Math.PI/2,0); pwQuat.setFromEuler(pwEuler);
+      pwM.compose(pwPos,pwQuat,pwScale);
+      if((f+k+i)%4) projWinDarkInst.setMatrixAt(pwDark++,pwM); else projWinLitInst.setMatrixAt(pwLit++,pwM);
+    }
     if(i<4){const mural=new THREE.Mesh(new THREE.PlaneGeometry(9.2,4.6),new THREE.MeshBasicMaterial({map:graffitiTexture((i+2)/7,['VOICE','NOISE','FREESTYLE','STAY ODD'][i]),toneMapped:false}));mural.position.set(bx-side*(w/2+.02),4.0,bz);mural.rotation.y=side>0?-Math.PI/2:Math.PI/2;scene.add(mural);}
   }
+  // Trim each instanced buffer to what was actually filled, or the unused
+  // slots would draw a stack of identity-matrix windows at the world origin.
+  projWinDarkInst.count=pwDark; projWinLitInst.count=pwLit;
+  projWinDarkInst.instanceMatrix.needsUpdate=true; projWinLitInst.instanceMatrix.needsUpdate=true;
+  scene.add(projWinDarkInst,projWinLitInst);
+
   // Habitable detail on the project blocks: projecting balconies, fire stairs,
   // laundries, entrance canopies and warm domestic windows establish scale.
+  // The balcony assembly is the same story: 44 slabs, 44 rails and 176 uprights
+  // are three repeated shapes, so they become three instanced draws instead of
+  // 264 meshes.
+  let balTotal=0;
+  for(const side of [-1,1])for(let i=0;i<5;i++){ balTotal+=Math.max(2,Math.floor((12+(i%3)*4.1)/3.2)); }
+  const balSlabInst=new THREE.InstancedMesh(new THREE.BoxGeometry(2.4,.18,6.8),paleStone,balTotal);
+  const balRailInst=new THREE.InstancedMesh(new THREE.BoxGeometry(.08,1.0,6.8),steel,balTotal);
+  const balBarInst=new THREE.InstancedMesh(new THREE.BoxGeometry(.07,1.0,.07),steel,balTotal*4);
+  let bSlab=0,bRail=0,bBar=0;
+  const bM=new THREE.Matrix4(), bPos=new THREE.Vector3(), bQuat=new THREE.Quaternion(), bScale=new THREE.Vector3(1,1,1);
+
   for(const side of [-1,1])for(let i=0;i<5;i++){
     const h=12+(i%3)*4.1,w=15+(i%2)*4,bx=x0+side*(31+i*4.3),bz=z0+22+i*14.2;
     for(let f=0;f<Math.max(2,Math.floor(h/3.2));f++){
-      const balcony=new THREE.Mesh(new THREE.BoxGeometry(2.4,.18,6.8),paleStone);balcony.position.set(bx-side*(w/2+.95),2.65+f*3.05,bz);scene.add(balcony);
-      const rail=new THREE.Mesh(new THREE.BoxGeometry(.08,1.0,6.8),steel);rail.position.set(bx-side*(w/2+2.10),3.12+f*3.05,bz);scene.add(rail);
-      for(let k=0;k<4;k++){const bar=new THREE.Mesh(new THREE.BoxGeometry(.07,1.0,.07),steel);bar.position.set(bx-side*(w/2+2.10),3.12+f*3.05,bz-2.8+k*1.85);scene.add(bar);}
+      bM.compose(bPos.set(bx-side*(w/2+.95),2.65+f*3.05,bz),bQuat,bScale); balSlabInst.setMatrixAt(bSlab++,bM);
+      bM.compose(bPos.set(bx-side*(w/2+2.10),3.12+f*3.05,bz),bQuat,bScale); balRailInst.setMatrixAt(bRail++,bM);
+      for(let k=0;k<4;k++){
+        bM.compose(bPos.set(bx-side*(w/2+2.10),3.12+f*3.05,bz-2.8+k*1.85),bQuat,bScale);
+        balBarInst.setMatrixAt(bBar++,bM);
+      }
     }
     const canopy=new THREE.Mesh(new THREE.BoxGeometry(2.5,.18,4.4),i%2?brass:steel);canopy.position.set(bx-side*(w/2+1.0),2.35,bz-3.5);scene.add(canopy);
     const door=new THREE.Mesh(new THREE.PlaneGeometry(1.45,2.3),new THREE.MeshStandardMaterial({color:i%2?0x7a332b:0x244a4b,roughness:.55}));door.position.set(bx-side*(w/2+.03),1.2,bz-3.5);door.rotation.y=side>0?-Math.PI/2:Math.PI/2;scene.add(door);
   }
+  balSlabInst.count=bSlab; balRailInst.count=bRail; balBarInst.count=bBar;
+  [balSlabInst,balRailInst,balBarInst].forEach(m=>{m.instanceMatrix.needsUpdate=true;scene.add(m);});
+
   // Street-level life is legible without turning every façade into a prop
   // catalogue. One coherent shopfront, one roof service element and one
   // domestic trace per block establish an inhabited Mediterranean district.

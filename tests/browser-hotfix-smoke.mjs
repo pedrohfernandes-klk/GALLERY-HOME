@@ -1,4 +1,29 @@
 import { chromium } from 'playwright';
+import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { dirname, join, normalize } from 'node:path';
+
+// The test used to assume something was already serving the project on 4187.
+// Nothing started it, so the run failed before reaching a single assertion.
+// It now serves the repository itself and shuts down afterwards, so
+// `npm run test:browser` is a complete, self-contained command.
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const TYPES = { '.html':'text/html', '.js':'text/javascript', '.mjs':'text/javascript',
+  '.css':'text/css', '.json':'application/json', '.webp':'image/webp', '.png':'image/png',
+  '.jpg':'image/jpeg', '.svg':'image/svg+xml', '.mp4':'video/mp4', '.webm':'video/webm' };
+
+const server = createServer(async (req, res) => {
+  try {
+    const path = normalize(decodeURIComponent(req.url.split('?')[0])).replace(/^(\.\.[/\\])+/, '');
+    const file = join(ROOT, path === '/' ? 'index.html' : path);
+    if (!file.startsWith(ROOT)) { res.writeHead(403).end(); return; }          // no path escapes
+    const ext = file.slice(file.lastIndexOf('.'));
+    res.writeHead(200, { 'content-type': TYPES[ext] || 'application/octet-stream' });
+    res.end(await readFile(file));
+  } catch { res.writeHead(404).end(); }
+});
+await new Promise(resolve => server.listen(4187, '127.0.0.1', resolve));
 
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -28,3 +53,4 @@ if (await page.locator('#archivePanel').evaluate(el => el.classList.contains('op
 if (pageErrors.length) throw new Error(`Page errors: ${pageErrors.join('\n')}`);
 console.log(JSON.stringify({ researchOpenHref, pageErrors }, null, 2));
 await browser.close();
+await new Promise(resolve => server.close(resolve));
