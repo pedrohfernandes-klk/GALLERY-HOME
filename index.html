@@ -4574,7 +4574,47 @@ function runWorkshopSelfTest(){
       const need=a.width/2 + b.width/2 + ART_MARGIN;
       if(along<need){ artClashes++; worstArt=`${a.title} ~ ${b.title} (${along.toFixed(2)}<${need.toFixed(2)})`; }
     }));
-    check(wallArtPieces.length>=30, 'wall art registered', `${wallArtPieces.length} pieces`);
+    // Nothing solid may stand in front of an artwork. Doors and neighbouring art
+  // are checked above from the registries; this catches the third case —
+  // furniture, shelving or props drifting into a piece's viewing cone, which
+  // is how the Thinking Room bookshelves once crossed the picture wall.
+  //
+  // An artwork's own mounting (backing panel, brass frame, reveal) sits flush
+  // against the wall, so anything within FLUSH of the art plane is skipped;
+  // only objects standing off the wall and tall enough to read as an
+  // obstruction count.
+  {
+    const box=new THREE.Box3(), size=new THREE.Vector3(), ctr=new THREE.Vector3();
+    const FLUSH=0.40, REACH=1.60, MIN_H=0.9, MAX_DIM=12;
+    let blocked=0, worst='';
+    wallArtPieces.forEach(a=>{
+      scene.traverse(o=>{
+        if(!o.isMesh || o.userData?.rpgAvatar) return;
+        box.setFromObject(o);
+        if(!isFinite(box.min.x)) return;
+        box.getSize(size); box.getCenter(ctr);
+        // Architecture is excluded by its LARGEST dimension: a wall slab is thin
+        // in one axis but huge in the others, so testing each axis separately
+        // let full-height walls through as if they were furniture.
+        if(Math.max(size.x,size.y,size.z) > MAX_DIM) return;              // walls, floors, sky
+        if(size.y < MIN_H) return;                                        // low props cannot block
+        if(Math.abs(ctr.y-a.y) > (a.height/2 + size.y/2)) return;         // no vertical overlap
+        // Distance must be measured PERPENDICULAR to the wall, not as a plain
+        // radius: a monumental piece is metres wide, so a radial test sweeps in
+        // its own edge trim (Cadavre Expat III is 11.2 m and flagged its own
+        // brass accent at 5.96 m). rotationY gives the wall normal.
+        const nx=Math.sin(a.rotationY), nz=Math.cos(a.rotationY);
+        const d=Math.abs((ctr.x-a.x)*nx + (ctr.z-a.z)*nz);                // off-wall depth
+        const along=Math.abs(-(ctr.x-a.x)*nz + (ctr.z-a.z)*nx);           // sideways along wall
+        if(along > a.width/2) return;                                     // not in front of the image
+        if(d<=FLUSH || d>REACH) return;                                   // own mounting, or clear
+        blocked++; worst=`${a.title||'untitled'} blocked at ${d.toFixed(2)}m by object h=${size.y.toFixed(1)}`;
+      });
+    });
+    check(blocked===0, 'no object stands in front of an artwork', blocked?worst:'all clear');
+  }
+
+  check(wallArtPieces.length>=30, 'wall art registered', `${wallArtPieces.length} pieces`);
     check(doorFootprints.length>=30, 'doors registered', `${doorFootprints.length} doors`);
     check(doorClashes===0, 'no wall art crowds a doorway', doorClashes?worstDoor:'all clear');
     check(artClashes===0, 'no wall art crowds its neighbour', artClashes?worstArt:'all clear');

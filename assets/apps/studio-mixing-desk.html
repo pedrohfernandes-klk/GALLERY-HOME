@@ -1434,6 +1434,11 @@
       const al=$('#arpLatch'); if(al) al.classList.toggle('on',p.arpLatch);
       octaveLabel();
     }
+    // Test-only accessor. Browser tests need to tap the live audio graph to
+    // assert the synth genuinely produces signal — something no headless Node
+    // test can observe. It exposes nothing the page does not already own and
+    // returns null until the AudioContext exists.
+    window.__deskAudioProbe=()=>ctx?{ctx,master:masterIn,voices:()=>synthVoices.size}:null;
     function setupSynth(){
       renderKeyboard(); renderSynthControls();
       const p=state.synth;
