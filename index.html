@@ -6138,13 +6138,22 @@ function buildOutdoorSpace(){
     const cranium=new THREE.Mesh(new THREE.SphereGeometry(.60,72,56),headStone);cranium.scale.set(.98,1.10,.92);cranium.castShadow=true;headGroup.add(cranium);
     const jaw=new THREE.Mesh(new THREE.SphereGeometry(.43,64,42),headStone);jaw.position.set(0,-.29,.035);jaw.scale.set(1.02,.78,.92);headGroup.add(jaw);
     const neck=new THREE.Mesh(new THREE.CylinderGeometry(.27,.34,.66,48),headStone);neck.position.set(0,-.65,-.02);headGroup.add(neck);
-    const faceCap=new THREE.Mesh(new THREE.CircleGeometry(.525,72),new THREE.MeshStandardMaterial({map:faceTex,roughness:.84,metalness:.01}));
-    faceCap.position.set(0,-.005,.555);faceCap.scale.set(1.00,1.15,1);headGroup.add(faceCap);
+    // The face is carried on a shallow spherical cap concentric with the
+    // cranium, so the portrait curves with the skull instead of reading as a
+    // flat disc pinned to the front — the one remaining "toy" tell the visual
+    // guidelines call out (no flat-disc face). A hair larger than the cranium
+    // so it sits just proud and never z-fights.
+    const faceR=.60, halfPhi=.66, halfTheta=.80;
+    const faceGeo=new THREE.SphereGeometry(faceR,56,44, Math.PI/2-halfPhi, halfPhi*2, Math.PI/2-halfTheta, halfTheta*2);
+    const faceCap=new THREE.Mesh(faceGeo,new THREE.MeshStandardMaterial({map:faceTex,roughness:.84,metalness:.01}));
+    faceCap.scale.set(.995,1.115,.935);headGroup.add(faceCap);
     // The original mouth is reinforced as a recessed, softly modelled opening,
-    // avoiding the tiny pasted-on look of the previous version.
+    // avoiding the tiny pasted-on look of the previous version. Its depth now
+    // hugs the curved face (~z .52 at mouth height) rather than the old flat
+    // plane, so it reads as carved into the surface, still clearly proud.
     const mouthRim=new THREE.Mesh(new THREE.TorusGeometry(.145,.036,18,48),new THREE.MeshStandardMaterial({color:0x6f1718,roughness:.62,metalness:.03}));
-    mouthRim.position.set(0,-.245,.584);mouthRim.scale.y=.46;headGroup.add(mouthRim);
-    const mouthVoid=new THREE.Mesh(new THREE.CircleGeometry(.115,40),new THREE.MeshBasicMaterial({color:0x170707}));mouthVoid.position.set(0,-.245,.588);mouthVoid.scale.y=.42;headGroup.add(mouthVoid);
+    mouthRim.position.set(0,-.245,.536);mouthRim.scale.y=.46;headGroup.add(mouthRim);
+    const mouthVoid=new THREE.Mesh(new THREE.CircleGeometry(.115,40),new THREE.MeshBasicMaterial({color:0x170707}));mouthVoid.position.set(0,-.245,.542);mouthVoid.scale.y=.42;headGroup.add(mouthVoid);
     // Designed back: three shallow concentric carvings and a small maker's seal
     // are visible when the visitor walks around the monument.
     for(const r of [.27,.38,.49]){const groove=new THREE.Mesh(new THREE.TorusGeometry(r,.012,10,64),statueMaskFrameMat);groove.position.set(0,.01,-.555);groove.rotation.y=Math.PI;headGroup.add(groove);}
